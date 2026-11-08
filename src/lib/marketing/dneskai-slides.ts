@@ -90,6 +90,8 @@ export const DneskaiSlideSchema = z.strictObject({
   body: z.string().max(700).optional(),
   kicker: z.string().max(80).optional(),
   credit: z.string().max(120).optional(),
+  /** A series post's cover: its label and running number ("Slovník AI #3", 8 November 2026). Code writes it, never the model. */
+  series: z.string().min(1).max(60).optional(),
   sources: z.array(z.string().min(1).max(240)).max(4).optional(),
   images: z.array(DneskaiSlideImageSchema).max(4),
   alt: z.string().min(1).max(1000),
@@ -102,6 +104,7 @@ export const DneskaiSlideSchema = z.strictObject({
   if (slide.variant && slide.type === "statement" && !["accent", "ink"].includes(slide.variant)) context.addIssue({ code: "custom", message: "statement variant must be accent or ink", path: ["variant"] });
   if (slide.variant && slide.type === "single" && !["photo", "type"].includes(slide.variant)) context.addIssue({ code: "custom", message: "single variant must be photo or type", path: ["variant"] });
   if (slide.variant && !["statement", "single"].includes(slide.type)) context.addIssue({ code: "custom", message: "only statement and single slides take a variant", path: ["variant"] });
+  if (slide.series !== undefined && slide.type !== "cover-photo") context.addIssue({ code: "custom", message: "only a cover carries a series line", path: ["series"] });
 });
 export type DneskaiSlide = z.infer<typeof DneskaiSlideSchema>;
 

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
-import { dneskaiDeckLacksPhoto, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
+import { dneskaiDeckLacksPhoto, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiSeriesOutOfDate, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
 import { deck } from './marketing-dneskai-revision-fixture';
 
 /** The plan step's decisions (owner decision, 7 November 2026), one slot at a time. Synthetic values only. */
@@ -27,6 +27,23 @@ describe('dneskaiPlanAction', () => {
   it('waits for a topic still generating and fails a news slot without its post', () => {
     expect(dneskaiPlanAction(slot({ kind: 'education', revision_id: null, topic_id: 't' }), null, null, true, now)).toEqual({ kind: 'wait', status: 'generating', code: null });
     expect(dneskaiPlanAction(slot(), null, null, true, now)).toMatchObject({ kind: 'wait', status: 'failed', code: 'plan-post-missing' });
+  });
+
+  it('puts the series heading on a series post before approving it, and renumbers an approved one while there is time (8 November 2026)', () => {
+    const heading = 'Slovník AI #2';
+    const fresh = revision();
+    expect(fresh.deck!.slides[0]!.type).toBe('cover-photo');
+    expect(dneskaiSeriesOutOfDate(fresh, heading)).toBe(true);
+    const numbered = { caption: `${heading}\nText.`, deck: { ...fresh.deck!, slides: [{ ...fresh.deck!.slides[0]!, series: heading }, ...fresh.deck!.slides.slice(1)] } };
+    expect(dneskaiSeriesOutOfDate(numbered as never, heading)).toBe(false);
+    expect(dneskaiSeriesOutOfDate(numbered as never, 'Slovník AI #3')).toBe(true);
+    expect(dneskaiPlanAction(slot(), head(), null, true, now, null, heading)).toEqual({ kind: 'series', status: 'ready' });
+    expect(dneskaiPlanAction(slot(), head({}, numbered as never), null, true, now, null, heading)).toEqual({ kind: 'approve', status: 'approved' });
+    expect(dneskaiPlanAction(slot(), head(), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
+    expect(dneskaiPlanAction(slot(), head({ status: 'approved' }, numbered as never), null, true, now, null, 'Slovník AI #1')).toEqual({ kind: 'series', status: 'ready' });
+    // Under half an hour before its slot an approved post goes out as it is.
+    const late = new Date(Date.parse(dneskaiPlanSlotAt(slot())) - 20 * 60_000);
+    expect(dneskaiPlanAction(slot(), head({ status: 'approved' }, numbered as never), null, true, late, null, 'Slovník AI #1').kind).not.toBe('series');
   });
 
   it('moves an older-kit post to Spotlight, then to the slot time, then approves it', () => {
@@ -128,6 +145,9 @@ describe('the night\'s news in the plan (7 November 2026)', () => {
       { topicId: 'b', date: '2026-11-20', time: '20:00', instagram: false },
     ]);
     const morning = new Date('2026-11-20T06:00:00Z'); // 07:00 in Prague: 08:00 is too close
-    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-20', rank: 1 }], [], morning)[0]).toMatchObject({ time: '17:00' });
+    // Friday 17:00 is a series slot from 16 November 2026, so the news takes Threads at 20:00.
+    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-20', rank: 1 }], [], morning)[0]).toMatchObject({ time: '20:00' });
+    // Sunday 17:00 stays with the news.
+    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-22', rank: 1 }], [], new Date('2026-11-22T06:00:00Z'))[0]).toMatchObject({ time: '17:00' });
   });
 });

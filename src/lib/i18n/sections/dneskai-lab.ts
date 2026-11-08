@@ -1,5 +1,6 @@
 import type { DneskaiKit, DneskaiLabApprovalBlock } from '@/lib/marketing/dneskai-lab';
 import type { DneskaiShapeId } from '@/lib/marketing/dneskai-slide-layout';
+import type { DneskaiSeries } from '@/lib/marketing/dneskai-series';
 
 /** The DNESKAi Design Lab (design-lab-spec.md). Every string exists in English and Czech with the same meaning. */
 const en = {
@@ -226,6 +227,7 @@ const en = {
     listLabel: (group: string) => `${group}: proposed topics`,
     verdict: { fact: 'Fact', hype: 'Hype', unclear: 'Unclear' } as Record<'fact' | 'hype' | 'unclear', string>,
     manual: 'Added by hand',
+    series: { explainer: 'Series: AI glossary', mosseri: 'Series: Mosseri tips', karpathy: 'Series: Karpathy tips', cherny: 'Series: Boris Cherny tips', mollick: 'Series: Ethan Mollick tips', pocock: 'Series: Matt Pocock tips' } as Record<DneskaiSeries, string>,
     approved: 'Approved',
     approve: 'Approve',
     reject: 'Reject',
@@ -479,6 +481,7 @@ const cs: typeof en = {
     listLabel: (group: string) => `${group}: navržené náměty`,
     verdict: { fact: 'Fact', hype: 'Hype', unclear: 'Nejasné' },
     manual: 'Přidáno ručně',
+    series: { explainer: 'Série: Slovník AI', mosseri: 'Série: Mosseri tipy', karpathy: 'Série: Karpathy tipy', cherny: 'Série: Boris Cherny tipy', mollick: 'Série: Ethan Mollick tipy', pocock: 'Série: Matt Pocock tipy' },
     approved: 'Schváleno',
     approve: 'Schválit',
     reject: 'Zamítnout',

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-import { createJinaTopicReader, dneskaiOwnerLinkCandidate, dneskaiOwnerLinkSource, dneskaiReaderText, dneskaiTopicUrl } from '@/lib/marketing/dneskai-topic-source';
+import { createJinaTopicReader, dneskaiOwnerLinkCandidate, dneskaiOwnerLinkSource, dneskaiReaderText, dneskaiTopicUrl, dneskaiTopicUrls } from '@/lib/marketing/dneskai-topic-source';
 import { advanceDneskaiTopicBriefs, type DneskaiBridgeTopic, type DneskaiTopicBridgeStore } from '@/lib/marketing/dneskai-topic-bridge';
 import type { DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
 
@@ -41,6 +41,18 @@ describe('owner-link sources (#210)', () => {
     expect(dneskaiTopicUrl(null)).toBeNull();
     expect(dneskaiReaderText('a  \n\n\n\nb')).toBe('a\n\nb');
   });
+
+  it('takes up to three distinct https URLs in order, and numbers the candidates of further pages', () => {
+    const urls = ['https://a.example.test/1', 'http://plain.example.test/', 'https://a.example.test/1', 'https://b.example.test/2', 'https://c.example.test/3', 'https://d.example.test/4'];
+    expect(dneskaiTopicUrls({ urls })).toEqual(['https://a.example.test/1', 'https://b.example.test/2', 'https://c.example.test/3']);
+    expect(dneskaiTopicUrls({ urls: 'https://a.example.test/1' })).toEqual([]);
+    const input = { topicId, kind: 'education' as const, page: { title: 'Page', text: 'Text.' }, fallbackTitle: 'T', fallbackText: null, now: new Date('2026-11-08T08:00:00Z') };
+    expect(dneskaiOwnerLinkCandidate({ ...input, url, part: 1 }).candidate.id).toBe(`owner-link:${topicId}`);
+    expect(dneskaiOwnerLinkCandidate({ ...input, url: 'https://b.example.test/2', part: 2 }).candidate.id).toBe(`owner-link:${topicId}:2`);
+    // A series topic's summary leads the page text (8 November 2026); without page text the summary is the fallback alone.
+    expect(dneskaiOwnerLinkCandidate({ ...input, url, lead: 'Shrnutí tipu.' }).candidate.text).toBe('Shrnutí tipu.\n\nText.');
+    expect(dneskaiOwnerLinkCandidate({ ...input, url, page: { title: 'P', text: '' }, fallbackText: 'Shrnutí tipu.', lead: 'Shrnutí tipu.' }).candidate.text).toBe('Shrnutí tipu.');
+  });
 });
 
 describe('the bridge with owner links (#210)', () => {
@@ -80,6 +92,33 @@ describe('the bridge with owner links (#210)', () => {
     const norun = stores([topic({ urls: [url] })], { run: null });
     expect(await advance(norun.store, reader)).toMatchObject({ waiting: 1 });
     expect(norun.updates[0]).toMatchObject({ evidence: { bridgeCode: 'topic-run-unavailable' } });
+    expect(reader).not.toHaveBeenCalled();
+  });
+
+  it('makes every readable further page a member of the brief and leaves an unreadable one out', async () => {
+    const second = 'https://b.example.test/2', third = 'https://c.example.test/3';
+    const runId = '44444444-4444-4444-8444-444444444444';
+    const row = (id: string) => ({ id, run_id: runId, status: 'new', target_date: null, content_hash: 'h', candidate: {} });
+    const reader = vi.fn(async (page: string) => page === second ? null : { title: 'Page', text: 'Text.' });
+    const insertCandidate = vi.fn(async (_o: string, _p: string, _r: string, inserted: { candidate: { id: string } }) => ({ id: inserted.candidate.id }));
+    const insertTopicBrief = vi.fn(async () => ({ id: '55555555-5555-4555-8555-555555555555' }));
+    const selectCandidate = vi.fn(async () => undefined);
+    const updates: Array<Record<string, unknown>> = [];
+    const store = { topics: async () => [topic({ urls: [url, second, third], reportId: `owner-link:${topicId}` })], brief: async () => null, candidate: async (_o: string, _p: string, id: string) => row(id),
+      selectCandidate, insertTopicBrief, updateTopic: async (_o: string, _i: string, patch: Record<string, unknown>) => { updates.push(patch); }, job: async () => null,
+      candidateByUrl: async () => null, latestRun: async () => ({ id: runId }), insertCandidate } as unknown as DneskaiTopicBridgeStore;
+    await advance(store, reader);
+    expect(reader.mock.calls.map(([page]) => page)).toEqual([second, third]);
+    expect(updates[0]).toMatchObject({ evidence: { extraReports: { [third]: `owner-link:${topicId}:3` }, extraAttempts: 1 } });
+    expect(selectCandidate).toHaveBeenCalledTimes(2);
+    expect(insertTopicBrief).toHaveBeenCalledWith(owner, expect.objectContaining({ member_ids: [`owner-link:${topicId}`, `owner-link:${topicId}:3`], lead_candidate_id: `owner-link:${topicId}` }));
+  });
+
+  it('stops reading further pages after the third pass and keeps the ones it has', async () => {
+    const reader = vi.fn(async () => ({ title: 'Page', text: 'Text.' }));
+    const second = 'https://b.example.test/2';
+    const base = stores([topic({ urls: [url, second], reportId: `owner-link:${topicId}`, extraAttempts: 3 })]);
+    await advance(base.store, reader);
     expect(reader).not.toHaveBeenCalled();
   });
 });

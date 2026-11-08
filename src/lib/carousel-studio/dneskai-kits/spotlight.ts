@@ -115,6 +115,13 @@ const mark = (frame: Frame): CarouselLayerInput =>
 const speaker = (frame: Frame): CarouselLayerInput =>
   text("kicker", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 30, maxFontSize: 30, maxChars: 28, maxLines: 1, uppercase: true, tracking: 0.02, align: "middle" });
 
+/**
+ * A series post's label and running number above the cover headline ("Slovník AI #3", owner decision, 8 November
+ * 2026): Inter 700, uppercase, centred. Only series posts set it; without it the cover carries its headline alone.
+ */
+const seriesLine = (frame: Frame): CarouselLayerInput =>
+  text("series", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 24, maxFontSize: 24, maxChars: 48, maxLines: 1, uppercase: true, tracking: 0.04, align: "middle" });
+
 const copy = (frame: Frame, options: Parameters<typeof body>[1]): CarouselLayerInput =>
   body(frame, { colorToken: "surface", align: "middle", ...options });
 
@@ -128,7 +135,8 @@ const coverPhoto = template({
     photo("image-1", 0, W, H, BLEED_FADE),
     inset,
     logo,
-    headline(box(LEFT, 772, MEASURE, 490), { minFontSize: 46, maxFontSize: 64, maxChars: 110, maxLines: 6 })
+    headline(box(LEFT, 772, MEASURE, 490), { minFontSize: 46, maxFontSize: 64, maxChars: 110, maxLines: 6 }),
+    seriesLine(box(LEFT, H - 140, MEASURE, 40))
   ]
 });
 
@@ -270,7 +278,7 @@ const QUOTE: Item[] = [["quote-mark", 0], ["headline", 2, MARK_PULL], ["kicker",
 const SOURCES = Array.from({ length: DNESKAI_MAX_THUMBNAILS + 1 }, (_, count) => sources(count));
 
 const TEMPLATES: DneskaiKitTemplate[] = [
-  { role: "cover-photo", template: coverPhoto, flow: floor(["headline", 0]) },
+  { role: "cover-photo", template: coverPhoto, flow: floor(["series", 0], ["headline", "headlineToNote"]) },
   { role: "figure", template: figure, flow: floor(["headline", 0], ["body", "headlineToBody"]) },
   { role: "split", template: split, flow: floor(...QUOTE) },
   { role: "split-pair", template: splitPair, flow: floor(...QUOTE) },

@@ -1,0 +1,407 @@
+{
+ "series": "mosseri",
+ "note": "Owner decision 8 Nov 2026: Tue/Thu 12:30 from 17 Nov. Mosseri is named as the speaker in the text; URLs and credits stay in the database only. Paraphrase only. The first URL is an editorial article (text and photo), further URLs add pictures. Tips 15 and 16 have one or second-hand sources (confidence medium).",
+ "topics": [
+  {
+   "order": 1,
+   "slug": "engagement-rate",
+   "said": "září 2026, Instagram, série videí o řazení",
+   "confidence": "high",
+   "title": "Šéf Instagramu radí: přestaň počítat zhlédnutí",
+   "keyword": "Zapojeni",
+   "summary": "Šéf Instagramu Adam Mosseri v zářijové sérii videí o tom, jak Instagram řadí příspěvky, radí tvůrcům sledovat míru zapojení místo počtu zhlédnutí a lajků. Rozhoduje, jaký podíl lidí, kteří příspěvek viděli, s ním opravdu něco udělal: dali like, okomentovali ho nebo ho poslali dál.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-chief-shares-algorithm-insights-and-posting-tips/831326/",
+    "https://www.parasocialmagazine.com/news/mosseri-names-four-instagram-ranking-principles-for-creators/"
+   ]
+  },
+  {
+   "order": 2,
+   "slug": "originality",
+   "said": "30. 4. 2026, Instagram, video; září 2026, série o řazení",
+   "confidence": "high",
+   "title": "Repost cizího obsahu se nevyplácí. Instagram takové účty přestává doporučovat.",
+   "keyword": "Original",
+   "summary": "Originalita je podle šéfa Instagramu Adama Mosseriho první ze čtyř principů řazení. Od 30. 4. 2026 platí i pro fotky a karusely: účet, který převážně přeposílá cizí práci bez vlastního přínosu, Instagram nedoporučuje lidem, kteří ho nesledují. Posuzuje se celý účet, ne jednotlivý příspěvek.",
+   "urls": [
+    "https://techcrunch.com/2026/04/30/instagram-restricts-reach-of-content-aggregators-in-new-crackdown/",
+    "https://www.tubefilter.com/2026/04/30/instagram-removes-algorithm-recommendations-repost-content-aggregator/"
+   ]
+  },
+  {
+   "order": 3,
+   "slug": "breaking-content",
+   "said": "9. 9. 2026, Instagram, video; 26. 10. 2026, The Colin & Samir Show",
+   "confidence": "high",
+   "title": "Šanci dostane i úplně nový účet. Instagram ukazuje malé tvůrce i nesledujícím.",
+   "keyword": "Dosah",
+   "summary": "Šéf Instagramu Adam Mosseri vysvětluje princip „breaking content“: veřejné příspěvky malých tvůrců Instagram zkouší ukazovat i lidem, kteří je nesledují, a podle reakcí je šíří dál. I úplně nový účet tak může dostat velký dosah. Podmínkou je postovat veřejně a vlastní obsah.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-chief-shares-algorithm-insights-and-posting-tips/831326/",
+    "https://www.netinfluencer.com/instagram-head-says-video-creator-payments-lose-money-as-platform-tests-long-form-video/",
+    "https://www.instagram.com/p/DdENi2fP59I/"
+   ]
+  },
+  {
+   "order": 4,
+   "slug": "ai-content",
+   "said": "polovina října 2026, Q&A ve Stories a Threads (17. 10. 2026)",
+   "confidence": "high",
+   "title": "Šéf Instagramu: obsah od AI netrestáme, ale označujte ho",
+   "keyword": "Oznacit",
+   "summary": "Šéf Instagramu Adam Mosseri říká, že Instagram nesnižuje dosah jen proto, že obsah vytvořila AI. Rozhoduje, jestli o něj diváci stojí. Chce ale AI obsah víc označovat a motivovat tvůrce, aby ho označovali sami. Kopírování cizí práce pomocí AI, třeba výstupů komiků nebo tanečníků, chce zarazit.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-chief-says-stronger-ai-slop-prevention-is-needed/833416/",
+    "https://www.threads.com/@mosseri/post/Dek1XiEmHuq"
+   ]
+  },
+  {
+   "order": 5,
+   "slug": "experiment",
+   "said": "24. 9. 2026, Instagram, video, 4. díl série o řazení",
+   "confidence": "high",
+   "title": "Co fungovalo minulý týden, dnes fungovat nemusí",
+   "keyword": "Test",
+   "summary": "Trendy se podle šéfa Instagramu Adama Mosseriho mění z týdne na týden. Radí proto zkoušet různé typy obsahu a přístupy místo opakování jednoho osvědčeného vzorce. Jako bezpečné místo pro pokusy doporučuje reels.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-chief-shares-algorithm-insights-and-posting-tips/831326/",
+    "https://www.techjuice.pk/instagram-ceo-adam-mosseri-breaks-down-why-your-instagram-posts-dont-go-viral/",
+    "https://www.instagram.com/p/DdrY25_gNvi/"
+   ]
+  },
+  {
+   "order": 6,
+   "slug": "sustainable-pace",
+   "said": "24. 9. 2026, Instagram, video, 4. díl série o řazení",
+   "confidence": "high",
+   "title": "Postuj často, ale v tempu, které vydržíš",
+   "keyword": "Tempo",
+   "summary": "Čím víc postujete, tím víc máte šancí na příspěvek, který se chytne. Šéf Instagramu Adam Mosseri ale zároveň varuje před vyhořením: radí rozvrhnout si čas tak, aby šlo tempo dlouhodobě udržet.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-chief-shares-algorithm-insights-and-posting-tips/831326/",
+    "https://www.techjuice.pk/instagram-ceo-adam-mosseri-breaks-down-why-your-instagram-posts-dont-go-viral/"
+   ]
+  },
+  {
+   "order": 7,
+   "slug": "raw-content",
+   "said": "31. 12. 2025, Threads, esej o Instagramu v roce 2026",
+   "confidence": "high",
+   "title": "Šéf Instagramu: uhlazené fotky jsou mrtvé, vsaďte na syrové",
+   "keyword": "Autentic",
+   "summary": "Podle šéfa Instagramu Adama Mosseriho přestal uhlazený, vyretušovaný obraz cokoli znamenat, protože ho AI vyrobí levně. Syrové a klidně i nelichotivé záběry se stávají důkazem, že za obsahem stojí skutečný člověk. Tvůrci mají vsadit na autenticitu a obsah, který by nikdo jiný nevytvořil.",
+   "urls": [
+    "https://www.engadget.com/social-media/instagram-chief-ai-is-so-ubiquitous-it-will-be-more-practical-to-fingerprint-real-media-than-fake-media-202620080.html",
+    "https://www.tubefilter.com/2026/01/06/adam-mosseri-instagram-warning-generative-ai-deepfakes/",
+    "https://www.threads.com/@mosseri/post/DS76UiklIDf"
+   ]
+  },
+  {
+   "order": 8,
+   "slug": "trial-reels",
+   "said": "2. 4. 2026, Instagram, video",
+   "confidence": "high",
+   "title": "Trial Reels: otestuj nápad na lidech, kteří tě nesledují",
+   "keyword": "Trial",
+   "summary": "Trial Reels se nejdřív ukážou jen lidem, kteří vás nesledují. Šéf Instagramu Adam Mosseri oznámil, že je nově jde naplánovat na konkrétní čas. Nápad nebo formát si tak otestujete na novém publiku bez rizika a vydání načasujete na chvíli, kdy je publikum aktivní.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-allows-creators-to-schedule-trial-reels/816549/",
+    "https://www.techjuice.pk/instagram-now-lets-creators-schedule-trial-reels-for-better-reach/",
+    "https://www.instagram.com/reel/DWooFXuADXR/"
+   ]
+  },
+  {
+   "order": 9,
+   "slug": "stories-reshare",
+   "said": "přelom března a dubna 2026, Q&A ve Stories",
+   "confidence": "high",
+   "title": "Sdílení vlastního postu do Stories nepomůže. Na dosah to podle Mosseriho nepůsobí.",
+   "keyword": "Stories",
+   "summary": "Feed příspěvek můžete do Stories klidně sdílet, ale na celkový dosah to podle šéfa Instagramu Adama Mosseriho výrazně nepůsobí. Většina „hacků“ podle něj nefunguje, a ty, které Instagram najde, obvykle vypne.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-chief-debunks-popular-engagement-hack/816781/",
+    "https://wersm.com/instagram-says-reposting-to-stories-wont-boost-your-reach"
+   ]
+  },
+  {
+   "order": 10,
+   "slug": "sends-per-reach",
+   "said": "26. 10. 2026, The Colin & Samir Show (YouTube)",
+   "confidence": "high",
+   "title": "Nejdůležitější číslo není počet lajků. Rozhoduje, kolik lidí post pošle dál.",
+   "keyword": "Sends",
+   "summary": "Pro dosah mimo vlastní sledující je podle šéfa Instagramu Adama Mosseriho klíčové „sends per reach“: podíl lidí, kteří příspěvek poslali někomu ve zprávě. Aplikace Edits tuhle metriku už počítá a Instagram ji přidává do statistik.",
+   "urls": [
+    "https://www.netinfluencer.com/instagram-head-says-video-creator-payments-lose-money-as-platform-tests-long-form-video/",
+    "https://www.zoomsphere.com/blog/instagram-algorithm-2026-what-actually-gets-reach"
+   ]
+  },
+  {
+   "order": 11,
+   "slug": "ai-translation",
+   "said": "14. 7. 2026, Threads; 23. 10. 2026, Q&A ve Stories",
+   "confidence": "high",
+   "title": "Reels v cizím jazyce: Instagram je přeloží za vás",
+   "keyword": "Preklad",
+   "summary": "Instagram rozšířil AI překlad a dabing reelsů o další jazyky a nově překládá hlas i titulky na obrazovce. Šéf Instagramu Adam Mosseri ho tvůrcům doporučuje jako cestu k publiku, které nemluví jejich jazykem. Funkce je volitelná a překlad jde před zveřejněním zkontrolovat.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-reels-adds-more-ai-translations/825258/",
+    "https://www.threads.com/@mosseri/post/DaxpWl5gJjx"
+   ]
+  },
+  {
+   "order": 12,
+   "slug": "collab-posts",
+   "said": "18. 11. 2025, Instagram, reel",
+   "confidence": "high",
+   "title": "Collab post: jeden příspěvek, dvě publika",
+   "keyword": "Collab",
+   "summary": "Collab post se zobrazí sledujícím obou spolupracujících účtů, takže jeden příspěvek osloví víc publik. Šéf Instagramu Adam Mosseri k tomu přidal tip: spolupráci jde nově přidat i dodatečně, po zveřejnění.",
+   "urls": [
+    "https://onlinemarketing.de/social-media-marketing/instagram-collabs-nach-posting-algorithmus-insights",
+    "https://www.instagram.com/reel/DRNMNP1D-Mq/"
+   ]
+  },
+  {
+   "order": 13,
+   "slug": "features-long-video",
+   "said": "26. 10. 2026, Instagram, video s Tessou Lyons; Threads 27. 10. 2026",
+   "confidence": "high",
+   "title": "Instagram zkouší 90minutová videa. Jak s nimi pracovat",
+   "keyword": "Features",
+   "summary": "Instagram testuje Features, horizontální videa až do 90 minut, jejichž výstřižky jde publikovat jako reels s odkazem na celé video. Šéf Instagramu Adam Mosseri chce, aby se krátký a dlouhý formát navzájem podporovaly. Funkce se zpřístupňuje postupně a výdělek z dlouhých videí se teprve hledá.",
+   "urls": [
+    "https://techcrunch.com/2026/10/26/watch-out-youtube-instagram-goes-from-short-form-to-90-minute-videos/",
+    "https://www.tubefilter.com/2026/10/26/instagram-features-longer-uploads-clips-as-reels/",
+    "https://www.threads.com/@mosseri/post/DfA1glCj_5s"
+   ]
+  },
+  {
+   "order": 14,
+   "slug": "many-stories",
+   "said": "12. 9. 2025, Instagram, reel",
+   "confidence": "high",
+   "title": "Víc Stories denně už dosah nesráží",
+   "keyword": "Pribehy",
+   "summary": "Instagram opravil chybu, kvůli které účty s více Stories denně ztrácely dosah. Šéf Instagramu Adam Mosseri řekl, že to nebylo zamýšlené chování. Kdo kvůli tomu se Stories šetřil, může je zase přidávat. Každý další příběh ale nemá zhlédnutí zaručená.",
+   "urls": [
+    "https://www.engadget.com/social-media/instagram-fixed-an-issue-that-caused-posting-multiple-stories-to-tank-your-reach-184714482.html",
+    "https://www.instagram.com/reel/DOgMqw_Dp4j/"
+   ]
+  },
+  {
+   "order": 15,
+   "slug": "caption-typo",
+   "said": "červen 2026, broadcast kanál „Instagram advice“",
+   "confidence": "medium",
+   "title": "Překlep v popisku klidně opravte. Dosah se úpravou neresetuje.",
+   "keyword": "Popisek",
+   "summary": "Úprava popisku po zveřejnění dosah nepoškodí ani nic „neresetuje“. Šéf Instagramu Adam Mosseri radí jednoduše: když najdete překlep, opravte ho.",
+   "urls": [
+    "https://onlinemarketing.de/social-media-marketing/instagram-chef-caption-mythos"
+   ]
+  },
+  {
+   "order": 16,
+   "slug": "reply-comments",
+   "said": "listopad 2025, Q&A (zachyceno z druhé ruky)",
+   "confidence": "medium",
+   "title": "Místo repostu raději odpovídej na komentáře",
+   "keyword": "Komentar",
+   "summary": "Repostnout vlastní starší obsah pomůže dosahu podle šéfa Instagramu Adama Mosseriho jen okrajově. Víc udělá, když na komentáře u původního příspěvku odpovíte a dáte jim like.",
+   "urls": [
+    "https://onlinemarketing.de/social-media-marketing/repost-dein-instagram-content-reichweite",
+    "https://www.threads.com/@oncescuradu/post/DRhbeE5DBbt"
+   ]
+  },
+  {
+   "order": 17,
+   "slug": "your-algorithm",
+   "said": "konec června 2026, Instagram, karuselový post; funkce spuštěna 10. 12. 2025 v USA",
+   "confidence": "high",
+   "title": "Feed si můžeš ladit sám. Instagram k tomu přidává Your Algorithm.",
+   "keyword": "Algoritmus",
+   "summary": "Instagram ukazuje v nástroji Your Algorithm témata, o kterých si myslí, že vás zajímají. Můžete si říct o víc nebo méně určitého tématu a dopsat i vlastní. Začalo to u reels, pak přibyly Explore a hlavní feed. Šéf Instagramu Adam Mosseri v červnu 2026 ukázal, že nástroj má být víc po ruce: třeba stažením feedu dolů nebo tlačítky pod reelsem. Upozornil, že některé věci jsou zatím jen v testu a dostupnost se postupně rozšiřuje.",
+   "urls": [
+    "https://techcrunch.com/2026/06/27/instagram-is-testing-more-ways-for-users-to-customize-your-algorithm/",
+    "https://www.socialmediatoday.com/news/instagram-tests-more-algorithm-controls/823936/",
+    "https://www.instagram.com/p/DaDWjlEG7vl/"
+   ]
+  },
+  {
+   "order": 18,
+   "slug": "reset-recommendations",
+   "said": "19. 11. 2024, Instagram, video",
+   "confidence": "high",
+   "title": "Doporučení tě nebaví. Instagram je umí vymazat a začít od nuly.",
+   "keyword": "Reset",
+   "summary": "V nastavení obsahu jde doporučený obsah v Explore, reels a feedu vynulovat. Instagram se pak vaše zájmy učí znovu podle toho, s čím budete pracovat, a nabídne i kontrolu účtů, které sledujete. Šéf Instagramu Adam Mosseri ale varuje, že je to velký krok: aplikace bude zpočátku mnohem méně zajímavá, protože o vás nic neví. Reset není na pravidelné používání, spíš pro chvíli, kdy vám Instagram přestane dělat dobře. Data ani reklamy se tím nemažou.",
+   "urls": [
+    "https://techcrunch.com/2024/11/19/instagram-will-soon-let-you-reset-your-recommendation-algorithm/",
+    "https://about.instagram.com/blog/announcements/reset-instagram-content-suggestions"
+   ]
+  },
+  {
+   "order": 19,
+   "slug": "microphone-myth",
+   "said": "1. 10. 2025, Instagram, video",
+   "confidence": "high",
+   "title": "Telefon tě neposlouchá. Reklamy vycházejí z toho, co děláš online.",
+   "keyword": "Mikrofon",
+   "summary": "Šéf Instagramu Adam Mosseri odmítl mýtus, že aplikace tajně poslouchá přes mikrofon. Podle něj by to bylo hrubé porušení soukromí a poznali byste to na baterii i na indikátoru mikrofonu. Reklamy, které vypadají jako odposlech, vysvětluje jinak: inzerenti sdílejí, kdo navštívil jejich web, Instagram ukazuje reklamy, které zaujaly lidi s podobnými zájmy, a reklamu jste mohli vidět dřív, než jste o věci mluvili, jen jste si toho nevšimli.",
+   "urls": [
+    "https://techcrunch.com/2025/10/01/instagram-head-says-company-is-not-using-your-microphone-to-listen-to-you-with-ai-data-it-wont-need-to/",
+    "https://www.instagram.com/reel/DPRA3qyEgWw/"
+   ]
+  },
+  {
+   "order": 20,
+   "slug": "instagram-map",
+   "said": "6.–7. 8. 2025, Threads, odpovědi uživatelům",
+   "confidence": "high",
+   "title": "Mapa přátel tě sama neprozradí. Polohu sdílíš, jen když to zapneš.",
+   "keyword": "Mapa",
+   "summary": "Po spuštění mapy přátel šéf Instagramu Adam Mosseri vysvětloval, že sdílení polohy je ve výchozím stavu vypnuté a vyžaduje dvojí souhlas. Podle něj si lidé pletli, že když vidí na mapě sebe, vidí je i ostatní. Polohu můžete sdílet jen s vybranými lidmi. Pozor ale na označené místo ve Stories nebo reelsu: to se na mapě může 24 hodin ukázat, i když sdílení máte vypnuté. Stačí štítek s místem smazat.",
+   "urls": [
+    "https://www.engadget.com/social-media/adam-mosseri-says-people-are-confused-about-how-the-instagram-map-works-184736070.html",
+    "https://techcrunch.com/2025/08/07/how-to-use-instagram-map-and-set-your-location-sharing-preferences",
+    "https://www.threads.com/@mosseri/post/DNDwYMIsP7G"
+   ]
+  },
+  {
+   "order": 21,
+   "slug": "following-feed",
+   "said": "září 2024, týdenní Q&A; 23. 3. 2022, blog Instagramu (autor Mosseri)",
+   "confidence": "high",
+   "title": "Chceš jen lidi, které sleduješ. Přepni feed na Sledované.",
+   "keyword": "Sledovane",
+   "summary": "Klepnutím na nápis Instagram vlevo nahoře přepnete feed na Sledované, kde jsou jen účty, které sledujete, seřazené podle času. Druhá možnost jsou Oblíbené: až 50 vybraných účtů, jejichž příspěvky nezmeškáte, a nikdo se nedozví, že jste je přidali. Šéf Instagramu Adam Mosseri říká, že čistě chronologický feed jako výchozí nevrátí, protože v testech byli lidé méně spokojení. Jako alternativy jmenuje Sledované, Oblíbené a odložení doporučení na měsíc.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-chief-says-following-feed-option-wont-work/728374/",
+    "https://about.instagram.com/blog/announcements/favorites-and-following",
+    "https://techcrunch.com/2022/03/23/instagram-launches-chronological-and-favorites-feeds-for-all-users-but-they-cant-be-the-default/"
+   ]
+  },
+  {
+   "order": 22,
+   "slug": "hashtags",
+   "said": "únor 2025, Instagram, reel; prosinec 2025 limit pěti hashtagů",
+   "confidence": "high",
+   "title": "Hashtagy dosah nezvednou. Pomůžou jen vysvětlit, o čem post je.",
+   "keyword": "Hashtagy",
+   "summary": "Šéf Instagramu Adam Mosseri opakovaně říká, že hashtagy dosah nezvyšují. Hodí se k tomu, aby lidé i Instagram pochopili, o čem příspěvek je, a k propojení podobných postů. Od prosince 2025 jde navíc k příspěvku nebo reelsu dát nejvýš pět hashtagů místo dřívějších třiceti. Místo dlouhých seznamů obecných hashtagů tedy stačí pár výstižných a energii dát do obsahu.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-implements-new-limits-on-hashtag-use/808309/",
+    "https://www.businesstoday.in/technology/news/story/no-more-hashtag-stuffing-instagram-limits-hashtag-usage-to-just-5-per-reel-and-post-507444-2025-12-19",
+    "https://www.instagram.com/reel/DGdsCt5pr0R/"
+   ]
+  },
+  {
+   "order": 23,
+   "slug": "watch-time",
+   "said": "leden 2025, Instagram, video, 1. díl série o algoritmu",
+   "confidence": "high",
+   "title": "Lidé musí u videa zůstat. Doba sledování patří k hlavním signálům.",
+   "keyword": "Sledovanost",
+   "summary": "Šéf Instagramu Adam Mosseri jmenoval tři signály, na kterých při řazení záleží nejvíc: dobu sledování, lajky a přeposlání. Ve statistikách proto radí sledovat průměrnou dobu sledování, lajky na dosah a přeposlání na dosah. U sledujících podle něj hrají o něco větší roli lajky, u lidí, kteří vás nesledují, přeposlání. Video, u kterého lidé vydrží, má větší šanci dostat se dál.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-shares-algorithm-insights-2025/738034/",
+    "https://www.instagram.com/p/DFFyRp-pINJ/"
+   ]
+  },
+  {
+   "order": 24,
+   "slug": "carousels",
+   "said": "polovina října 2024, Instagram, reel",
+   "confidence": "high",
+   "title": "Karusel dostane druhou šanci. Instagram ukáže další snímek.",
+   "keyword": "Karusel",
+   "summary": "Karusely mají podle šéfa Instagramu Adama Mosseriho v průměru větší dosah než jedna fotka. Víc snímků znamená víc interakcí a víc interakcí víc dosahu. Navíc když karusel uvidíte a nepřetočíte, Instagram vám ho později může ukázat znovu, rovnou od dalšího snímku. Proto se někdy karusel ve feedu otevře na druhé fotce. Každý snímek by tak měl obstát i sám za sebe.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/ig-chief-recommends-posting-carousels-to-improve-reach/730232/",
+    "https://www.instagram.com/reel/DBOeUmTSmIC/"
+   ]
+  },
+  {
+   "order": 25,
+   "slug": "stories-retention",
+   "said": "listopad 2024, Instagram, reel",
+   "confidence": "high",
+   "title": "Stories drží publikum. Kdo je přidává, méně lidí ho odsleduje.",
+   "keyword": "Vernost",
+   "summary": "Šéf Instagramu Adam Mosseri napsal, že tvůrci, kteří pravidelně přidávají Stories, mívají méně odsledování než ti, kteří je vynechávají, a to jim dlouhodobě pomáhá růst. Stories tak nejsou zbytečná práce, i když nepřinesou velká čísla: pomáhají udržet vztah s lidmi, kteří vás už sledují.",
+   "urls": [
+    "https://onlinemarketing.de/social-media-marketing/plattformchef-darum-solltest-du-instagram-stories-posten",
+    "https://www.instagram.com/reel/DBqsPQxPsB9/"
+   ]
+  },
+  {
+   "order": 26,
+   "slug": "watermark",
+   "said": "říjen 2024, Instagram, reel",
+   "confidence": "high",
+   "title": "Vlastní logo na videu nevadí. Vodoznak TikToku dosah omezí.",
+   "keyword": "Vodoznak",
+   "summary": "Šéf Instagramu Adam Mosseri uklidnil tvůrce, kteří dávají do reelsů vlastní logo: dosah to nesnižuje. Jinak je to s vodoznakem jiné platformy. Reels s logem TikToku Instagram od roku 2021 nedoporučuje lidem, kteří vás nesledují, takže se neobjeví v Explore ani v doporučeních. Sledující je uvidí normálně. Když video sdílíte z jiné aplikace, nahrajte verzi bez cizího vodoznaku.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-clarifies-that-including-your-own-logo-on-a-reel-is-ok/730852/",
+    "https://www.instagram.com/reel/DBd7KE6T7E1/"
+   ]
+  },
+  {
+   "order": 27,
+   "slug": "account-status",
+   "said": "únor 2025, Instagram, reel; prosinec 2022, video k funkci Stav účtu",
+   "confidence": "high",
+   "title": "Bojíš se shadowbanu. Stav účtu ukáže, jestli tě Instagram omezil.",
+   "keyword": "Stav",
+   "summary": "Šéf Instagramu Adam Mosseri vysvětluje, že sledujícím Instagram dosah neomezuje. Opatrnější je u lidí, kteří vás nesledují, protože za doporučený obsah nese větší odpovědnost. Jestli máte omezení, zjistíte v profilu: Nastavení, Stav účtu. Profesionální účty tam vidí, jestli jejich obsah smí být doporučován, které příspěvky porušily pravidla, a můžou je upravit, smazat nebo se odvolat.",
+   "urls": [
+    "https://onlinemarketing.de/social-media-marketing/adam-mosseri-instagram-shadowban-mythen-tipps-mehr-reichweite-trotz-algorithmus",
+    "https://www.engadget.com/instagram-account-status-recommendations-shadowbans-180937137.html",
+    "https://www.instagram.com/reel/DFp_Er8voYN/"
+   ]
+  },
+  {
+   "order": 28,
+   "slug": "profile-grid",
+   "said": "17.–18. 1. 2025, Instagram, Stories a reel",
+   "confidence": "high",
+   "title": "Profil už není čtvercový. Mřížka ukazuje příspěvky na výšku.",
+   "keyword": "Mrizka",
+   "summary": "Instagram přešel ze čtvercové mřížky na profilu na obdélníky na výšku. Šéf Instagramu Adam Mosseri to zdůvodnil tím, že většina nahraných fotek a videí je dnes svislá a ořezávat je do čtverce je škoda. Přiznal, že přechod bude pro část lidí bolestivý. Fotky se v mřížce ořezávají, po otevření se ale ukážou celé. Kdo si hlídá vzhled profilu, má fotit a navrhovat obsah na výšku.",
+   "urls": [
+    "https://www.engadget.com/social-media/instagram-swoops-in-with-3-minute-reels-and-rectangular-profile-grids-as-the-tiktok-ban-gets-real-201316339.html",
+    "https://www.businesstoday.in/technology/news/story/instagram-head-announces-big-changes-3-minute-reels-and-new-look-for-profile-grid-461527-2025-01-21"
+   ]
+  },
+  {
+   "order": 29,
+   "slug": "three-minute-reels",
+   "said": "17. 1. 2025, Instagram, reel",
+   "confidence": "high",
+   "title": "Reel už nemusí mít jen 90 sekund. Jde nahrát až tři minuty.",
+   "keyword": "Delka",
+   "summary": "Šéf Instagramu Adam Mosseri oznámil, že reels můžou trvat až tři minuty místo dřívějších 90 sekund. Reagoval na tvůrce, kterým byl limit na delší příběhy krátký. Delší reel se hodí pro návody, vyprávění nebo rozhovory, kde se obsah do minuty a půl nevejde. Délka sama o sobě ale nepomůže: video musí lidi udržet až do konce.",
+   "urls": [
+    "https://www.engadget.com/social-media/instagram-swoops-in-with-3-minute-reels-and-rectangular-profile-grids-as-the-tiktok-ban-gets-real-201316339.html",
+    "https://www.businesstoday.in/technology/news/story/instagram-head-announces-big-changes-3-minute-reels-and-new-look-for-profile-grid-461527-2025-01-21",
+    "https://www.instagram.com/reel/DE-DISgytMe/"
+   ]
+  },
+  {
+   "order": 30,
+   "slug": "edits-app",
+   "said": "19. 1. 2025, Threads; 1. 4. 2025, Instagram, post",
+   "confidence": "high",
+   "title": "Videa jde stříhat v aplikaci od Instagramu. Edits je zdarma.",
+   "keyword": "Edits",
+   "summary": "Šéf Instagramu Adam Mosseri představil Edits, aplikaci na střih videa v telefonu určenou hlavně tvůrcům. Řekl, že bude zdarma a placené mohou být časem jen náročné AI funkce. Edits nabízí kameru, záložku na nápady, sdílení rozpracovaných verzí a statistiky, jak si video vede na Instagramu. Od listopadu 2026 existuje i verze pro Mac s exportem bez vodoznaku, takže video můžete nahrát bez cizího loga.",
+   "urls": [
+    "https://www.socialmediatoday.com/news/instagram-free-edits-video-editing-app-coming-soon/744139/",
+    "https://techcrunch.com/2025/01/19/meta-announces-a-new-video-editing-app-called-edits-amidst-tiktok-and-capcut-ban/",
+    "https://www.instagram.com/p/DH5zeEAxgw5/"
+   ]
+  }
+ ]
+}

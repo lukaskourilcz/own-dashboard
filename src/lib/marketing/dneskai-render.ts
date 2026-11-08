@@ -198,6 +198,7 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
     ...(slide.body !== undefined ? { body: slide.body } : {}),
     ...(slide.kicker !== undefined ? { kicker: slide.kicker } : {}),
     ...(slide.credit !== undefined ? { credit: slide.credit } : {}),
+    ...(slide.series !== undefined ? { series: slide.series } : {}),
     ...(slide.sources !== undefined ? { sources: slide.sources } : {}),
     images,
     position,
@@ -232,6 +233,8 @@ export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encode
     locale: "cs",
     // Keyed only when not editorial, so every editorial key stays what it was before kits existed.
     ...(kit !== "editorial" ? { kit } : {}),
+    // Keyed only on a series cover, so every other key stays what it was.
+    ...(slide.series?.trim() ? { series: slide.series.trim() } : {}),
     // Keyed only when the owner placed words by hand, so every other key stays what it was.
     ...(slide.layout && Object.keys(slide.layout).length ? { layout: slide.layout } : {}),
   }));

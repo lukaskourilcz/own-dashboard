@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DneskaiCandidateSchema } from './dneskai-contracts';
 import { dneskaiSourceById } from './dneskai-registry';
-import { dneskaiOwnerLinkSource } from './dneskai-topic-source';
+import { DNESKAI_OWNER_LINK_SOURCE_ID, dneskaiOwnerLinkSource } from './dneskai-topic-source';
 import { safeFetch, SourceHttpError, UnsafeUrlError } from './free-feeds/security/url';
 import { SOURCE_USER_AGENT } from './free-feeds/sources/adapters/util';
 import { DneskaiMediaImageError, inspectDneskaiImage } from './dneskai-media-image';
@@ -16,7 +16,7 @@ import {
 import type { LoadDneskaiMediaBytes } from './dneskai-ports';
 import { DNESKAI_MEDIA_READ_VERSION, DneskaiMediaReadSchema, type DneskaiMediaCandidateView, type DneskaiMediaRead } from './dneskai-media-contracts';
 import {
-  DNESKAI_ILLUSTRATION_CREDIT, DNESKAI_ILLUSTRATION_URL, DNESKAI_MEDIA_PLAN_LIMIT, DNESKAI_PRESS_KITS, DNESKAI_SUPPLEMENT_TARGET, dneskaiIllustrationPrompt, dneskaiIllustrationsPerDay,
+  DNESKAI_ILLUSTRATION_CREDIT, DNESKAI_MEDIA_PLAN_LIMIT, DNESKAI_PRESS_KITS, DNESKAI_SUPPLEMENT_TARGET, dneskaiIllustrationPrompt, dneskaiIllustrationsPerDay, dneskaiIllustrationUrl,
   dneskaiMediaSourceSwitches, dneskaiPressKitsFor, dneskaiStockQuery, fetchDneskaiPageViaApify, generateDneskaiIllustration, pressKitEntries, pressKitImagePolicy,
   searchDneskaiStock, stockImagePolicy, type DneskaiSupplementEntry,
 } from './dneskai-media-sources';
@@ -424,9 +424,9 @@ const anyPressKitPolicy: DneskaiImageUrlPolicy = (url) => DNESKAI_PRESS_KITS.som
 /**
  * Tops a short plan up from the extra sources (`dneskai-media-sources.ts`), in their order and only while it is
  * short: the newsrooms of the companies the story names, then stock when the publisher and the newsrooms offered
- * nothing, then one AI illustration when still nothing, at most `dneskaiIllustrationsPerDay` a day.
+ * nothing (an owner link always gets stock), then one AI illustration when still nothing, at most `dneskaiIllustrationsPerDay` a day.
  */
-export async function supplementDneskaiPlan(db: DneskaiMediaDatabase, owner: string, candidate: Pick<z.infer<typeof DneskaiCandidateSchema>, 'title' | 'text'>, base: readonly DneskaiSupplementEntry[], switches: ReturnType<typeof dneskaiMediaSourceSwitches>, env: Record<string, string | undefined>, deps: Pick<DneskaiMediaDependencies, 'fetchImpl' | 'resolveImpl' | 'signal' | 'illustrationsToday'>): Promise<DneskaiSupplementEntry[]> {
+export async function supplementDneskaiPlan(db: DneskaiMediaDatabase, owner: string, candidate: Pick<z.infer<typeof DneskaiCandidateSchema>, 'title' | 'text'> & { sourceId?: string }, base: readonly DneskaiSupplementEntry[], switches: ReturnType<typeof dneskaiMediaSourceSwitches>, env: Record<string, string | undefined>, deps: Pick<DneskaiMediaDependencies, 'fetchImpl' | 'resolveImpl' | 'signal' | 'illustrationsToday'>): Promise<DneskaiSupplementEntry[]> {
   const plan = base.slice(0, DNESKAI_MEDIA_PLAN_LIMIT).map((entry) => ({ ...entry }));
   const seen = new Set(plan.map((entry) => entry.url));
   let next = Math.max(19, ...plan.map((entry) => entry.position)) + 1;
@@ -447,9 +447,11 @@ export async function supplementDneskaiPlan(db: DneskaiMediaDatabase, owner: str
       }
     }
   }
-  if (switches.stock && plan.length === 0) add(await searchDneskaiStock(dneskaiStockQuery(candidate), 2, env, { fetchImpl: deps.fetchImpl, signal }), 2);
+  // A page the owner added by hand or from the library (a series topic) often has only a logo or text, which vision
+  // drops after collection: it always gets two stock photos to choose from (owner decision, 8 November 2026).
+  if (switches.stock && (plan.length === 0 || candidate.sourceId === DNESKAI_OWNER_LINK_SOURCE_ID)) add(await searchDneskaiStock(dneskaiStockQuery(candidate), 2, env, { fetchImpl: deps.fetchImpl, signal }), 2);
   if (switches.generated && plan.length === 0) {
-    if (await (deps.illustrationsToday ?? (() => dneskaiIllustrationsToday(db, owner)))() < dneskaiIllustrationsPerDay(env)) add([{ position: 0, url: DNESKAI_ILLUSTRATION_URL, kind: 'generated', credit: DNESKAI_ILLUSTRATION_CREDIT }], 1);
+    if (await (deps.illustrationsToday ?? (() => dneskaiIllustrationsToday(db, owner)))() < dneskaiIllustrationsPerDay(env)) add([{ position: 0, url: dneskaiIllustrationUrl(env), kind: 'generated', credit: DNESKAI_ILLUSTRATION_CREDIT }], 1);
   }
   return plan;
 }

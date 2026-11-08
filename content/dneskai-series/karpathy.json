@@ -1,0 +1,404 @@
+{
+ "series": "karpathy",
+ "note": "Owner decision 8 Nov 2026: \"Tipy od leadera vibecodingu Karpathyho #N\", twice a week (Mon and Fri 17:00). Karpathy is named as the speaker; URLs stay in the database only. Paraphrase only. X posts were read through the public api.fxtwitter.com mirror; the first URL is an editorial article.",
+ "topics": [
+  {
+   "order": 1,
+   "slug": "karpathy-vibe-coding",
+   "said": "2. 2. 2025, X (@karpathy), příspěvek",
+   "confidence": "high",
+   "title": "Kód, který ani nečtete. Karpathy tak pojmenoval vibe coding.",
+   "keyword": "vibecoding",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI a bývalý šéf AI v Tesle, v únoru 2025 pojmenoval nový styl práce s AI: kód nechá psát model, změny přijímá bez čtení a chybové hlášky jen vkládá zpátky do chatu. Kód podle něj skoro přestává existovat. Hned ale dodal, že se to hodí hlavně na víkendové projekty na jedno použití. Z vtipného příspěvku se stal pojem, který Collins Dictionary vyhlásil slovem roku.",
+   "urls": [
+    "https://fortune.com/2026/05/19/who-is-andrej-karpathy-vibe-coding-anthropic-openai-rubiks-cube/",
+    "https://x.com/karpathy/status/1886192184808149383"
+   ]
+  },
+  {
+   "order": 2,
+   "slug": "karpathy-context-engineering",
+   "said": "25. 6. 2025, X (@karpathy), příspěvek",
+   "confidence": "high",
+   "title": "Nejde o kouzelný prompt. Karpathy radí starat se hlavně o kontext.",
+   "keyword": "kontext",
+   "summary": "Andrej Karpathy, který zavedl pojem vibe coding, v červnu 2025 podpořil výraz „context engineering“ místo „prompt engineering“. Podle něj nerozhoduje jedna chytrá věta, ale to, jaké informace modelu dáte: zadání, příklady, podklady, nástroje a historii konverzace. Když je kontextu málo nebo je špatný, model tápe. Když je ho moc a je nerelevantní, výsledky se zhorší a zdraží. Vyplatí se tedy přidat přesně ty podklady, které úkol potřebuje.",
+   "urls": [
+    "https://the-decoder.com/shopify-ceo-and-ex-openai-researcher-agree-that-context-engineering-beats-prompt-engineering/",
+    "https://x.com/karpathy/status/1937902205765607626"
+   ]
+  },
+  {
+   "order": 3,
+   "slug": "karpathy-agent-jako-stazista",
+   "said": "17. 10. 2025, Dwarkesh Podcast, rozhovor (epizoda „AGI is still a decade away“)",
+   "confidence": "high",
+   "title": "Agent není hotový kolega. Karpathy ho přirovnává ke stážistovi.",
+   "keyword": "agenti",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, v podcastu Dwarkeshe Patela řekl, že AI agenta je potřeba posuzovat jako zaměstnance nebo stážistu, kterého si najmete. Tehdejší agenti podle něj neměli dost inteligence, špatně ovládali počítač a hlavně si nepamatovali, co jim řeknete. Proto mluvil o „dekádě agentů“, ne o roku agentů. Prakticky z toho plyne: dávejte agentům jasně ohraničené úkoly a výsledek kontrolujte jako práci nováčka.",
+   "urls": [
+    "https://fortune.com/2025/10/20/workers-fear-ai-job-cuts-open-ai-co-founder-says-ai-agents-will-take-a-decade-before-they-even-work-they-dont-have-enough-intelligence-unemployment-automation-2035/",
+    "https://www.dwarkesh.com/p/andrej-karpathy"
+   ]
+  },
+  {
+   "order": 4,
+   "slug": "karpathy-hlidat-jako-ostriz",
+   "said": "26. 1. 2026, X (@karpathy), dlouhý příspěvek",
+   "confidence": "high",
+   "title": "AI už píše většinu kódu. Karpathy radí hlídat ji jako ostříž.",
+   "keyword": "kontrola",
+   "summary": "Andrej Karpathy, který zavedl pojem vibe coding, v lednu 2026 napsal, že s agenty jako Claude programuje hlavně „anglicky“ a většinu kódu za něj píše AI. Varuje ale, že chyby už nejsou překlepy, nýbrž nenápadné omyly, jaké dělá uspěchaný junior: model si za vás domyslí předpoklady a bez ověření na nich staví. Radí sledovat AI „jako ostříž“ a dávat jí jasná kritéria úspěchu. Přiznal také, že mu ruční programování pomalu zakrňuje.",
+   "urls": [
+    "https://the-decoder.com/former-tesla-ai-chief-andrej-karpathy-now-codes-mostly-in-english-just-three-months-after-calling-ai-agents-useless/",
+    "https://x.com/karpathy/status/2015883857489522876"
+   ]
+  },
+  {
+   "order": 5,
+   "slug": "karpathy-posuvnik-autonomie",
+   "said": "17. 6. 2025, YC AI Startup School, přednáška „Software Is Changing (Again)“; znovu v blogu 2025 LLM Year in Review (19. 12. 2025)",
+   "confidence": "high",
+   "title": "Oblek, ne robot. Karpathy radí nechat si nad AI kontrolu.",
+   "keyword": "autonomie",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, v přednášce pro Y Combinator přirovnal dobré AI nástroje k obleku Iron Mana: mají člověka posilovat, ne nahrazovat. Doporučuje „posuvník autonomie“, kterým si sami určíte, kolik práce AI svěříte, a pracovní smyčku, v níž AI navrhne a člověk ověří. Člověk má zůstat pilotem. Na posuvník autonomie se v bilanci roku 2025 odvolal znovu jako na typický znak dobrých AI aplikací.",
+   "urls": [
+    "https://haimagazine.com/en/science-and-development/karpathy-ai-is-not-electricity-its-a-new-operating-system/",
+    "https://www.youtube.com/watch?v=LCEmiRjPEtQ",
+    "https://karpathy.bearblog.dev/year-in-review-2025/"
+   ]
+  },
+  {
+   "order": 6,
+   "slug": "karpathy-zubata-inteligence",
+   "said": "17. 11. 2025, blog karpathy.bearblog.dev (esej „Verifiability“); 19. 12. 2025, blog (2025 LLM Year in Review)",
+   "confidence": "high",
+   "title": "Exceluje v matematice, jinde klopýtá. Karpathy popisuje zubatou AI.",
+   "keyword": "jagged",
+   "summary": "Andrej Karpathy, který zavedl pojem vibe coding, popisuje schopnosti AI jako „zubaté“ (jagged). Modely se nejrychleji zlepšují tam, kde jde výsledek automaticky ověřit, typicky v matematice a programování. U kreativních, strategických a na kontextu závislých úkolů zaostávají a umí selhat i na jednoduché otázce. Pro uživatele z toho plyne, že výkon v jedné oblasti nic neslibuje o jiné a tam, kde se odpověď nedá snadno zkontrolovat, je třeba ověřovat.",
+   "urls": [
+    "https://the-decoder.com/llms-crush-coding-and-math-but-choke-on-casual-questions-and-thats-not-a-contradiction/",
+    "https://karpathy.bearblog.dev/verifiability/",
+    "https://karpathy.bearblog.dev/year-in-review-2025/"
+   ]
+  },
+  {
+   "order": 7,
+   "slug": "karpathy-propast-ve-vnimani-ai",
+   "said": "9. 4. 2026 a 11. 10. 2026, X (@karpathy), příspěvky",
+   "confidence": "high",
+   "title": "Bezplatný chatbot není celá AI. Karpathy mluví o rostoucí propasti.",
+   "keyword": "propast",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, který dnes pracuje v Anthropicu, upozorňuje, že lidé o AI mluví každý o něčem jiném. Kdo zná jen bezplatný nebo starší model, vidí chatbota, který plete i jednoduché věci. Profesionálové s nejnovějšími placenými nástroji mezitím vidí agenty, kteří hodinu samostatně přestavují kód. V říjnu 2026 dodal, že většina světa AI skoro nepoužila a propast se zvětšuje. Názor na AI si tedy dělejte až podle aktuálních modelů.",
+   "urls": [
+    "https://the-decoder.com/anthropics-andrej-karpathy-says-the-external-world-has-seen-the-preview-of-what-ai-can-actually-do/",
+    "https://x.com/karpathy/status/2042334451611693415",
+    "https://x.com/karpathy/status/2109361546505966046"
+   ]
+  },
+  {
+   "order": 8,
+   "slug": "karpathy-gemini-3-rok-2024",
+   "said": "18. 11. 2025, X (@karpathy), příspěvek a virální vlákno o předběžném přístupu ke Gemini 3",
+   "confidence": "high",
+   "title": "Gemini 3 nevěřil, že je rok 2025. Karpathy radí zkoušet modely sám.",
+   "keyword": "benchmarky",
+   "summary": "Andrej Karpathy, který zavedl pojem vibe coding, testoval v listopadu 2025 předem Gemini 3. Model s daty do roku 2024 tvrdil, že je stále rok 2024, a jeho důkazy považoval za podvrhy. Pomohlo až zapnout vyhledávání Google, které zapomněl aktivovat. Karpathy zároveň radí nevěřit slepě benchmarkům, které se dají vyladit, a modely si vyzkoušet sám a střídat je. Nejvíc o modelu prozradí situace mimo vyšlapané cesty.",
+   "urls": [
+    "https://techcrunch.com/2025/11/20/gemini-3-refused-to-believe-it-was-2025-and-hilarity-ensued/",
+    "https://x.com/karpathy/status/1990854771058913347"
+   ]
+  },
+  {
+   "order": 9,
+   "slug": "karpathy-ai-v-domacich-ukolech",
+   "said": "24. 11. 2025, X (@karpathy), příspěvek (vystoupení před školní radou)",
+   "confidence": "high",
+   "title": "AI v domácích úkolech neodhalíte. Karpathy radí zkoušet ve třídě.",
+   "keyword": "skola",
+   "summary": "Andrej Karpathy, zakladatel vzdělávací firmy Eureka Labs, v listopadu 2025 vzkázal školám, že použití AI v domácích úkolech nikdy spolehlivě neodhalí. Navrhuje počítat s tím, že práce mimo třídu vzniká s AI, a většinu hodnocení přesunout do vyučování. Studenti se mají AI naučit používat, ale zároveň rozumět základům natolik, aby poznali, kdy se mýlí. Přirovnává to ke kalkulačkám: počítat se děti učí dál, i když je máme.",
+   "urls": [
+    "https://the-decoder.com/andrej-karpathy-declares-the-war-on-ai-homework-lost-and-urges-schools-to-stop-policing-it/",
+    "https://x.com/karpathy/status/1993010584175141038"
+   ]
+  },
+  {
+   "order": 10,
+   "slug": "karpathy-llm-council",
+   "said": "22. 11. 2025, X (@karpathy) a GitHub, víkendový projekt LLM Council",
+   "confidence": "high",
+   "title": "Jeden model nestačí. Karpathy nechal AI hodnotit odpovědi ostatních.",
+   "keyword": "council",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, v listopadu 2025 zveřejnil víkendový projekt LLM Council. Napadl ho při čtení knih s AI. Dotaz pošle několika modelům najednou (GPT, Gemini, Claude, Grok), ty anonymně ohodnotí odpovědi ostatních a „předseda“ z nich sestaví jednu výslednou. Překvapilo ho, jak často modely uznají cizí odpověď za lepší než vlastní. Z toho plyne jednoduchý tip: u důležitých otázek se zeptejte víc modelů a porovnejte je.",
+   "urls": [
+    "https://venturebeat.com/ai/a-weekend-vibe-code-hack-by-andrej-karpathy-quietly-sketches-the-missing",
+    "https://x.com/karpathy/status/1992381094667411768",
+    "https://github.com/karpathy/llm-council"
+   ]
+  },
+  {
+   "order": 11,
+   "slug": "karpathy-osobni-wiki-s-ai",
+   "said": "2. 4. 2026, X (@karpathy), příspěvek o „LLM Knowledge Bases“",
+   "confidence": "high",
+   "title": "Poznámky si nepište sami. Karpathy nechává AI vést osobní wiki.",
+   "keyword": "wiki",
+   "summary": "Andrej Karpathy, který zavedl pojem vibe coding, v dubnu 2026 popsal, jak s AI buduje osobní znalostní báze. Články, studie a výstřižky z webu ukládá do jedné složky, model z nich sestaví wiki se shrnutími, pojmy a odkazy a pravidelně v ní hledá rozpory a mezery. Wiki sám skoro needituje, je to „doména“ modelu. Odpovědi na své otázky ukládá zpátky do wiki, takže se jeho znalosti postupně sčítají.",
+   "urls": [
+    "https://venturebeat.com/data/karpathy-shares-llm-knowledge-base-architecture-that-bypasses-rag-with-an",
+    "https://x.com/karpathy/status/2039805659525644595"
+   ]
+  },
+  {
+   "order": 12,
+   "slug": "karpathy-zadani-pro-agenta",
+   "said": "7. 3. 2026, X (@karpathy) a GitHub, projekt autoresearch",
+   "confidence": "high",
+   "title": "AI pracovala dva dny sama. Karpathy ukázal, jak psát zadání agentovi.",
+   "keyword": "autoresearch",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, v březnu 2026 představil projekt autoresearch: AI agent dva dny sám upravoval trénovací kód malého modelu, provedl asi 700 pokusů a našel 20 zlepšení, která zrychlila trénink většího modelu o 11 %. Člověk přitom upravuje jen textový soubor se zadáním. Podle Fortune obsahuje tři části použitelné u jakéhokoli agenta: co má dělat, na co nesmí sahat a kdy má skončit a podat zprávu.",
+   "urls": [
+    "https://fortune.com/2026/03/17/andrej-karpathy-loop-autonomous-ai-agents-future/",
+    "https://x.com/karpathy/status/2030371219518931079"
+   ]
+  },
+  {
+   "order": 13,
+   "slug": "karpathy-moltbook-bezpecnost",
+   "said": "31. 1. 2026, X (@karpathy), příspěvek (reakce na Moltbook a agenty OpenClaw)",
+   "confidence": "high",
+   "title": "Agenty nespouštějte na svém počítači. Karpathy varuje před Moltbookem.",
+   "keyword": "bezpecnost",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, nejdřív Moltbook, sociální síť pro AI agenty, označil za fascinující. Krátce nato napsal, že je to „hořící popelnice“ plná spamu a podvodů, a důrazně nedoporučil spouštět takové agenty na vlastním počítači. Sám je zkoušel v izolovaném prostředí, a i tak měl strach. Varoval před útoky typu prompt injection a před vysokým rizikem pro počítač i soukromá data.",
+   "urls": [
+    "https://fortune.com/2026/02/02/moltbook-security-agents-singularity-disaster-gary-marcus-andrej-karpathy/",
+    "https://www.engadget.com/ai/what-the-hell-is-moltbook-the-social-network-for-ai-agents-140000787.html",
+    "https://x.com/karpathy/status/2017442712388309406"
+   ]
+  },
+  {
+   "order": 14,
+   "slug": "karpathy-eureka-labs",
+   "said": "16. 7. 2024, X (@karpathy), oznámení firmy Eureka Labs",
+   "confidence": "high",
+   "title": "Učitel plus AI asistent. Karpathy založil školu Eureka Labs.",
+   "keyword": "eureka",
+   "summary": "Andrej Karpathy, bývalý šéf AI v Tesle a spoluzakladatel OpenAI, v červenci 2024 oznámil firmu Eureka Labs, „nový typ školy postavené na AI“. Kurzy v ní mají dál navrhovat lidští učitelé a AI asistent má studenty materiálem provázet, aby se kdokoli mohl naučit cokoli. Prvním produktem měl být vysokoškolský kurz LLM101n o tom, jak si natrénovat vlastní AI, online i ve skupinách. Vzdělávání označil za oblast, které se dosud věnoval jen při práci.",
+   "urls": [
+    "https://techcrunch.com/2024/07/16/after-tesla-and-openai-andrej-karpathys-startup-aims-to-apply-ai-assistants-to-education/",
+    "https://x.com/karpathy/status/1813263734707790301"
+   ]
+  },
+  {
+   "order": 15,
+   "slug": "karpathy-nanochat",
+   "said": "říjen 2025 (zhruba 13.–14. 10.), GitHub a X, open source projekt nanochat",
+   "confidence": "high",
+   "title": "Vlastní ChatGPT za sto dolarů. Karpathy zveřejnil projekt nanochat.",
+   "keyword": "nanochat",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, v říjnu 2025 zveřejnil open source projekt nanochat s heslem „nejlepší ChatGPT, jaký se dá koupit za 100 dolarů“. Jednoduchý a čitelný kód provede celou cestu od tréninku po chat s vlastním modelem na jednom pronajatém GPU serveru. Malý model zvládne jednoduché otázky, příběhy a básně, sám ho ale přirovnává k malému dítěti. Za zhruba 1 000 dolarů je podle něj výrazně soudržnější.",
+   "urls": [
+    "https://fortune.com/2025/10/15/ai-artificial-intelligence-nanochat-100-dollar-chatbot/",
+    "https://github.com/karpathy/nanochat"
+   ]
+  },
+  {
+   "order": 16,
+   "slug": "karpathy-hackertube",
+   "said": "31. 10. 2026, blog karpathy.bearblog.dev, příspěvek „HackerTube“",
+   "confidence": "high",
+   "title": "Dvě hodiny práce, hotový web. Karpathy postavil HackerTube s Claudem.",
+   "keyword": "hackertube",
+   "summary": "Andrej Karpathy, který zavedl pojem vibe coding, na konci října 2026 spustil HackerTube, video web s více než 6 400 videi doporučenými v diskusích na Hacker News. Vadilo mu, že doporučování na YouTube je zahlcené balastem. Projekt mu zabral asi dvě hodiny: kód nečetl ani nepsal, jen zadával práci Claudovi. Sám udělal jen to, co vyžaduje člověka, tedy API klíč, server a doménu. Na hromadné třídění nasadil levnější model, na řízení projektu silnější.",
+   "urls": [
+    "https://cryptobriefing.com/andrej-karpathy-launches-hackertube/",
+    "https://karpathy.bearblog.dev/hacker-tube/"
+   ]
+  },
+  {
+   "order": 17,
+   "slug": "karpathy-digitalni-hygiena",
+   "said": "17. 3. 2025, blog karpathy.bearblog.dev, příspěvek „Digital hygiene“",
+   "confidence": "high",
+   "title": "Jedno heslo všude nestačí. Karpathy sepsal pravidla digitální hygieny.",
+   "keyword": "hesla",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, v březnu 2025 sepsal na blogu, jak chrání svá data a účty. Ke každé službě používá jiné silné heslo uložené ve správci hesel, důležité účty jistí hardwarovým klíčem a SMS kódům nevěří kvůli riziku krádeže telefonního čísla. Bezpečnostní otázky vyplňuje náhodnými odpověďmi, má zapnuté šifrování disku, píše přes Signal a na odkazy v e-mailech neklikne. K chytrým zařízením v domácnosti je skeptický, protože sbírají moc dat.",
+   "urls": [
+    "https://www.genbeta.com/a-fondo/cofundador-openai-comparte-software-servicios-que-usa-para-tener-maxima-privacidad-no-se-ha-librado-gmail",
+    "https://karpathy.bearblog.dev/digital-hygiene/"
+   ]
+  },
+  {
+   "order": 18,
+   "slug": "karpathy-agenticke-inzenyrstvi",
+   "said": "4. 2. 2026, X (@karpathy), příspěvek k prvnímu výročí pojmu vibe coding",
+   "confidence": "high",
+   "title": "Vibe coding dospěl. Karpathy mu dal nové jméno: agentic engineering.",
+   "keyword": "agentic",
+   "summary": "Andrej Karpathy, který zavedl pojem vibe coding, se rok po jeho vzniku ohlédl zpět. Tehdy byly modely tak slabé, že se vibe coding hodil hlavně na hraní a ukázky. Dnes se agenti stávají běžným nástrojem profesionálů, jen pod přísnějším dohledem. Preferuje proto název „agentic engineering“: člověk agenty hlavně řídí a kontroluje, místo aby psal kód, a jde o skutečné řemeslo, které se dá naučit. Cílem je získat rychlost agentů bez slevování z kvality softwaru.",
+   "urls": [
+    "https://www.digit.in/news/general/openai-co-founder-says-agentic-engineering-is-the-next-big-thing-in-ai-coding.html",
+    "https://x.com/karpathy/status/2019137879310836075"
+   ]
+  },
+  {
+   "order": 19,
+   "slug": "karpathy-porozumeni-nedelegujte",
+   "said": "29. 4. 2026, Sequoia AI Ascent 2026, rozhovor se Stephanie Zhan (video); písemné shrnutí na blogu karpathy.bearblog.dev 30. 4. 2026",
+   "confidence": "high",
+   "title": "Myšlení se dá svěřit AI, porozumění ne. Karpathy radí znát základy.",
+   "keyword": "porozumeni",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, který dnes pracuje v Anthropicu, na konferenci Sequoia AI Ascent 2026 řekl, že agenti zvládají stále víc detailní práce, ale porozumění musí zůstat u člověka. Myšlení podle něj svěřit AI můžete, porozumění ne. Člověk má dál rozumět základům, určovat směr, vědět, co a proč stojí za to dělat, a poznat, kterým výsledkům nevěřit. Práci agentů proto doporučuje kontrolovat: projít výstupy i předpoklady, na kterých stojí.",
+   "urls": [
+    "https://universemagazine.com/en/andrej-karpathy-on-ai-you-can-outsource-thinking-but-not-understanding/",
+    "https://karpathy.bearblog.dev/sequoia-ascent-2026/",
+    "https://www.youtube.com/watch?v=96jN2OCOfLs"
+   ]
+  },
+  {
+   "order": 20,
+   "slug": "karpathy-aplikace-ktera-nema-existovat",
+   "said": "29. 4. 2026, Sequoia AI Ascent 2026, rozhovor se Stephanie Zhan (video); písemné shrnutí na blogu karpathy.bearblog.dev 30. 4. 2026",
+   "confidence": "high",
+   "title": "Jeho aplikaci nahradil jeden dotaz. Karpathy radí zkusit nejdřív model.",
+   "keyword": "aplikace",
+   "summary": "Andrej Karpathy, který zavedl pojem vibe coding, si v roce 2025 s AI naprogramoval aplikaci MenuGen: z fotky jídelního lístku přečetla text a ke každému jídlu vygenerovala obrázek. Později zjistil, že stačí poslat fotku lístku modelu Gemini s pokynem, ať obrázky jídel dokreslí přímo do ní. Na konferenci Sequoia AI Ascent 2026 proto řekl, že jeho aplikace by vůbec neměla existovat. Než začnete hledat nebo stavět aplikaci, zkuste úkol zadat přímo modelu, který rozumí obrázkům.",
+   "urls": [
+    "https://officechai.com/ai/andrej-karpathy-describes-how-his-own-vibe-coded-app-was-rendered-obsolete-by-gemini/",
+    "https://karpathy.bearblog.dev/sequoia-ascent-2026/",
+    "https://www.youtube.com/watch?v=96jN2OCOfLs"
+   ]
+  },
+  {
+   "order": 21,
+   "slug": "karpathy-mluvte-na-ai",
+   "said": "21. 7. 2026, X (@karpathy), příspěvek o „ramble sessions“; dříve také v YouTube videu „How I use LLMs“ (konec února 2025)",
+   "confidence": "high",
+   "title": "Nepište, mluvte. Karpathy na AI klidně deset minut mluví hlasem.",
+   "keyword": "hlas",
+   "summary": "Andrej Karpathy, který dnes pracuje v Anthropicu, v červenci 2026 popsal svůj zvyk: když model potřebuje víc kontextu a psát se mu nechce, zapne hlasový vstup a zhruba deset minut neuspořádaně mluví. Někdy předem upozorní, že diktuje a přepis bude mít chyby. Modely si podle něj s chaotickou řečí poradí, jeho myšlenky často shrnou jasněji než on sám a pak potřebuje méně oprav. Už v únoru 2025 uvedl, že na mobilu zadává hlasem asi 80 % dotazů.",
+   "urls": [
+    "https://www.analyticsinsight.net/news/andrej-karpathy-says-natural-conversations-beat-perfect-ai-prompts",
+    "https://x.com/karpathy/status/2079610838143623371",
+    "https://www.youtube.com/watch?v=EWvNQjAaOHw"
+   ]
+  },
+  {
+   "order": 22,
+   "slug": "karpathy-nova-konverzace",
+   "said": "konec února 2025, YouTube, video „How I use LLMs“",
+   "confidence": "high",
+   "title": "Nové téma, nová konverzace. Karpathy radí nezahlcovat paměť chatu.",
+   "keyword": "konverzace",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, ve dvouhodinovém videu How I use LLMs radí začít nový chat pokaždé, když měníte téma. Okno kontextu přirovnává k pracovní paměti modelu: všechno, co v konverzaci zůstane, model při každé odpovědi znovu zpracovává. Staré a nesouvisející texty ho pak mohou rozptylovat, snižovat přesnost a zpomalovat odpovědi. Konverzace se proto vyplatí držet stručné a u jednoho tématu.",
+   "urls": [
+    "https://www.analyticsvidhya.com/blog/2025/03/how-andrej-karpathy-uses-llms/",
+    "https://www.youtube.com/watch?v=EWvNQjAaOHw"
+   ]
+  },
+  {
+   "order": 23,
+   "slug": "karpathy-premyslejici-modely",
+   "said": "konec února 2025, YouTube, video „How I use LLMs“",
+   "confidence": "high",
+   "title": "Na cestování stačí rychlý model. Na matematiku Karpathy zapíná přemýšlení.",
+   "keyword": "premysleni",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, ve videu How I use LLMs doporučuje vybírat model podle úkolu. Takzvané přemýšlející modely, které si před odpovědí nejdřív dlouho „rozmýšlejí“, se podle něj nejvíc vyplatí u těžkých úloh z matematiky a programování. Na běžné dotazy, třeba tipy na cestování, je nepotřebuje, protože jiné modely odpovídají rychleji. Když má pocit, že odpověď mohla být lepší, zkusí stejný dotaz znovu s přemýšlejícím modelem.",
+   "urls": [
+    "https://www.analyticsvidhya.com/blog/2025/03/how-andrej-karpathy-uses-llms/",
+    "https://www.youtube.com/watch?v=EWvNQjAaOHw"
+   ]
+  },
+  {
+   "order": 24,
+   "slug": "karpathy-rozbor-krve-s-ai",
+   "said": "konec února 2025, YouTube, video „How I use LLMs“",
+   "confidence": "high",
+   "title": "Rozbor krve s AI. Karpathy radí nejdřív zkontrolovat, co model přečetl.",
+   "keyword": "dokumenty",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, ve videu How I use LLMs ukázal, jak s AI procházel výsledky svých krevních testů. Nahrával je po částech jako snímky obrazovky a před otázkami si ověřil, že model všechny hodnoty přečetl správně. Radí hlídat přepis dokumentu, protože chyba v něm zkreslí celou odpověď. U zdravotních výsledků dodal, že je dobré promluvit si i se skutečným lékařem. Stejně lze s AI shrnovat a procházet dlouhé dokumenty v PDF.",
+   "urls": [
+    "https://www.analyticsvidhya.com/blog/2025/03/how-andrej-karpathy-uses-llms/",
+    "https://www.youtube.com/watch?v=EWvNQjAaOHw"
+   ]
+  },
+  {
+   "order": 25,
+   "slug": "karpathy-vlastni-instrukce",
+   "said": "konec února 2025, YouTube, video „How I use LLMs“",
+   "confidence": "high",
+   "title": "Ať nemluví jako personalista. Karpathy si AI nastavil vlastními pokyny.",
+   "keyword": "instrukce",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, ve videu How I use LLMs ukázal, jak si ChatGPT přizpůsobil. Do vlastních instrukcí napsal, ať s ním nemluví jako firemní personalista, ale normálně. Využívá i paměť, do které si model ukládá informace mezi konverzacemi, někdy o to ale musí výslovně požádat. Pro opakované úkoly, hlavně výuku jazyků, si vytvořil vlastní GPT s připraveným zadáním a příklady, takže nemusí pokaždé začínat od nuly.",
+   "urls": [
+    "https://www.analyticsvidhya.com/blog/2025/03/how-andrej-karpathy-uses-llms/",
+    "https://www.youtube.com/watch?v=EWvNQjAaOHw"
+   ]
+  },
+  {
+   "order": 26,
+   "slug": "karpathy-ai-jako-simulator",
+   "said": "7. 12. 2025, X (@karpathy), příspěvek",
+   "confidence": "high",
+   "title": "Neptejte se AI na názor. Karpathy radí nechat ji hrát skupinu odborníků.",
+   "keyword": "simulator",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, v prosinci 2025 doporučil brát jazykové modely jako simulátory, ne jako bytosti s vlastním názorem. Otázka „co si o tom myslíš“ podle něj nedává moc smysl, protože model žádné „ty“ nemá a o tématu dlouhodobě nepřemýšlel. Lepší je zeptat se, jaká skupina lidí by se tématem měla zabývat a co by řekli. Model tak zprostředkuje víc pohledů. Při oslovení „ty“ jen sehraje osobnost, kterou získal při dolaďování.",
+   "urls": [
+    "https://officechai.com/ai/andrej-karpathy-on-why-instead-of-asking-llms-what-you-think-people-should-ask-what-experts-think",
+    "https://x.com/karpathy/status/1997731268969304070"
+   ]
+  },
+  {
+   "order": 27,
+   "slug": "karpathy-nikdy-tak-pozadu",
+   "said": "26. 12. 2025, X (@karpathy), příspěvek",
+   "confidence": "high",
+   "title": "Ani on nestíhá. Karpathy se jako programátor cítí pozadu víc než kdy dřív.",
+   "keyword": "pozadu",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, na konci roku 2025 napsal, že se jako programátor nikdy necítil tolik pozadu. Podíl práce, který dodává člověk, se podle něj zmenšuje. Odhadl, že by mohl být až desetkrát produktivnější, kdyby naplno využil nástroje z posledního roku: agenty, jejich pokyny, paměť, oprávnění a další doplňky. Přirovnal je k mocnému nástroji, který dostali všichni bez návodu. Radí vyhrnout si rukávy a nové nástroje se učit, jinak člověk zaostane.",
+   "urls": [
+    "https://www.businesstoday.in/technology/news/story/never-felt-this-behind-openai-co-founder-admits-ai-is-evolving-so-fast-its-refactoring-how-developers-work-508391-2025-12-28",
+    "https://x.com/karpathy/status/2004607146781278521"
+   ]
+  },
+  {
+   "order": 28,
+   "slug": "karpathy-pocitani-pres-kod",
+   "said": "konec února 2025, YouTube, video „How I use LLMs“",
+   "confidence": "high",
+   "title": "Model počítá spíš zpaměti. Karpathy radí nechat ho spustit kód.",
+   "keyword": "kalkulacka",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, ve videu How I use LLMs vysvětluje, že model bez nástrojů počítá spíš „zpaměti“, podobně jako člověk bez kalkulačky. U složitějších výpočtů proto má sáhnout po nástroji: napíše a spustí krátký program v Pythonu, takže výsledek je přesný. Karpathy takto nechává dělat i analýzu dat a grafy. Radí ale zkontrolovat předpoklady, které model do kódu vložil. U důležitých čísel se tedy vyplatí výslovně chtít výpočet v kódu.",
+   "urls": [
+    "https://www.analyticsvidhya.com/blog/2025/03/how-andrej-karpathy-uses-llms/",
+    "https://www.youtube.com/watch?v=EWvNQjAaOHw"
+   ]
+  },
+  {
+   "order": 29,
+   "slug": "karpathy-deep-research-jako-koncept",
+   "said": "konec února 2025, YouTube, video „How I use LLMs“",
+   "confidence": "high",
+   "title": "Hloubkový výzkum je jen první verze. Karpathy si citace ověřuje sám.",
+   "keyword": "research",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, ve videu How I use LLMs popisuje vyhledávání a hloubkový výzkum (deep research). Vyhledávání používá u čerstvých informací, které model sám znát nemůže, a někdy je podle něj lepší mu výslovně říct, ať hledá na webu. Deep research nechá pracovat i desítky minut, výsledek ale bere jen jako první verzi, protože cokoli v něm může být vymyšlené. Citace proto považuje za klíčové a zdroje si kontroluje sám.",
+   "urls": [
+    "https://www.analyticsvidhya.com/blog/2025/03/how-andrej-karpathy-uses-llms/",
+    "https://www.youtube.com/watch?v=EWvNQjAaOHw"
+   ]
+  },
+  {
+   "order": 30,
+   "slug": "karpathy-domaci-agent-dobby",
+   "said": "20. 3. 2026, podcast No Priors, rozhovor (epizoda „Skill Issue“)",
+   "confidence": "high",
+   "title": "Dům ovládá zprávou ve WhatsAppu. Karpathy si postavil agenta Dobbyho.",
+   "keyword": "dobby",
+   "summary": "Andrej Karpathy, spoluzakladatel OpenAI, v podcastu No Priors v březnu 2026 popsal domácího AI agenta, kterému říká skřítek Dobby. Postavil ho v lednu a agent ovládá jeho reproduktory, světla, topení a klimatizaci, žaluzie, bazén i zabezpečení. Místo přepínání mezi několika aplikacemi mu pokyny píše obyčejnou řečí přes WhatsApp. Z bezpečnostních kamer agent pozná, že dorazila zásilka, a pošle mu zprávu. Sám ale jinde varoval, že agenti s přístupem k počítači a datům nesou velká rizika.",
+   "urls": [
+    "https://fortune.com/2026/03/21/andrej-karpathy-openai-cofounder-ai-agents-coding-state-of-psychosis-openclaw/",
+    "https://www.youtube.com/watch?v=kwSVtQ7dziU"
+   ]
+  }
+ ]
+}

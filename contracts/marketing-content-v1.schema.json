@@ -269,6 +269,11 @@
                 "type": "string",
                 "maxLength": 120
               },
+              "series": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
               "sources": {
                 "maxItems": 4,
                 "type": "array",

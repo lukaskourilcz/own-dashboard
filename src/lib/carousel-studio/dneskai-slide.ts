@@ -110,6 +110,8 @@ export interface DneskaiSlideInput {
   kicker?: string;
   /** Accepted and ignored: no slide shows a picture credit; it belongs in the Instagram caption. */
   credit?: string;
+  /** A series post's cover only: its label and running number, written by code, never by the model. */
+  series?: string;
   /** The sources slide's lines, one source each, at most `DNESKAI_MAX_SOURCES`. */
   sources?: readonly string[];
   images?: readonly DneskaiImageInput[];
@@ -257,6 +259,7 @@ function strings(input: DneskaiSlideInput, template: CarouselTemplate): Record<s
     body: dneskaiMarkedWords(input.body?.trim() ?? "").plain,
     kicker: dneskaiMarkedWords(input.kicker?.trim() ?? "").plain,
     credit: input.credit?.trim() ?? "",
+    series: input.series?.replace(/\s+/gu, " ").trim() ?? "",
     title: fixed.title,
     "images-label": fixed.imagesLabel,
     disclosure: fixed.disclosure,

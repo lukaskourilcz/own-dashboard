@@ -63,6 +63,15 @@ describe('readDneskaiTopics (#150)', () => {
     expect(topics.map((topic) => [topic.id, topic.code])).toEqual([[id(1), 'topic-source-missing'], [id(2), undefined], [id(3), undefined]]);
   });
 
+  it('carries the recurring series a topic belongs to, and only a known one (8 November 2026)', async () => {
+    const { db } = fakeDb([
+      { data: [row(1, { source_kind: 'manual', evidence: { series: 'mosseri' } }), row(2, { evidence: { series: 'reels' } }), row(3, {})], error: null },
+      { data: [], error: null }, { data: [], error: null },
+    ]);
+    const topics = (await readDneskaiTopics(db, owner, project, now, { enabled: true }))!.groups.education.proposed;
+    expect(topics.map((topic) => [topic.id, topic.series])).toEqual([[id(1), 'mosseri'], [id(2), undefined], [id(3), undefined]]);
+  });
+
   it('fails the read when a query fails', async () => {
     const { db } = fakeDb([{ data: null, error: { message: 'x' } }, { data: [], error: null }, { data: [], error: null }]);
     await expect(readDneskaiTopics(db, owner, project, now, { enabled: true })).rejects.toThrow('dneskai-topics-unavailable');

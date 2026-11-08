@@ -197,6 +197,13 @@ moves its calendar entry to the slot, returns the old version and enqueues one r
 The finished job supersedes the old version and the plan carries the new one on as usual. One restyle per tick; the
 job cap is 24 per 24 hours since that day.
 
+### Series (8 November 2026)
+
+Six recurring series (Slovník AI, and tips from Mosseri, Karpathy, Cherny, Mollick and Pocock) take 12:30 every day
+and 17:00 from Monday to Saturday, from 16 November 2026. They are education topics tagged `evidence.series`; the plan
+seats them, numbers them and writes their label on the cover and the first caption line (`dneskai-series.ts`,
+`dneskai-plan.ts`). Details, the weekly grid and the backlogs: `docs/dneskai-series.md`.
+
 ### devShark posts (7 November 2026)
 
 devShark gets its own concepts and plan, separate from DNESKAi. `devshark-render.ts` draws a `devshark-deck/1` in the

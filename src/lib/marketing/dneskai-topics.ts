@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DNESKAI_SERIES } from './dneskai-series';
 
 /**
  * DNESKAi topics (náměty, #150, plan A1): a working title the owner approves or rejects before the pipeline pays for
@@ -43,6 +44,8 @@ export const DneskaiTopicSchema = z.strictObject({
   updatedAt: timestamp,
   /** #210: why an approved topic is not on its way to a brief (`evidence.bridgeCode`); absent when nothing is wrong. */
   code: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/).nullable().optional(),
+  /** The recurring series of the topic (`evidence.series`, 8 November 2026); absent for an ordinary topic. */
+  series: z.enum(DNESKAI_SERIES).optional(),
 });
 export type DneskaiTopic = z.infer<typeof DneskaiTopicSchema>;
 /** #210: the bridge codes the owner can act on, shown under an approved topic. */
