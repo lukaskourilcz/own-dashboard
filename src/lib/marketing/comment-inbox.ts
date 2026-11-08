@@ -19,5 +19,5 @@ export function commentDraftsEnabled(env: Environment = process.env): boolean {
   return commentInboxEnabled(env) && env.MARKETING_COMMENT_DRAFTS_ENABLED === 'true' && env.MARKETING_AI_CONSENT === 'true';
 }
 
-/** The default reply signature (owner default, 8 November 2026); the owner may change it per reply before sending. */
-export const DEFAULT_REPLY_SIGNATURE = '— Lukáš';
+// Comment replies carry no signature (owner decision, 8 November 2026): a drafted reply, and what is sent, append no
+// "— Lukáš" and no sign-off. There is deliberately no reply-signature constant.

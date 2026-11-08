@@ -198,6 +198,7 @@ The migrations, in the order they run:
 100. `20261108200100_project_heydarlink_name.sql` — the phone-app project is called heyDarlink.
 101. `20261108210000_heydarlink_ambient.sql` — HeyDarlink ambient batches and frames (moved from Quorum), with a claim for one frame per tick.
 102. `20261108220000_heydarlink_ambient_tick.sql` — the HeyDarlink ambient batches get their own signed tick every five minutes.
+103. `20261108230000_drop_comment_reply_signature.sql` — comment replies carry no signature; the per-reply signature column is removed.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.
