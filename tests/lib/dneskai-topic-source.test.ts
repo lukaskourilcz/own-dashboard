@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-import { createJinaTopicReader, dneskaiOwnerLinkCandidate, dneskaiOwnerLinkSource, dneskaiReaderText, dneskaiTopicUrl } from '@/lib/marketing/dneskai-topic-source';
+import { createJinaTopicReader, dneskaiOwnerLinkCandidate, dneskaiOwnerLinkSource, dneskaiReaderText, dneskaiTopicUrl, dneskaiTopicUrls } from '@/lib/marketing/dneskai-topic-source';
 import { advanceDneskaiTopicBriefs, type DneskaiBridgeTopic, type DneskaiTopicBridgeStore } from '@/lib/marketing/dneskai-topic-bridge';
 import type { DneskaiBriefStore } from '@/lib/marketing/dneskai-briefs';
 
@@ -40,6 +40,15 @@ describe('owner-link sources (#210)', () => {
     expect(dneskaiTopicUrl({})).toBeNull();
     expect(dneskaiTopicUrl(null)).toBeNull();
     expect(dneskaiReaderText('a  \n\n\n\nb')).toBe('a\n\nb');
+  });
+
+  it('takes up to three distinct https URLs in order, and numbers the candidates of further pages', () => {
+    const urls = ['https://a.example.test/1', 'http://plain.example.test/', 'https://a.example.test/1', 'https://b.example.test/2', 'https://c.example.test/3', 'https://d.example.test/4'];
+    expect(dneskaiTopicUrls({ urls })).toEqual(['https://a.example.test/1', 'https://b.example.test/2', 'https://c.example.test/3']);
+    expect(dneskaiTopicUrls({ urls: 'https://a.example.test/1' })).toEqual([]);
+    const input = { topicId, kind: 'education' as const, page: { title: 'Page', text: 'Text.' }, fallbackTitle: 'T', fallbackText: null, now: new Date('2026-11-08T08:00:00Z') };
+    expect(dneskaiOwnerLinkCandidate({ ...input, url, part: 1 }).candidate.id).toBe(`owner-link:${topicId}`);
+    expect(dneskaiOwnerLinkCandidate({ ...input, url: 'https://b.example.test/2', part: 2 }).candidate.id).toBe(`owner-link:${topicId}:2`);
   });
 });
 
