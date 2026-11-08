@@ -29,9 +29,9 @@ describe('HeyDarlink ambient shot list (moved from Quorum, 8 November 2026)', ()
     expect(next.used).toEqual([]);
   });
 
-  it('prices fal per megapixel rounded up', () => {
-    expect(ambientFalUsd('4:5')).toBeCloseTo(0.05);
-    expect(ambientFalUsd('9:16')).toBeCloseTo(0.075);
+  it('prices fal per megapixel rounded up: one megapixel per attempt at either aspect', () => {
+    expect(ambientFalUsd('4:5')).toBeCloseTo(0.025);
+    expect(ambientFalUsd('9:16')).toBeCloseTo(0.025);
   });
 
   it('stays idle until it is switched on, has consent, its keys and the ingest token', () => {
@@ -110,5 +110,16 @@ describe('plan frames named by a HeyDarlink posting-plan ref (8 November 2026)',
     const { ambientPlanPrompt } = await import('@/lib/heydarlink/ambient-batch');
     expect(ambientPlanPrompt('Candid iPhone photo of a marina skyline at golden hour in Dubai. No people, no faces, no hands, no text, no logos, no watermark.')).toBe(true);
     expect(ambientPlanPrompt('Candid iPhone photo of a marina skyline at golden hour in Dubai, people strolling.')).toBe(false);
+  });
+});
+
+describe('the vision gate rubric (8 November 2026)', () => {
+  it('keeps the reason for an off-brief verdict and still fails closed on readable text', async () => {
+    const { ambientVerdictReasons, AMBIENT_GATE_SYSTEM } = await import('@/lib/heydarlink/ambient-gates');
+    const clean = { people: false, faces: false, body_parts: false, text_or_logos: false, nsfw: false, matches_brief: true, note: '' };
+    expect(ambientVerdictReasons(clean)).toEqual([]);
+    expect(ambientVerdictReasons({ ...clean, matches_brief: false, note: 'The  mug   melts into the table.' })).toEqual(['vision:off-brief', 'vision:note:The mug melts into the table.']);
+    expect(ambientVerdictReasons({ ...clean, text_or_logos: true })).toEqual(['vision:text_or_logos']);
+    expect(AMBIENT_GATE_SYSTEM).toContain('readable text anywhere does');
   });
 });

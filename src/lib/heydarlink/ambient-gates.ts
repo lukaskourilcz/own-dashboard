@@ -33,13 +33,18 @@ export function ambientDuplicateGate(hash: string, history: readonly string[]): 
 }
 
 // Extra keys are ignored; every listed field must be there and be a boolean.
-const VerdictSchema = z.object({ people: z.boolean(), faces: z.boolean(), body_parts: z.boolean(), text_or_logos: z.boolean(), nsfw: z.boolean(), matches_brief: z.boolean() });
+const VerdictSchema = z.object({ people: z.boolean(), faces: z.boolean(), body_parts: z.boolean(), text_or_logos: z.boolean(), nsfw: z.boolean(), matches_brief: z.boolean(), note: z.string().optional() });
 export type AmbientVerdict = z.infer<typeof VerdictSchema>;
 const REJECTING = ['people', 'faces', 'body_parts', 'text_or_logos', 'nsfw'] as const;
 
 export function ambientVerdictReasons(verdict: AmbientVerdict): string[] {
   const reasons: string[] = REJECTING.filter((field) => verdict[field]).map((field) => `vision:${field}`);
-  if (!verdict.matches_brief) reasons.push('vision:off-brief');
+  if (!verdict.matches_brief) {
+    reasons.push('vision:off-brief');
+    // Why, kept short, so the rubric can be tuned from real frames (8 November 2026).
+    const note = (verdict.note ?? '').replace(/\s+/g, ' ').trim().slice(0, 120);
+    if (note) reasons.push(`vision:note:${note}`);
+  }
   return reasons;
 }
 
@@ -57,8 +62,8 @@ export function parseAmbientVerdict(text: string): AmbientVerdict | null {
  */
 export const AMBIENT_VERDICT_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['people', 'faces', 'body_parts', 'text_or_logos', 'nsfw', 'matches_brief'],
-  properties: Object.fromEntries(['people', 'faces', 'body_parts', 'text_or_logos', 'nsfw', 'matches_brief'].map((key) => [key, { type: 'boolean' }])),
+  required: ['people', 'faces', 'body_parts', 'text_or_logos', 'nsfw', 'matches_brief', 'note'],
+  properties: { ...Object.fromEntries(['people', 'faces', 'body_parts', 'text_or_logos', 'nsfw', 'matches_brief'].map((key) => [key, { type: 'boolean' }])), note: { type: 'string' } },
 } as const;
 const AMBIENT_VERDICT_TOOL = { name: 'record_verdict' } as const;
 
@@ -79,10 +84,11 @@ export const AMBIENT_GATE_SYSTEM = [
   'people: true if any person, figure, silhouette, reflection of a person or crowd appears anywhere, however small or blurred.',
   'faces: true if any human or human-like face appears, including on posters, screens, statues or packaging.',
   'body_parts: true if any hand, finger, arm, leg, foot or other body part appears.',
-  'text_or_logos: true if any readable or pseudo text, letters, numbers, signage, brand mark, logo or watermark appears.',
+  'text_or_logos: true if any readable text, letters or numbers, signage you can read, brand mark, logo or watermark appears. Background text that is blurred or out of focus so nobody could read it (soft book spines, a distant menu board) does not count; readable text anywhere does.',
   'nsfw: true if anything sexual, nude or suggestive appears.',
-  'matches_brief: true if the photo plausibly shows the brief and looks like a natural photograph, not an illustration or a render with obvious artefacts.',
-  'Example: {"people":false,"faces":false,"body_parts":false,"text_or_logos":false,"nsfw":false,"matches_brief":true}',
+  'matches_brief: true if the photo plausibly shows the brief and could pass as a candid phone photo. Imperfect framing, soft focus, grain or an ordinary scene are fine; answer false only for an illustration, a clearly different subject, or obvious render artefacts (melted objects, warped geometry, impossible light).',
+  'note: one short sentence on why matches_brief is false, or an empty string when it is true.',
+  'Example: {"people":false,"faces":false,"body_parts":false,"text_or_logos":false,"nsfw":false,"matches_brief":true,"note":""}',
 ].join('\n');
 
 /** Claude's look at one frame: rejection reasons (empty when clean) and what the call cost. Never throws. */
