@@ -6,9 +6,6 @@ type MarketingStrings = {
   calendarEntries: (label: string, count: number) => string;
   couldNotRead: (location: string, reason: string) => string;
   reason: {
-    "not-found": string;
-    unreadable: string;
-    disconnected: string;
     "invalid-json": string;
     "wrong-schema": string;
     "wrong-project": (project: string | null) => string;
@@ -63,9 +60,6 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     calendarEntries: (label, count) => `${label} (${count} ${count === 1 ? "entry" : "entries"})`,
     couldNotRead: (location, reason) => `Could not read ${location}: ${reason}.`,
     reason: {
-      "not-found": "the file is not on the default branch yet",
-      unreadable: "the connected GitHub account cannot see the repository",
-      disconnected: "GitHub is not connected",
       "invalid-json": "the file is not valid JSON",
       "wrong-schema": "the file is not a marketing-calendar/1 document",
       "wrong-project": (project) => (project ? `the document is for ${project}` : "the document names no project"),
@@ -127,9 +121,6 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
       `${label} (${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"})`,
     couldNotRead: (location, reason) => `${location} se nepodařilo přečíst: ${reason}.`,
     reason: {
-      "not-found": "soubor na výchozí větvi zatím není",
-      unreadable: "připojený účet GitHub repozitář nevidí",
-      disconnected: "GitHub není připojený",
       "invalid-json": "soubor není platný JSON",
       "wrong-schema": "soubor není dokument marketing-calendar/1",
       "wrong-project": (project) => (project ? `dokument patří k projektu ${project}` : "dokument neuvádí projekt"),
