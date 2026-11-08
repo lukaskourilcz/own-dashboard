@@ -73,10 +73,10 @@ describe("the code-written keyword line (#158)", () => {
     expect(paragraphs.at(-2)).toBe(dneskaiKeywordLine("LIGHTROOM"));
     expect(keyed.caption).not.toContain(DNESKAI_AI_DISCLOSURE);
     expect(dneskaiCaptionHashtags(keyed.caption)).toBe(dneskaiCaptionHashtags(plain.caption));
-    // Ten hashtags pass with the keyword line; the generation schema refuses eleven proposals.
+    // Seven hashtags pass with the keyword line (owner cap, 8 November 2026); the generation schema refuses eight proposals.
     const ten = assembleDneskaiCaption({ ...validCopy(pictures), hashtags: Array.from({ length: 9 }, (_, index) => `tema${index}`) }, offer, "LIGHTROOM");
     expect("caption" in ten && dneskaiCaptionHashtags(ten.caption)).toBe(DNESKAI_CAPTION_HASHTAG_MAX);
-    expect(DneskaiCopySchema.safeParse({ ...validCopy(pictures), hashtags: Array.from({ length: 11 }, (_, index) => `tema${index}`) }).success).toBe(false);
+    expect(DneskaiCopySchema.safeParse({ ...validCopy(pictures), hashtags: Array.from({ length: 8 }, (_, index) => `tema${index}`) }).success).toBe(false);
   });
 });
 
