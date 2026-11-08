@@ -2,7 +2,8 @@ import { z } from "zod";
 import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema";
 import { contentHash } from "./hashes";
 import type { DneskaiBrief, DneskaiBriefMedia } from "./dneskai-brief";
-import { DNESKAI_GENERATION_KIT, DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, dneskaiGenerationKit, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { dneskaiClosingSlide } from "./dneskai-closing";
 import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
@@ -139,6 +140,8 @@ const SYSTEM_RULES = [
   `- statement: no picture. One sentence as headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-statement"].headline)}; optional body up to ${target(DNESKAI_TEXT_LIMITS["dneskai-statement"].body)}. variant accent (default) or ink. No kicker.`,
   `- single: the only slide of a single-image post, headline only. variant photo: image-1 with singlePhotoCapable true, headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-photo"].headline)}. variant type: no picture, headline up to ${target(DNESKAI_TEXT_LIMITS["dneskai-single-type"].headline)}. No kicker, no body.`,
   "Follow rules.firstSlide for the first carousel slide and rules.singleVariant for a single slide. Show pictures on at least rules.minimumPictureSlides carousel slides. Images use slots image-1, then image-2.",
+  "Carousel order: the slides at the positions in rules.picturedSlides (counting from 0) carry a picture: the first two always, the fourth when there is one. The third slide may be a statement without a picture. With fewer than three usable pictures, write at most three slides. With exactly one usable picture, the second slide shows that same picture again as a figure; code crops it closer. Code adds the closing slide after yours; never write one.",
+  "In every headline, mark the one to three key words a reader must see first with double square brackets, like [[OpenAI]] or [[100 funkcí]]; never mark a whole headline. Marks never go in a body, kicker, alt text, caption or title.",
   "alt: one or two Czech sentences for a reader who cannot see the slide: what kind of slide it is, its message, and whose picture it carries, named from its credit, without describing the picture. Never repeat the headline as the alt text.",
   `caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what comes next. Its first sentence, at most 125 characters, states the cover's fact in fuller form under the same rules as the cover hook. Code appends the AI disclosure and the hashtags; the caption names no source and no picture credit. hashtags: up to ${DNESKAI_HASHTAG_LIMIT - 1} topic tags, the most specific first (product, company, field), Latin letters and digits only, lowercase, without #; code adds #${DNESKAI_BRAND_HASHTAG} and keeps the post at ${DNESKAI_HASHTAG_LIMIT} hashtags.`,
   "title: a short internal working title for the editor.",
@@ -169,7 +172,7 @@ export type DneskaiBriefOffer = {
   brief: DneskaiBrief;
   evidence: DneskaiOfferEvidence[];
   media: DneskaiOfferMedia[];
-  rules: { formats: ("carousel" | "single-image")[]; firstSlide: "cover-photo" | "figure"; singleVariant: "photo"; minimumPictureSlides: number };
+  rules: { formats: ("carousel" | "single-image")[]; firstSlide: "cover-photo" | "figure"; singleVariant: "photo"; minimumPictureSlides: number; picturedSlides: number[]; repeatSecondPicture: boolean };
   /** Every text the model was shown that may carry a number: what the number gate checks against. */
   corpus: string;
 };
@@ -244,6 +247,9 @@ function offerFor(brief: DneskaiBrief, publishers: readonly string[], plan: Offe
     firstSlide: fullBleed ? "cover-photo" as const : "figure" as const,
     singleVariant: "photo" as const,
     minimumPictureSlides: Math.max(1, Math.min(2, usable)),
+    // The owner's order (8 November 2026): pictures on slides 1, 2 and 4, slide 3 may be text, then code's closing slide.
+    picturedSlides: [0, 1, 3],
+    repeatSecondPicture: usable < 2,
   };
   const corpus = [brief.title, czechDate(brief.targetDate) ?? "", ...evidence.flatMap((item) => [item.title, item.excerpt, item.published ?? ""])].join("\n");
   return { brief, evidence, media, rules, corpus };
@@ -390,7 +396,9 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
     for (const image of slide.images) {
       const offered = media.get(image.assetSha256);
       if (!offered) { issues.push(issue("unknown-asset", index, image.slot, "This assetSha256 is not one of the offered media.")); continue; }
-      if (used.has(image.assetSha256)) issues.push(issue("asset-repeated", index, image.slot, "This picture is already used on an earlier slide."));
+      // With one usable picture the second slide shows it again, closer (owner, 8 November 2026); nowhere else.
+      const repeatAllowed = copy.format === "carousel" && index === 1 && offer.rules.repeatSecondPicture;
+      if (used.has(image.assetSha256) && !repeatAllowed) issues.push(issue("asset-repeated", index, image.slot, "This picture is already used on an earlier slide."));
       used.add(image.assetSha256);
       if (slide.type === "single") { if (!offered.singlePhotoCapable) issues.push(issue("picture-not-single-photo", index, image.slot, "A single photo slide needs a picture with singlePhotoCapable true.")); }
       else if (slide.type === "cover-photo") { if (!offered.fullBleedCapable) issues.push(issue("picture-not-full-bleed", index, image.slot, "A cover-photo slide needs a picture with fullBleedCapable true.")); }
@@ -413,7 +421,9 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
       if (!value.trim()) { issues.push(issue("text-missing", index, field, `The ${field} is blank.`)); continue; }
       if (!placed.includes(field)) { issues.push(issue("text-unplaced", index, field, `A ${slide.type} slide does not show a ${field}; leave it out.`)); continue; }
       const limit = limits[field];
-      if (limit !== undefined && value.trim().length > limit) issues.push(issue("text-too-long", index, field, `The ${field} has ${value.trim().length} characters; this slide holds at most ${limit}. Aim for ${target(limit)}.`));
+      // Key-word marks `[[…]]` are not drawn, so they do not count.
+      const shown = value.trim().replace(/\[\[|\]\]/gu, "");
+      if (limit !== undefined && shown.length > limit) issues.push(issue("text-too-long", index, field, `The ${field} has ${shown.length} characters; this slide holds at most ${limit}. Aim for ${target(limit)}.`));
     }
     if (sameText(slide.alt, slide.headline)) issues.push(issue("alt-repeats-headline", index, "alt", "The alt text repeats the headline; describe the slide for a reader who cannot see it."));
   });
@@ -423,6 +433,9 @@ export function validateDneskaiCopy(copy: DneskaiCopy, offer: DneskaiBriefOffer)
     if (!allowed.includes(first)) issues.push(issue("first-slide-invalid", 0, "type", `rules.firstSlide allows ${allowed.join(" or ")} here.`));
     const pictured = copy.slides.filter((slide) => slide.images.length > 0).length;
     if (pictured < offer.rules.minimumPictureSlides) issues.push(issue("too-few-pictures", null, "slides", `Show pictures on at least ${offer.rules.minimumPictureSlides} slides; ${pictured} do.`));
+    for (const position of offer.rules.picturedSlides) {
+      if (position < copy.slides.length && !copy.slides[position]!.images.length) issues.push(issue("slide-needs-picture", position, "images", `Slide ${position + 1} carries a picture (rules.picturedSlides); show one here or make the deck shorter.`));
+    }
   }
   const prose: { slide: number | null; field: string; value: string }[] = [
     { slide: null, field: "title", value: copy.title }, { slide: null, field: "caption", value: copy.caption },
@@ -510,21 +523,33 @@ export function dneskaiHashtags(proposed: readonly string[]): string[] {
 export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): DneskaiDeck {
   // Claude vision's focal point sets the crop the model was told to omit (8 November 2026).
   const focal = new Map(offer.media.flatMap((item) => "focal" in item && item.focal ? [[item.assetSha256, item.focal] as const] : []));
+  const seen = new Set<string>();
   const slides: DneskaiSlide[] = copy.slides.map((slide) => {
     const placed: readonly string[] = DNESKAI_PLACED_FIELDS[slide.type];
+    const images = slide.images.map((image) => {
+      const crop = image.crop ?? (focal.has(image.assetSha256) ? { focal: focal.get(image.assetSha256)! } : undefined);
+      // A picture shown a second time (one usable picture, owner rule of 8 November 2026) is cropped closer.
+      const repeated = seen.has(image.assetSha256);
+      seen.add(image.assetSha256);
+      const shown = repeated ? { focal: crop?.focal ?? { x: 0.5, y: 0.45 }, zoom: 1.8 } : crop;
+      return { slot: image.slot, assetSha256: image.assetSha256, ...(shown ? { crop: shown } : {}) };
+    });
     return {
       type: slide.type,
       ...(slide.variant ? { variant: slide.variant } : {}),
       headline: slide.headline.trim(),
       ...(slide.body && placed.includes("body") ? { body: slide.body.trim() } : {}),
       ...(slide.kicker && placed.includes("kicker") ? { kicker: slide.kicker.trim() } : {}),
-      images: slide.images.map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, ...(image.crop ? { crop: image.crop } : focal.has(image.assetSha256) ? { crop: { focal: focal.get(image.assetSha256)! } } : {}) })),
+      images,
       alt: slide.alt.trim(),
     };
   });
   const topic = dneskaiTopicName(copy.topic ?? "");
-  // Every generated deck is drawn in Spotlight (owner decision, 6 November 2026).
-  return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, kit: DNESKAI_GENERATION_KIT, ...(topic ? { topic } : {}), slides });
+  // Owner decisions of 8 November 2026: a style picked at random among the generation kits (stable for the same copy),
+  // and every carousel ends with code's closing slide.
+  const kit = dneskaiGenerationKit([copy.title, ...copy.slides.map((slide) => slide.headline)].join("\n"));
+  const closed = copy.format === "carousel" ? [...slides, dneskaiClosingSlide()] : slides;
+  return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, kit, ...(topic ? { topic } : {}), slides: closed });
 }
 
 export { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";

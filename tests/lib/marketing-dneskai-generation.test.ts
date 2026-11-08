@@ -7,7 +7,8 @@ import {
 import { DEFAULT_GENERATION_BUDGET, claudeCallProfile, createClaudeMarketingModel, generateMarketingDraft, type GenerationDependencies, type MarketingModel } from "@/lib/marketing/generation";
 import { MARKETING_HUMANIZER_POLICY_FINGERPRINT } from "@/lib/marketing/humanizer";
 import { MARKETING_DECK_CONTENT_VERSION, parseContentRevision } from "@/lib/marketing/contracts";
-import { DneskaiDeckSchema } from "@/lib/marketing/dneskai-slides";
+import { DNESKAI_GENERATION_KITS, DneskaiDeckSchema } from "@/lib/marketing/dneskai-slides";
+import { DNESKAI_CLOSING_SHA256, dneskaiClosingSlide } from "@/lib/marketing/dneskai-closing";
 import { validateDneskaiDeck, type DneskaiSlideRenderProblem } from "@/lib/marketing/dneskai-render";
 import { dneskaiEvidencePublishers } from "@/lib/marketing/dneskai-publishers";
 import { ACCOUNT, BRIEF_NOW, briefFixture, briefInput, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
@@ -40,7 +41,7 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
     expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/7");
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("2fc6c7715cb858ede97864cf5faec41e6865ff946214890ae62c0f0ede9d625a");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("04b558e8ce145f68188c5cf9b962f1d17a8ed37e2c4be9bb8171b9adb2d2b2dc");
     expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/7+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("asks for a factual cover hook and a matching first caption sentence, inside the truth rules (owner decision 1, option B)", () => {
@@ -84,18 +85,18 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
     const prompt = JSON.parse(dneskaiBriefPrompt(offer));
     expect(dneskaiBriefPrompt(offer)).not.toMatch(/https?:\/\//);
     expect(prompt.presentationOnly).toEqual([]);
-    expect(prompt.rules).toEqual({ formats: ["carousel", "single-image"], firstSlide: "cover-photo", singleVariant: "photo", minimumPictureSlides: 2 });
+    expect(prompt.rules).toEqual({ formats: ["carousel", "single-image"], firstSlide: "cover-photo", singleVariant: "photo", minimumPictureSlides: 2, picturedSlides: [0, 1, 3], repeatSecondPicture: false });
     expect(prompt.evidence.map((item: { publisher: string; captionOnly: boolean; published: string }) => [item.publisher, item.captionOnly, item.published]))
       .toEqual([["The Verge", false, "20. 10. 2026"], ["@technology (Instagram)", true, "20. 10. 2026"]]);
     expect(prompt.media.map((item: { assetSha256: string }) => item.assetSha256)).toEqual([pictures.hero.sha256, pictures.figure.sha256, pictures.post.sha256]);
     // Without a full-bleed picture the cover is a framed figure and the post is a carousel: every post shows a photo
     // on its first slide (owner decision, 8 November 2026), so there is no statement opener and no type-only post.
     const framed = offerFor({ media: briefFixture(pictures).media.map((item) => ({ ...item, fullBleedCapable: false })), suggestedFormat: "single-image" });
-    expect(framed.rules).toEqual({ formats: ["carousel"], firstSlide: "figure", singleVariant: "photo", minimumPictureSlides: 2 });
+    expect(framed.rules).toEqual({ formats: ["carousel"], firstSlide: "figure", singleVariant: "photo", minimumPictureSlides: 2, picturedSlides: [0, 1, 3], repeatSecondPicture: false });
   });
   it("never lets a brief without a usable photo open on text: the first slide must carry a picture (8 November 2026)", () => {
     const offer = offerFor({ media: [], suggestedFormat: "carousel" });
-    expect(offer.rules).toEqual({ formats: ["carousel"], firstSlide: "figure", singleVariant: "photo", minimumPictureSlides: 1 });
+    expect(offer.rules).toEqual({ formats: ["carousel"], firstSlide: "figure", singleVariant: "photo", minimumPictureSlides: 1, picturedSlides: [0, 1, 3], repeatSecondPicture: true });
     const statements: DneskaiCopy = { ...validCopy(pictures), slides: [
       { type: "statement", headline: "Lightroom na mobilu nabídne otevření zavřených očí.", images: [], alt: "Textový slide o nové rychlé akci v mobilním Lightroomu." },
       { type: "statement", headline: "Zdarma jsou 2 použití, pak je potřeba předplatné.", images: [], alt: "Textový slide o tom, kolik funkce stojí." },
@@ -243,7 +244,27 @@ describe("deterministic gates before render", () => {
     expect(codes(validCopy(pictures), offerFor({ suggestedFormat: "single-image" }))).toEqual(["-:format-not-allowed"]);
     expect(codes({ ...single, format: "carousel" })).toEqual(["-:single-in-carousel", "0:first-slide-invalid", "-:too-few-pictures"]);
     const few = validCopy(pictures); few.slides = [few.slides[0]!, few.slides[2]!];
-    expect(codes(few)).toEqual(["-:too-few-pictures"]);
+    expect(codes(few)).toEqual(["-:too-few-pictures", "1:slide-needs-picture"]);
+  });
+  it("keeps the owner's order: pictures on slides 1, 2 and 4, slide 3 may be text (8 November 2026)", () => {
+    const copy = validCopy(pictures);
+    expect(copy.slides.map((slide) => slide.images.length > 0)).toEqual([true, true, false, true]);
+    expect(codes(copy)).toEqual([]);
+    const swapped = validCopy(pictures); swapped.slides = [swapped.slides[0]!, swapped.slides[2]!, swapped.slides[1]!, swapped.slides[3]!];
+    expect(codes(swapped)).toContain("1:slide-needs-picture");
+    const textFourth = validCopy(pictures); textFourth.slides = [textFourth.slides[0]!, textFourth.slides[1]!, textFourth.slides[3]!, { ...textFourth.slides[2]! }];
+    expect(codes(textFourth)).toContain("3:slide-needs-picture");
+  });
+  it("lets the second slide show the only usable picture again, cropped closer, and nowhere else", () => {
+    const copy = validCopy(pictures);
+    copy.slides = [copy.slides[0]!, { ...copy.slides[1]!, images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }] }, copy.slides[2]!];
+    expect(codes(copy)).toContain("1:asset-repeated");
+    const one = offerFor();
+    one.rules.repeatSecondPicture = true;
+    expect(codes(copy, one)).not.toContain("1:asset-repeated");
+    const deck = buildDneskaiDeck(copy, one);
+    expect(deck.slides[1]!.images[0]!.crop?.zoom).toBe(1.8);
+    expect(deck.slides[0]!.images[0]!.crop?.zoom).toBeUndefined();
   });
 });
 
@@ -325,17 +346,24 @@ describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", 
 });
 
 describe("deck assembly by code", () => {
-  it("keeps the written slides only: no sources slide and no credit", () => {
+  it("keeps the written slides, adds code's closing slide and nothing else: no sources slide and no credit", () => {
     const deck = buildDneskaiDeck(validCopy(pictures), offerFor());
     expect(DneskaiDeckSchema.parse(deck)).toEqual(deck);
     expect(deck.format).toBe("carousel");
-    expect(deck.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split"]);
+    expect(deck.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split", "figure"]);
+    expect(deck.slides.at(-1)).toEqual(dneskaiClosingSlide());
     expect(deck.slides.some((slide) => slide.type === "sources")).toBe(false);
     expect(deck.slides.every((slide) => !("credit" in slide) && !("sources" in slide))).toBe(true);
-    expect(deck.slides.map((slide) => slide.images.map((image) => image.assetSha256))).toEqual([[pictures.hero.sha256], [pictures.figure.sha256], [], [pictures.post.sha256]]);
+    expect(deck.slides.map((slide) => slide.images.map((image) => image.assetSha256))).toEqual([[pictures.hero.sha256], [pictures.figure.sha256], [], [pictures.post.sha256], [DNESKAI_CLOSING_SHA256]]);
     // The written words pass through trimmed and unchanged.
-    expect(deck.slides.map((slide) => [slide.headline, slide.body ?? null, slide.kicker ?? null, slide.alt])).toEqual(
+    expect(deck.slides.slice(0, -1).map((slide) => [slide.headline, slide.body ?? null, slide.kicker ?? null, slide.alt])).toEqual(
       validCopy(pictures).slides.map((slide) => [slide.headline, slide.body ?? null, slide.kicker ?? null, slide.alt]));
+  });
+  it("picks the style at random among the generation kits, the same for the same copy (8 November 2026)", () => {
+    const kits = new Set<string>();
+    for (let index = 0; index < 40; index += 1) kits.add(buildDneskaiDeck({ ...validCopy(pictures), title: `Titulek ${index}` }, offerFor()).kit!);
+    expect([...kits].sort()).toEqual([...DNESKAI_GENERATION_KITS].sort());
+    expect(buildDneskaiDeck(validCopy(pictures), offerFor()).kit).toBe(buildDneskaiDeck(validCopy(pictures), offerFor()).kit);
   });
   it("keeps only the fields the slide type places, so the cover and a single slide keep the headline alone", () => {
     const copy = validCopy(pictures);
@@ -345,11 +373,11 @@ describe("deck assembly by code", () => {
     expect(deck.slides[0]).toEqual({ type: "cover-photo", headline: copy.slides[0]!.headline, images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: copy.slides[0]!.alt });
     expect(deck.slides[1]).not.toHaveProperty("kicker");
     expect(deck.slides[3]).toMatchObject({ kicker: "Na Instagramu" });
-    // Every generated deck is drawn in Spotlight (owner decision, 6 November 2026).
-    expect(deck.kit).toBe("spotlight");
+    // Every generated deck is drawn in one of the generation kits (owner decision, 8 November 2026).
+    expect(DNESKAI_GENERATION_KITS).toContain(deck.kit);
     const single: DneskaiCopy = { ...validCopy(pictures), format: "single-image", slides: [{ type: "single", variant: "photo", headline: " Lightroom otevře zavřené oči ", body: "Zdarma jsou 2 použití.", kicker: "Nástroj",
       images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] };
-    expect(buildDneskaiDeck(single, offerFor())).toEqual({ schemaVersion: expect.any(String), format: "single-image", kit: "spotlight",
+    expect(buildDneskaiDeck(single, offerFor())).toEqual({ schemaVersion: expect.any(String), format: "single-image", kit: expect.stringMatching(/^(spotlight|plakat)$/),
       slides: [{ type: "single", variant: "photo", headline: "Lightroom otevře zavřené oči", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Oznámení o funkci s obrázkem z článku The Verge." }] });
   });
 });
@@ -391,7 +419,7 @@ describe("picture credits stay off the slides", () => {
     expect(validateDneskaiCopy(singlePhoto(pictures.hero.sha256), unfittable)).toEqual([]);
     // Even a credit no line could hold keeps its picture: the capability flags alone decide.
     const nowhere = dneskaiBriefOffer(briefFixture(pictures, { media: briefFixture(pictures).media.map((item) => ({ ...item, credit: `Obrázek: ${"x".repeat(90)}` })) }), publishers);
-    expect(nowhere.rules).toEqual({ formats: ["carousel", "single-image"], firstSlide: "cover-photo", singleVariant: "photo", minimumPictureSlides: 2 });
+    expect(nowhere.rules).toEqual({ formats: ["carousel", "single-image"], firstSlide: "cover-photo", singleVariant: "photo", minimumPictureSlides: 2, picturedSlides: [0, 1, 3], repeatSecondPicture: false });
   });
   it("accepts two pictures with long credits on one split slide and sets no credit on it", () => {
     const long = (prefix: string) => `Obrázek: ${prefix}.${"test-only-example".repeat(3)}.edu`;
@@ -428,8 +456,8 @@ describe("generation from a brief", () => {
       templateVersion: DNESKAI_DECK_TEMPLATE_VERSION, promptVersion: MARKETING_BRIEF_PROMPT_ID, model: "claude-sonnet-5-5", knowledgeIds: [], assets: [],
       sources: [{ sourceId: packet.sourceId, sourceRevision: packet.sourceRevision, contentHash: packet.contentHash }] });
     expect(revision.deck).toEqual(draft.deck);
-    expect(draft.deck!.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split"]);
-    expect(draft.deck!.slides.filter((slide) => slide.images.length)).toHaveLength(3);
+    expect(draft.deck!.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split", "figure"]);
+    expect(draft.deck!.slides.filter((slide) => slide.images.length)).toHaveLength(4);
     expect(draft.deck!.slides.every((slide) => !("credit" in slide))).toBe(true);
     expect(revision.caption).toBe([validCopy(pictures).caption, "#dneskai #adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech"].join("\n\n"));
     expect(draft.slides).toEqual([]);
