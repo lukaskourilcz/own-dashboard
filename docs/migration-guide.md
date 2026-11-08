@@ -986,3 +986,8 @@ the two timestamps. The global agent instructions insert into it as postgres thr
 has `user_id` for own-only RLS: a trigger fills it from the session, or with the dashboard's single owner when there is
 none, and keeps it and `created_at` on every update. The Backlog section reads and changes rows through the owner's
 session. Replayed in PGlite (`tests/lib/backlog-database.test.ts`).
+
+## heyDarlink name, 8 November 2026
+
+`20261108200100_project_heydarlink_name.sql` renames the `phone-app` project from LINKA to heyDarlink. The portfolio
+registry creates missing rows but never renames one, so the stored name changes here, and only while it is still LINKA.

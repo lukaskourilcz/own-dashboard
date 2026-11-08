@@ -80,7 +80,7 @@ import {
   unresolvedRepositoryProjects,
   type ProjectRepoUpdate,
 } from "@/lib/project-match";
-import { childProjects, planPortfolioSync, projectSummary } from "@/lib/portfolio";
+import { childProjects, isProjectsSectionProject, planPortfolioSync, projectSummary } from "@/lib/portfolio";
 import { projectSubscriptionShares, sharesMonthly } from "@/lib/dev-finance";
 import { assessProjectHealth, type ProjectHealth } from "@/lib/project-health";
 import {
@@ -589,6 +589,9 @@ function ProjectsListPanel({
     [projects],
   );
 
+  // The summary table lists the three products the owner runs every day (DNESKAi, devShark, heyDarlink; owner request,
+  // 8 November 2026). The other projects keep their data and stay reachable by URL, in Settings and wherever a project
+  // is picked (tasks, invoices, clients).
   // The summary table lists active projects only. Projects marked inactive in
   // Settings → Active projects are hidden here entirely (not shown dimmed) —
   // reactivate them from that Settings card to bring them back.
@@ -601,7 +604,7 @@ function ProjectsListPanel({
   const projectGroups = useMemo(
     () =>
       groupProjectsByEngagement(
-        ordered.filter((p) => p.is_active && !(p.parent_id && projectIds.has(p.parent_id))),
+        ordered.filter((p) => p.is_active && !(p.parent_id && projectIds.has(p.parent_id)) && isProjectsSectionProject(p)),
       ),
     [ordered, projectIds],
   );
