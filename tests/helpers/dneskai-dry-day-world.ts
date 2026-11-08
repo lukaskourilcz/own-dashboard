@@ -278,8 +278,9 @@ export function fixtureCopy(offer: Offer) {
     slides: [
       { type: 'cover-photo', headline: 'Claude dostává sdílenou paměť pro týmové pracovní prostory', images: image(cover), alt: 'Úvodní slide o sdílené paměti v Claude s ilustrací z oznámení společnosti Anthropic.' },
       { type: 'split', kicker: 'Jak to funguje', headline: 'Paměť projektu vidí a upravují všichni členové', body: 'Každý uložený údaj si mohou členové týmu prohlédnout, opravit nebo smazat.', images: image(inset[0]), alt: 'Slide o tom, jak týmová paměť funguje, s obrázkem nastavení od společnosti Anthropic.' },
-      { type: 'figure', headline: 'Správci rozhodují, kde paměť poběží', body: 'U stávajících pracovních prostorů je funkce ve výchozím stavu vypnutá. Cena se podle TechCrunch nemění.', images: image(inset[1]), alt: 'Slide o roli správců s obrázkem z článku TechCrunch.' },
+      // The owner's order (8 November 2026): pictures on slides 1, 2 and 4; slide 3 may be text alone.
       { type: 'statement', headline: 'Anthropic zatím neříká, jak dlouho paměť údaje uchovává.', images: [], alt: 'Textový slide o otázce, kterou oznámení nechává otevřenou.' },
+      { type: 'figure', headline: 'Správci rozhodují, kde paměť poběží', body: 'U stávajících pracovních prostorů je funkce ve výchozím stavu vypnutá. Cena se podle TechCrunch nemění.', images: image(inset[1]), alt: 'Slide o roli správců s obrázkem z článku TechCrunch.' },
     ],
   };
 }

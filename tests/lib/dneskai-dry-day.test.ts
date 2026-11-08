@@ -281,8 +281,9 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
       deck: { slides: [
         { from: 0, images: [{ slot: 'image-1', assetSha256: deck.slides[0]!.images[0]!.assetSha256, crop: { focal: { x: 0.3, y: 0.45 } } }] },
         { from: 1, headline: 'Paměť projektu teď vidí a upravuje celý tým' },
-        { from: 2, images: [{ slot: 'image-1', assetSha256: spare.assetSha256 }] },
-        { from: 3 },
+        { from: 2 },
+        { from: 3, images: [{ slot: 'image-1', assetSha256: spare.assetSha256 }] },
+        { from: 4 },
       ] },
     });
     const body = await response.json() as { id: string; ready: boolean; contentHash: string; render: { status: string; problems: unknown[] } };
@@ -296,10 +297,10 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(edited.revision.scheduledAt).toBe('2026-10-27T11:40:00.000Z');
     expect(rows.find((row) => row.id === noon.id)!.status).toBe('superseded');
     expect(body.contentHash).not.toBe(noon.content_hash);
-    // Only the three changed slides were rendered; the statement came from the render cache.
+    // Only the three changed slides were rendered; the statement and the closing slide came from the render cache.
     const after = await snapshot();
     expect(after.assetUploads - before.assetUploads).toBe(3);
-    expect(edited.revision.assets.map((asset, index) => asset.sha256 === noon.revision.assets[index]!.sha256)).toEqual([false, false, false, true]);
+    expect(edited.revision.assets.map((asset, index) => asset.sha256 === noon.revision.assets[index]!.sha256)).toEqual([false, false, true, false, true]);
     expect(edited.revision.deck!.slides.every((slide) => slide.credit === undefined && slide.type !== 'sources')).toBe(true);
     expect(after.imageDownloads).toBe(before.imageDownloads);
     for (const [index, asset] of edited.revision.assets.entries()) {
@@ -429,10 +430,10 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const rows = [saved.filter((file) => file.name.startsWith('morning-')), saved.filter((file) => file.name.startsWith('noon-') && !file.name.startsWith('noon-edited')), saved.filter((file) => file.name.startsWith('noon-edited'))];
     const width = 324, height = 405, gap = 12;
     const tiles = await Promise.all(rows.flatMap((row, y) => row.map(async (file, x) => ({ input: await sharp(file.bytes).resize(width, height).toBuffer(), left: gap + x * (width + gap), top: gap + y * (height + gap) }))));
-    const sheet = await sharp({ create: { width: gap + 4 * (width + gap), height: gap + rows.length * (height + gap), channels: 3, background: '#d9d9d9' } }).composite(tiles).jpeg({ quality: 90 }).toBuffer();
+    const sheet = await sharp({ create: { width: gap + 5 * (width + gap), height: gap + rows.length * (height + gap), channels: 3, background: '#d9d9d9' } }).composite(tiles).jpeg({ quality: 90 }).toBuffer();
     writeFileSync(`${OUT}/contact-sheet.jpg`, sheet);
     writeFileSync(`${OUT}/ticks.json`, JSON.stringify(ticks.map((entry) => ({ at: entry.at, ms: entry.ms, did: entry.result.did.map((item) => ({ category: item.category, status: item.status, code: item.code, detail: item.detail })) })), null, 1));
-    expect(saved).toHaveLength(12);
+    expect(saved).toHaveLength(15);
     console.info(`DNESKAi dry-day slides and contact sheet: ${OUT}`);
   });
 });
