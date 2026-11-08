@@ -154,7 +154,9 @@ function VersionPreview({ version, lang }: { version: PublishingVersion; lang: L
     {version.channel === "story"
       ? <div className="mx-auto aspect-[9/16] w-44 overflow-hidden rounded-lg border border-border bg-surface-inset sm:w-52" data-testid="story-frame">
           {pictures[0]
-            ? <Image unoptimized src={pictures[0].url} alt={pictures[0].alt} width={pictures[0].width} height={pictures[0].height} className="h-full w-full object-cover" />
+            // A rendered 9:16 story fills the frame; until it exists, the 4:5 cover sits whole inside it, never cropped.
+            ? <Image unoptimized src={pictures[0].url} alt={pictures[0].alt} width={pictures[0].width} height={pictures[0].height}
+                className={cn("h-full w-full", pictures[0].height / pictures[0].width >= 1.7 ? "object-cover" : "object-contain")} />
             : <p className="flex h-full items-center justify-center p-3 text-center text-xs text-foreground-muted">{t.notRendered}</p>}
         </div>
       : pictures.length === 0

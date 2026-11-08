@@ -38,8 +38,9 @@ export async function previewPublishingCalendar(now = new Date()): Promise<Publi
   const today = pragueDate(now);
   const days = [today, dayAfter(today, 1), dayAfter(today, 2)];
   const posts: PublishingPost[] = [];
+  // Posts waiting for review first: those the Design Lab lets the owner edit.
   const live = dneskai.posts.filter((post) => post.deck && !["superseded", "skipped", "returned"].includes(post.status))
-    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)).slice(0, 2);
+    .sort((a, b) => Number(b.status === "review") - Number(a.status === "review") || a.scheduledAt.localeCompare(b.scheduledAt)).slice(0, 2);
   live.forEach((post, index) => {
     const date = days[index]!, time = index === 0 ? "08:00" : "12:30";
     const slides = post.assets.map((asset) => ({ url: asset.url, alt: asset.alt || post.title, width: asset.width, height: asset.height }));
