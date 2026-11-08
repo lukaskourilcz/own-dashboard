@@ -533,6 +533,7 @@ export async function purgeUnusedDneskaiMedia(db: DneskaiMediaDatabase, owner: s
 
 const LinkRowSchema = z.object({
   candidate_id: z.string(), position: z.number().int(), origin_url: z.string(), origin_kind: z.enum(DNESKAI_MEDIA_ORIGIN_KINDS), credit: z.string(),
+  vision_score: z.number().int().nullable().optional(), vision_flags: z.array(z.string()).nullable().optional(), focal_x: z.number().nullable().optional(), focal_y: z.number().nullable().optional(),
   asset: z.object({ id: z.uuid(), sha256: z.string(), width: z.number().int(), height: z.number().int(), mime: z.enum(['image/jpeg', 'image/png', 'image/webp']), bytes: z.number().int(), storage_path: z.string(), fetched_at: z.string(), phash: z.string().nullable().optional(), duplicate_of_asset_id: z.uuid().nullable(), purged_at: z.string().nullable() }),
 });
 const CollectionRowSchema = z.object({
@@ -556,7 +557,7 @@ export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, 
   const ids = candidates.map((candidate) => candidate.id);
   const [collections, links] = await Promise.all([
     db.from('marketing_media_collections').select(`candidate_id,status,page_status,page_error,attempted_at,completed_at,skipped,plan${dneskaiRichEvidenceEnabled() ? ',article_text' : ''}`).eq('user_id', owner).eq('project_id', project).in('candidate_id', ids),
-    db.from('marketing_media_asset_links').select('candidate_id,position,origin_url,origin_kind,credit,asset:marketing_media_assets(id,sha256,width,height,mime,bytes,storage_path,fetched_at,phash,duplicate_of_asset_id,purged_at)')
+    db.from('marketing_media_asset_links').select('candidate_id,position,origin_url,origin_kind,credit,vision_score,vision_flags,focal_x,focal_y,asset:marketing_media_assets(id,sha256,width,height,mime,bytes,storage_path,fetched_at,phash,duplicate_of_asset_id,purged_at)')
       .eq('user_id', owner).eq('project_id', project).in('candidate_id', ids).order('position', { ascending: true }).limit(100),
   ]);
   if (collections.error || links.error) throw new DneskaiMediaError('media-read-unavailable');
@@ -589,6 +590,9 @@ export async function readDneskaiMedia(db: DneskaiMediaDatabase, owner: string, 
           ...dneskaiMediaCapabilities(row.asset),
           phash: row.asset.phash && /^[a-f0-9]{16}$/.test(row.asset.phash) ? row.asset.phash : null,
           duplicateOfAssetId: row.asset.duplicate_of_asset_id, duplicateOfSha256: row.asset.duplicate_of_asset_id ? shaById.get(row.asset.duplicate_of_asset_id) ?? null : null,
+          ...(row.vision_score !== undefined && row.vision_score !== null ? { visionScore: row.vision_score } : {}),
+          ...(row.vision_flags?.length ? { visionFlags: row.vision_flags.slice(0, 4) } : {}),
+          ...(typeof row.focal_x === 'number' && typeof row.focal_y === 'number' ? { focal: { x: row.focal_x, y: row.focal_y } } : {}),
           purged: row.asset.purged_at !== null, previewUrl: previews.get(`${row.candidate_id}:${row.asset.id}`) ?? null,
         })),
       };
