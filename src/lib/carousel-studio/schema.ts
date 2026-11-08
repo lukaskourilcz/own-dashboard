@@ -286,7 +286,12 @@ export const CarouselLayerSchema = z.discriminatedUnion("type", [
 const SlideVariantSchema = z.object({
   id: z.string().regex(/^[A-Z][A-Z0-9-]*$/),
   backgroundToken: TokenNameSchema.optional(),
-  accentToken: TokenNameSchema.optional()
+  accentToken: TokenNameSchema.optional(),
+  /**
+   * Text drawn in `background` takes this token in the variant (DNESKAi, 8 November 2026): ink words on a light blue
+   * ground become white on the INK variant's ink ground.
+   */
+  inkToken: TokenNameSchema.optional()
 });
 
 const SlideSchema = z.object({

@@ -25,12 +25,12 @@
       "source": "Labels on ink, shared with the spotlight look; 5.7:1 on the ink ground."
     },
     "accent": {
-      "value": "#3b5bdb",
-      "source": "The approved mockup's blue: the ground of the text-only slide."
+      "value": "#6ec1ff",
+      "source": "The icy blue of the new avatar (owner, 8 November 2026): the ground of the text-only slide, with ink words on it."
     },
     "secondary": {
-      "value": "#7c95ff",
-      "source": "The approved mockup's light blue: the key words of a headline on a photograph or on ink. On the blue slide the key words are ink instead."
+      "value": "#6ec1ff",
+      "source": "The icy blue of the new avatar (owner, 8 November 2026): the key words of a headline on a photograph or on ink, unless the post sets its own colour."
     }
   },
   "fonts": {
