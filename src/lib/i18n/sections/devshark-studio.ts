@@ -2,8 +2,8 @@ import type { DevsharkDraftStatus } from '@/lib/marketing/devshark-studio';
 
 /** The devShark studio (owner request, 7 November 2026). Every string exists in English and Czech with the same meaning. */
 const en = {
-  tab: 'Studio',
-  title: 'devShark studio',
+  tab: 'Design Lab',
+  title: 'devShark Design Lab',
   intro: 'Edit each concept’s slides and caption, render it again and approve the version that should go out. Only approved versions enter the plan: one Instagram and two Threads posts a day.',
   loading: 'Loading the concepts…',
   unavailable: 'The concepts could not be loaded. Check the connection, then refresh.',
@@ -34,8 +34,8 @@ const en = {
   failed: (code: string) => `The action failed (${code}). Try again.`,
 };
 const cs: typeof en = {
-  tab: 'Studio',
-  title: 'Studio devShark',
+  tab: 'Design Lab',
+  title: 'Design Lab devShark',
   intro: 'Upravte slidy a popisek každého konceptu, nechte ho znovu vykreslit a schvalte verzi, která má vyjít. Do plánu jdou jen schválené verze: jeden příspěvek denně na Instagram a dva na Threads.',
   loading: 'Načítám koncepty…',
   unavailable: 'Koncepty nelze načíst. Zkontrolujte připojení a obnovte stránku.',
