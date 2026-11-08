@@ -16,13 +16,13 @@
       "name": "cover-photo-crop",
       "templateId": "dneskai-spotlight-cover-photo",
       "version": "1.1.0",
-      "pngHash": "fba5e95bd5e6b9ecdfa0f6d5790a1272f37b96b9a80c12bee6e429060d8f5497"
+      "pngHash": "361f946b1e34dc06a50d1f589676c9d7f3acf945d514bcc290167f69b396fe60"
     },
     {
       "name": "figure",
       "templateId": "dneskai-spotlight-figure",
       "version": "1.1.0",
-      "pngHash": "c00e39c96972987609bb632b3710aea6b4b4c724c04dc3daefa02e7861ccfb65"
+      "pngHash": "c054fa15a48f417b7561e7fb38a3c16ed9949c0082a1f0459fdaca86850eced5"
     },
     {
       "name": "split",
@@ -52,7 +52,7 @@
       "name": "sources",
       "templateId": "dneskai-spotlight-sources-4",
       "version": "1.1.0",
-      "pngHash": "6eb3db5f5ba71261c4068280435ccd26c034a35886128e9ecc71f9aa7660e0b2"
+      "pngHash": "acb94a5bab424d21d7dec204d13acf0772369ff52534e2f1f8cda1fe3d9a7427"
     },
     {
       "name": "single-photo",

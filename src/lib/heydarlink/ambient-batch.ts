@@ -1,9 +1,10 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { AMBIENT_ASPECTS, AMBIENT_CAPS, AMBIENT_GATE, AMBIENT_PERSONAS, ambientFalUsd, ambientSeed, ambientShotList, heydarlinkAmbientSettings, type AmbientAspect, type AmbientPersona, type AmbientSettings } from './ambient-config';
+import { AMBIENT_ASPECTS, AMBIENT_CAPS, AMBIENT_GATE, AMBIENT_PERSONAS, ambientFalUsd, ambientSeed, ambientShotList, heydarlinkAmbientSettings, type AmbientAspect, type AmbientPersona, type AmbientSettings, type AmbientShot } from './ambient-config';
 import { ambientDuplicateGate, ambientFormatGate, inspectAmbientFrame, readAmbientFormat } from './ambient-gates';
 import { CropRefused, gradeAmbientFrame } from './ambient-grade';
+import { processAmbientInbox } from './ambient-inbox';
 import { ambientSha256, uploadAmbientFrame } from './ambient-ingest';
 import { ambientPhash } from './ambient-phash';
 import { AmbientRenderError, ambientStockSeed, renderAmbientFrame } from './ambient-render';
@@ -79,7 +80,10 @@ export async function workAmbientFrame(db: Database, settings: AmbientSettings, 
   let batchSpent = (spent.data ?? []).reduce((sum, row) => sum + Number(row.cost_usd ?? 0), 0);
   const capUsd = Number(batch.data.cap_usd);
   const shotList = ambientShotList();
-  const shot = shotList.personas[frame.persona].shots.find((item) => item.id === frame.shot_id);
+  // A plan frame (8 November 2026) is not in the shot list: HeyDarlink's posting plan names it by a ref, and the frame
+  // row carries its own prompt, which holds the same no-people wording as every listed shot.
+  const shot = shotList.personas[frame.persona].shots.find((item) => item.id === frame.shot_id)
+    ?? (ambientPlanPrompt(frame.prompt) ? { id: frame.shot_id, pillar: frame.pillar as AmbientShot['pillar'], prompt: frame.prompt, aspects: [frame.aspect] } as AmbientShot : undefined);
   const reasons = [...frame.reasons];
   let costUsd = 0, attempts = frame.attempts;
   const finish = async (status: AmbientWorkResult['status'], patch: Record<string, unknown> = {}) => {
@@ -191,8 +195,11 @@ export type AmbientTickResult = { status: 'idle' | 'worked' | 'skipped'; code?: 
 export async function runHeydarlinkAmbientTick(db: Database, env: Environment, input: { signal: AbortSignal; remainingMs: () => number; now?: () => Date; fetchImpl?: typeof fetch }): Promise<AmbientTickResult> {
   const settings = heydarlinkAmbientSettings(env);
   if ('idle' in settings) return { status: 'skipped', code: settings.idle, frames: 0, uploaded: 0, costUsd: 0, opened: 0 };
-  const refill = await refillAmbientStock(db, settings, env, { signal: input.signal, now: input.now, fetchImpl: input.fetchImpl });
-  let frames = 0, uploaded = 0, costUsd = 0, code: string | undefined;
+  // The owner's own pictures go first (8 November 2026); they cost only Claude's look.
+  const inbox = await processAmbientInbox(db, settings, { signal: input.signal, remainingMs: input.remainingMs, now: input.now, fetchImpl: input.fetchImpl });
+  // HEYDARLINK_AMBIENT_REFILL=false keeps the low-stock refill from opening generated batches.
+  const refill = env.HEYDARLINK_AMBIENT_REFILL === 'false' ? { checked: false, opened: [] as AmbientPersona[] } : await refillAmbientStock(db, settings, env, { signal: input.signal, now: input.now, fetchImpl: input.fetchImpl });
+  let frames = inbox.taken, uploaded = inbox.uploaded, costUsd = inbox.costUsd, code: string | undefined;
   for (let index = 0; index < 4; index++) {
     const result = await workAmbientFrame(db, settings, { signal: input.signal, remainingMs: input.remainingMs, now: input.now, fetchImpl: input.fetchImpl });
     if (result.status === 'idle' || result.status === 'deferred') { code = result.code; break; }
@@ -200,4 +207,10 @@ export async function runHeydarlinkAmbientTick(db: Database, env: Environment, i
     if (result.status === 'uploaded') uploaded++;
   }
   return { status: frames || refill.opened.length ? 'worked' : 'idle', ...(code ? { code } : {}), frames, uploaded, costUsd, opened: refill.opened.length };
+}
+
+/** A plan frame's own prompt counts only with the four phrases every listed shot carries (FLUX reads only this prompt). */
+export function ambientPlanPrompt(prompt: string): boolean {
+  const lower = prompt.toLowerCase();
+  return prompt.length >= 40 && prompt.length <= 900 && ['no people', 'no faces', 'no text', 'no logos'].every((phrase) => lower.includes(phrase));
 }

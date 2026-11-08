@@ -56,6 +56,9 @@ export const text = (slot: string, frame: Box, options: TextOptions): CarouselLa
   // Every kit slot keeps the Czech ties: no line ends on v, k, s, z, o, u, a or i, and a number
   // keeps its digit groups and its unit.
   keepWithNext: "cs",
+  // Every DNESKAi text block is balanced so its last line is never a lone word (text-pretty, 8 November 2026); a
+  // one-line slot is unaffected. A slot may switch it off through `options`.
+  balanceLastLine: true,
   ...options
 });
 

@@ -50,7 +50,25 @@ function breakLongWord(word: string, face: FaceMetrics, widthPx: number, fontSiz
   return chunks.length ? chunks : [word];
 }
 
-interface Wrapped { lines: string[]; truncated: boolean; brokenWords: string[]; overflowed: boolean }
+interface Wrapped { lines: string[]; truncated: boolean; brokenWords: string[]; overflowed: boolean; orphaned: boolean }
+
+/**
+ * Moves the last piece of the penultimate line down onto the last line, so a wrapped block does not end on a lone
+ * word (`text-wrap: pretty`). A "piece" is a word or a tie group, so a tie like "10 000" counts as one. The move is
+ * taken only when the two then still fit the measure, and never when it would empty the penultimate line. Returns
+ * whether a lone last piece remains, so the fitter can step the size down to clear it.
+ */
+function balanceLastLine(linePieces: string[][], face: FaceMetrics, widthPx: number, fontSize: number, tracking: number): boolean {
+  const last = linePieces.at(-1)!;
+  if (last.length !== 1) return false; // two or more pieces on the last line is not an orphan
+  const prev = linePieces.at(-2)!;
+  if (prev.length < 2) return true; // the penultimate line is a single piece; moving it would empty the line
+  const moved = [prev.at(-1)!, ...last];
+  if (widthOf(face, moved.join(" "), fontSize, tracking) > widthPx) return true; // the two pieces would not fit one line
+  linePieces[linePieces.length - 2] = prev.slice(0, -1);
+  linePieces[linePieces.length - 1] = moved;
+  return false;
+}
 
 /**
  * Which spaces a line may not break at.
@@ -126,7 +144,10 @@ function wrap(
   maxLines: number,
   locale: string,
   breakWords: boolean,
-  keepWithNext?: KeepWithNext
+  keepWithNext?: KeepWithNext,
+  // `balance` rebalances the last line so a block does not end on a lone word (DNESKAi text-pretty, 8 November 2026).
+  // Absent (every v1 layer and devShark's slide text), the lines are the ones the fitter has always set.
+  balance = false
 ): Wrapped {
   const brokenWords: string[] = [];
   const pieces = tieGroups(value, keepWithNext).flatMap((group) => {
@@ -141,26 +162,31 @@ function wrap(
       return breakLongWord(word, face, widthPx, fontSize, tracking, locale);
     });
   });
-  const lines: string[] = [];
+  // Lines are built as lists of pieces and joined at the end, so the drawn string is exactly what the old fitter set;
+  // the piece lists let the balancer see whether the last line is a lone piece.
+  const linePieces: string[][] = [];
   let truncated = false;
   let overflowed = false;
   for (const piece of pieces) {
     if (widthOf(face, piece, fontSize, tracking) > widthPx) overflowed = true;
-    const current = lines.at(-1);
+    const current = linePieces.at(-1);
     if (current === undefined) {
-      lines.push(piece);
+      linePieces.push([piece]);
       continue;
     }
-    if (widthOf(face, `${current} ${piece}`, fontSize, tracking) <= widthPx) {
-      lines[lines.length - 1] = `${current} ${piece}`;
+    if (widthOf(face, `${current.join(" ")} ${piece}`, fontSize, tracking) <= widthPx) {
+      current.push(piece);
       continue;
     }
-    if (lines.length >= maxLines) {
+    if (linePieces.length >= maxLines) {
       truncated = true;
       break;
     }
-    lines.push(piece);
+    linePieces.push([piece]);
   }
+  let orphaned = false;
+  if (balance && !truncated && linePieces.length >= 2) orphaned = balanceLastLine(linePieces, face, widthPx, fontSize, tracking);
+  const lines = linePieces.map((pieceList) => pieceList.join(" "));
   if (truncated && lines.length) {
     const last = lines.at(-1)!;
     const parts = graphemes(last, locale);
@@ -171,7 +197,7 @@ function wrap(
     }
     lines[lines.length - 1] = `${trimmed.replace(/…$/u, "")}…`;
   }
-  return { lines, truncated, brokenWords, overflowed };
+  return { lines, truncated, brokenWords, overflowed, orphaned };
 }
 
 /**
@@ -201,20 +227,27 @@ export function fitText(input: {
   keepWithNext?: KeepWithNext;
   /** Baseline distance in em; absent means 1.12. */
   leading?: number;
+  /**
+   * Rebalance so the block does not end on a lone word, and step the size down when rebalancing alone cannot
+   * (`text-wrap: pretty`, DNESKAi, 8 November 2026). Absent, the block breaks as it always has.
+   */
+  balance?: boolean;
 }): FittedText {
   const tracking = input.tracking ?? 0;
   const face = resolveFace(input.fontFamily, input.fontWeight);
   const all = graphemes(input.value.normalize("NFC").trim(), input.locale);
   const normalized = all.slice(0, input.maxChars).join("");
   const clippedByContract = all.length > input.maxChars;
+  const balance = input.balance ?? false;
   for (let fontSize = input.maxFontSize; fontSize >= input.minFontSize; fontSize -= 1) {
-    const wrapped = wrap(normalized, face, input.widthPx, fontSize, tracking, input.maxLines, input.locale, false, input.keepWithNext);
+    const wrapped = wrap(normalized, face, input.widthPx, fontSize, tracking, input.maxLines, input.locale, false, input.keepWithNext, balance);
     const fitsHeight = wrapped.lines.length * fontSize * (input.leading ?? 1.12) <= input.heightPx;
-    if (fitsHeight && !wrapped.truncated && !wrapped.overflowed) {
+    // A lone last word keeps the fitter stepping down (never below minFontSize), exactly as an overflow does.
+    if (fitsHeight && !wrapped.truncated && !wrapped.overflowed && !wrapped.orphaned) {
       return { lines: wrapped.lines, fontSize, truncated: clippedByContract, normalized, brokenWords: [] };
     }
   }
-  const wrapped = wrap(normalized, face, input.widthPx, input.minFontSize, tracking, input.maxLines, input.locale, true, input.keepWithNext);
+  const wrapped = wrap(normalized, face, input.widthPx, input.minFontSize, tracking, input.maxLines, input.locale, true, input.keepWithNext, balance);
   return {
     lines: wrapped.lines,
     fontSize: input.minFontSize,

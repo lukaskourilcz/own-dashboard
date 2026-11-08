@@ -10,7 +10,7 @@
       "name": "cover-photo",
       "templateId": "dneskai-plakat-cover-photo",
       "version": "1.1.0",
-      "pngHash": "35bed7e1789b4c9dcc29534d51a047bb3aeafbae8ad53aae98744fdad8c5c0c7"
+      "pngHash": "c2ef99aebd6cff2355102ee926ab4dc59bdd95221f82521357b9be5495b75669"
     },
     {
       "name": "cover-photo-crop",
@@ -34,7 +34,7 @@
       "name": "split-pair",
       "templateId": "dneskai-plakat-split-pair",
       "version": "1.1.0",
-      "pngHash": "7900e6ff520ed618c6afd4d8a5eba181c20a26cd44e537193afd0ea4b374a12e"
+      "pngHash": "04b98dfe2363551017067eb23d52f888d04859c6012e6acb44965dfd1d8b3085"
     },
     {
       "name": "statement",
@@ -52,7 +52,7 @@
       "name": "sources",
       "templateId": "dneskai-plakat-sources-4",
       "version": "1.1.0",
-      "pngHash": "3c65b9f8601dc87be869bb61582867d5cd9d8171c652da16ef03373f03389824"
+      "pngHash": "6aaf6439111f798b4c1860e426ccfe09d572084fb3a638d61f869a07fb03cb45"
     },
     {
       "name": "single-photo",

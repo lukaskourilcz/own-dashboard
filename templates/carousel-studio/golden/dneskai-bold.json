@@ -16,7 +16,7 @@
       "name": "cover-photo-crop",
       "templateId": "dneskai-bold-cover-photo",
       "version": "1.0.0",
-      "pngHash": "1e26390cb55c0540b0c1062b3309848c05d45ff52ebd869de930a03f475d83fa"
+      "pngHash": "718b6534c6e5ecdccf65d33dc3d43d395eb1d847270dc585ea9b3008c356a200"
     },
     {
       "name": "figure",
@@ -28,13 +28,13 @@
       "name": "split",
       "templateId": "dneskai-bold-split",
       "version": "1.1.0",
-      "pngHash": "381db3791d85b92b8714525e82def322cf455c7fe6207905c73272d5009870ef"
+      "pngHash": "b2dea8f7ad0794ac09ba28148bcf08dcc5a82606bad190b6426b2f36d770e7de"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-bold-split-pair",
       "version": "1.1.0",
-      "pngHash": "0d9b770327c3781c2ae9d2a0b453b93049b09c1b2b8cf3be22776ccaedfdc658"
+      "pngHash": "ec8b70eab26da0bab08dcd8c3eab41e1b82d97dc963caf298ac8a740bee657d4"
     },
     {
       "name": "statement",
@@ -52,25 +52,25 @@
       "name": "sources",
       "templateId": "dneskai-bold-sources-4",
       "version": "1.1.0",
-      "pngHash": "0e4399f05ce5e6b08047820bac59d91f380e61700212e3b6b42646512a6c208d"
+      "pngHash": "85adc7dcd5e9d4d5f12532ffebe587f68bf116df50a96260aa454898a4907a69"
     },
     {
       "name": "single-photo",
       "templateId": "dneskai-bold-single-photo",
       "version": "1.1.0",
-      "pngHash": "71b7d46832dd1a48f93104c7e507d24a78a5aec37eb1f28c6fddb9c1d965a356"
+      "pngHash": "05bd0a725846f9c35dbf37789e6b5ff44ab68fec84281bfa5ce8a3630766287c"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-bold-single-photo",
       "version": "1.1.0",
-      "pngHash": "b42cebb7c740f3ece9c83980277894a9f8a091785ae3a3b36d5c444097123197"
+      "pngHash": "67dbc1ae5ca800fb450a4156b0d50fc4dd7726b5c582275b230747622b2f54e6"
     },
     {
       "name": "single-type",
       "templateId": "dneskai-bold-single-type",
       "version": "1.1.0",
-      "pngHash": "f155c3ce1ef31ba07afb92c502aa0c7643f600b65433b6e293cf84bc592a54ed"
+      "pngHash": "74f40d581b9169712e0d270274df6cebc68427811386f2a073b3dc87f89a0245"
     },
     {
       "name": "acceptance-1",

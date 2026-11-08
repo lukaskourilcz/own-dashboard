@@ -72,3 +72,25 @@ per call, so a batch of 20 takes one to two hours.
 Edit `src/lib/heydarlink/ambient-shots.ts`. Every prompt must contain "no people", "no faces", "no text" and "no logos"
 in its own words (FLUX dev reads only the positive prompt); shot ids are unique and start with the persona key.
 `tests/lib/heydarlink-ambient.test.ts` checks it.
+
+## Plan frames (8 November 2026)
+
+HeyDarlink's posting plan names ambient pictures by a short ref ("marina skyline golden hour"). A plan frame is a
+frame row whose `shot_id` is the ref's slug (NFKD, no diacritics, lowercase, `&` → `and`, every other run of
+non-alphanumerics → `-`, at most 60 characters), which is what HeyDarlink's publisher matches on. It is not in the shot
+list: the row carries its own prompt and pillar, and the frame is worked only when that prompt contains "no people",
+"no faces", "no text" and "no logos" (`ambientPlanPrompt`). The frames are inserted into the persona's open batch with a
+`created_at` in the plan's time order, so the claim takes the earliest slot first; the batch cap and every gate apply
+unchanged.
+
+## The owner's own pictures (8 November 2026)
+
+When Lukáš makes plan pictures himself (Codex), he uploads them to the private bucket `heydarlink-ambient-inbox` in
+Supabase Studio (Storage → heydarlink-ambient-inbox → Upload; a whole folder at once is fine), named
+`<girl>__<shot_id>.jpg`, the shot id being the plan ref's slug. An optional `__4x5` or `__9x16` before the extension
+sets the format; without it a picture at least 1.5 times as tall as it is wide becomes a story (1080x1920) and any other
+a feed post (1080x1350). Each ambient tick takes the next pictures first: it crops them (centred on what draws the eye)
+and scales them, then runs the duplicate check, the format check and Claude's look, about $0.004 a picture, and sends
+the passing ones to HeyDarlink under that shot id. A file moves to `done/` or `rejected/`; `heydarlink_ambient_imports`
+records the reasons. `HEYDARLINK_AMBIENT_REFILL=false` keeps the low-stock refill from opening generated batches
+meanwhile.

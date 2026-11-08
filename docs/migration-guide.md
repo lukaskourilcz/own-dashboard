@@ -1060,3 +1060,9 @@ prepared at 12:00 cancels its queued publications, supersedes its versions and i
 
 `20261109021000_dneskai_reslot_times.sql` redefines `marketing_dneskai_reslot_brief` with the daily times 08:00, 12:30,
 19:00 and 21:00; nothing else in it changes.
+
+## HeyDarlink ambient inbox, 8 November 2026
+
+`20261109030000_heydarlink_ambient_inbox.sql` creates the private Storage bucket `heydarlink-ambient-inbox` (JPEG, PNG
+or WebP, at most 20 MB) and `public.heydarlink_ambient_imports`, service role only. The owner uploads
+`<girl>__<shot_id>.jpg` in Supabase Studio; the ambient tick ingests it (`docs/heydarlink-ambient.md`). Additive.
