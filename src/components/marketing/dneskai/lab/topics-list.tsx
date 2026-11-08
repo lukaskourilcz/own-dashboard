@@ -173,6 +173,7 @@ function TopicRow({ topic, lang, tabStop, busy, selected, onSelect, onFocus, onD
         <p id={titleId} className="break-words text-sm font-medium">{topic.title}</p>
         <div className="flex flex-wrap items-center gap-1.5 text-xs text-foreground-muted">
           <EntityBadge>{t.groups[topic.kind]}</EntityBadge>
+          {topic.series && <EntityBadge>{t.series[topic.series]}</EntityBadge>}
           {topic.source.label ? topic.source.url ? <a href={topic.source.url} target="_blank" rel="noreferrer noopener" className="underline-offset-2 hover:underline focus-ring rounded-sm">{topic.source.label}</a>
             : <span>{topic.source.label}</span> : <span>{t.manual}</span>}
           {topic.verdict && <StatusBadge value={`topic-${topic.verdict}`} label={t.verdict[topic.verdict]} tone={VERDICT_TONE[topic.verdict]} />}
