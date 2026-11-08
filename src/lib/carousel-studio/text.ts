@@ -199,6 +199,8 @@ export function fitText(input: {
   tracking?: number;
   /** Spaces a line may not break at; absent, any space breaks (see `KeepWithNext`). */
   keepWithNext?: KeepWithNext;
+  /** Baseline distance in em; absent means 1.12. */
+  leading?: number;
 }): FittedText {
   const tracking = input.tracking ?? 0;
   const face = resolveFace(input.fontFamily, input.fontWeight);
@@ -207,7 +209,7 @@ export function fitText(input: {
   const clippedByContract = all.length > input.maxChars;
   for (let fontSize = input.maxFontSize; fontSize >= input.minFontSize; fontSize -= 1) {
     const wrapped = wrap(normalized, face, input.widthPx, fontSize, tracking, input.maxLines, input.locale, false, input.keepWithNext);
-    const fitsHeight = wrapped.lines.length * fontSize * 1.12 <= input.heightPx;
+    const fitsHeight = wrapped.lines.length * fontSize * (input.leading ?? 1.12) <= input.heightPx;
     if (fitsHeight && !wrapped.truncated && !wrapped.overflowed) {
       return { lines: wrapped.lines, fontSize, truncated: clippedByContract, normalized, brokenWords: [] };
     }

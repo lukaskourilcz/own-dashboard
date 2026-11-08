@@ -18,7 +18,17 @@ enforce them; a change that lets any of them through is a bug.
   `plan-photo-missing`). An AI illustration (`generated`, credit „Ilustrace: AI“ in the database) is the last resort.
 - **No page counts.** No slide shows "02 / 05" or any other position or count.
 - **No picture credits on any slide.** "Obrázek: …" and "Foto: …" never appear in the graphics.
-- **No sources slide.** A deck is the written slides only; nothing is appended after them.
+- **No sources slide.** A deck is the written slides and, on a carousel, code's closing slide; nothing else is
+  appended.
+- **The closing slide** (owner, 8 November 2026) ends every carousel and is the same on every post: the
+  Higgsfield picture `dneskai-closing.jpg` with „Sleduj DNESKAi“ and „pro všechny novinky ze světa AI a
+  technologií. @dneskai“. Code writes it (`dneskai-closing.ts`), never the model. It is the owner's one exception to
+  the rule that nothing asks readers to follow; the model still writes no call to follow anywhere.
+- **Slide order** (owner, 8 November 2026): slides 1 and 2 carry a picture, slide 3 may be text alone, slide 4
+  carries a picture, then the closing slide. Fewer than three usable pictures: at most three written slides. One
+  usable picture: slide 2 shows it again, cropped closer.
+- **Style**: each post is drawn at random in Spotlight or Plakát (stored in the deck's `kit`). Key words of a
+  headline are marked `[[like this]]`; Plakát colours them, other kits drop the marks. Never a box behind the text.
 - **No text about sources or verification.** No slide says where information comes from, which article,
   text or announcement states it, or whether it is confirmed or independently verified. Never "Zdrojem je
   oznámení samotného…", "Údaj pochází od firmy samotné", "nezávislé potvrzení chybí", "Z dostupného textu

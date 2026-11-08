@@ -5,6 +5,19 @@ import { AssetSchema, canonicalJson } from "./contracts";
 import { DneskaiDeckSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiKitId, type DneskaiSlide } from "./dneskai-slides";
 import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { DNESKAI_CLOSING_FILE, DNESKAI_CLOSING_SHA256 } from "./dneskai-closing";
+
+/** The closing slide's picture, read from the app's files and checked against its pinned hash. */
+let closingBytes: Promise<Buffer> | null = null;
+export function dneskaiClosingBytes(): Promise<Buffer> {
+  closingBytes ??= readFile(path.join(process.cwd(), ...DNESKAI_CLOSING_FILE)).then((bytes) => {
+    if (createHash("sha256").update(bytes).digest("hex") !== DNESKAI_CLOSING_SHA256) throw new Error("closing-picture-changed");
+    return bytes;
+  }).catch((error: unknown) => { closingBytes = null; throw error; });
+  return closingBytes;
+}
 
 /**
  * DNESKAi slides through the vendored Design Lab engine (own-dashboard#117, quorum#603).
@@ -241,7 +254,8 @@ function mediaLoader(load: LoadDneskaiMediaBytes): LoadDneskaiMediaBytes {
   const loaded = new Map<string, Promise<Buffer>>();
   return (asset) => {
     let bytes = loaded.get(asset);
-    if (!bytes) { bytes = load(asset); loaded.set(asset, bytes); }
+    // The closing slide's picture is a file of the app, not a media asset (owner decision, 8 November 2026).
+    if (!bytes) { bytes = asset === DNESKAI_CLOSING_SHA256 ? dneskaiClosingBytes() : load(asset); loaded.set(asset, bytes); }
     return bytes;
   };
 }

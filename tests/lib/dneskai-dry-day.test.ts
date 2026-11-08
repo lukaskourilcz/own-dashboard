@@ -34,6 +34,7 @@ import { revisionContentHash } from '@/lib/marketing/hashes';
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
 import { DneskaiBriefSchema, type DneskaiBrief } from '@/lib/marketing/dneskai-brief';
 import { DNESKAI_RENDERER_VERSION } from '@/lib/marketing/dneskai-render';
+import { DNESKAI_CLOSING_SHA256 } from '@/lib/marketing/dneskai-closing';
 import { POST as revisionsPOST } from '@/app/api/marketing/revisions/route';
 
 const OWNER = '7a1c0b52-3f5e-4c11-9b8e-2d4f6a8c0e11';
@@ -221,7 +222,8 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
       expect(row.content_hash).toBe(revisionContentHash(revision));
       expect(revision.sources[0]).toMatchObject({ sourceId: brief.eventId, sourceRevision: brief.memberHash });
       const pool = new Set(brief.media.map((item) => item.assetSha256));
-      expect(revision.deck!.slides.flatMap((slide) => slide.images.map((image) => image.assetSha256)).every((hash) => pool.has(hash))).toBe(true);
+      // Every picture comes from the brief, except the closing slide's, which is a file of the app (8 November 2026).
+      expect(revision.deck!.slides.flatMap((slide) => slide.images.map((image) => image.assetSha256)).every((hash) => pool.has(hash) || hash === DNESKAI_CLOSING_SHA256)).toBe(true);
       expect(revision.assets).toHaveLength(revision.deck!.slides.length);
       for (const [index, asset] of revision.assets.entries()) {
         const bytes = await assetBytes(asset.url);
@@ -281,8 +283,9 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
       deck: { slides: [
         { from: 0, images: [{ slot: 'image-1', assetSha256: deck.slides[0]!.images[0]!.assetSha256, crop: { focal: { x: 0.3, y: 0.45 } } }] },
         { from: 1, headline: 'Paměť projektu teď vidí a upravuje celý tým' },
-        { from: 2, images: [{ slot: 'image-1', assetSha256: spare.assetSha256 }] },
-        { from: 3 },
+        { from: 2 },
+        { from: 3, images: [{ slot: 'image-1', assetSha256: spare.assetSha256 }] },
+        { from: 4 },
       ] },
     });
     const body = await response.json() as { id: string; ready: boolean; contentHash: string; render: { status: string; problems: unknown[] } };
@@ -296,10 +299,10 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(edited.revision.scheduledAt).toBe('2026-10-27T11:40:00.000Z');
     expect(rows.find((row) => row.id === noon.id)!.status).toBe('superseded');
     expect(body.contentHash).not.toBe(noon.content_hash);
-    // Only the three changed slides were rendered; the statement came from the render cache.
+    // Only the three changed slides were rendered; the statement and the closing slide came from the render cache.
     const after = await snapshot();
     expect(after.assetUploads - before.assetUploads).toBe(3);
-    expect(edited.revision.assets.map((asset, index) => asset.sha256 === noon.revision.assets[index]!.sha256)).toEqual([false, false, false, true]);
+    expect(edited.revision.assets.map((asset, index) => asset.sha256 === noon.revision.assets[index]!.sha256)).toEqual([false, false, true, false, true]);
     expect(edited.revision.deck!.slides.every((slide) => slide.credit === undefined && slide.type !== 'sources')).toBe(true);
     expect(after.imageDownloads).toBe(before.imageDownloads);
     for (const [index, asset] of edited.revision.assets.entries()) {
@@ -331,14 +334,14 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const [published] = await sql<{ status: string; remote_media_id: string; remote_url: string; error_code: string | null }>(
       "select p.status,p.remote_media_id,p.remote_url,p.error_code from public.marketing_publications p where p.revision_id=$1", [morning.id]);
     expect(published).toMatchObject({ status: 'published', error_code: null, remote_media_id: graph.media[0]!.id, remote_url: graph.media[0]!.permalink });
-    expect(graph.fetchedImages).toHaveLength(4);
+    expect(graph.fetchedImages).toHaveLength(5);
     expect(graph.fetchedImages.every((image) => image.format === 'jpeg' && image.width === 1080 && image.height === 1350)).toBe(true);
     // The bytes Meta fetched are the approved ones: the approval binds content_hash, which binds every asset sha256.
     const [approvedRow] = await sql<{ approved_hash: string; content_hash: string; status: string }>('select approved_hash,content_hash,status from public.marketing_revisions where id=$1', [morning.id]);
     expect(approvedRow).toEqual({ approved_hash: morning.content_hash, content_hash: morning.content_hash, status: 'published' });
     expect(graph.fetchedImages.map((image) => image.sha256)).toEqual(morning.revision.assets.map((asset) => asset.sha256));
     const carousel = [...graph.containers.values()].find((container) => container.children)!;
-    expect(carousel.children).toHaveLength(4);
+    expect(carousel.children).toHaveLength(5);
     expect(carousel.caption).toBe(morning.revision.caption);
     expect([...graph.containers.values()].filter((container) => container.alt).map((container) => container.alt)).toEqual(morning.revision.assets.map((asset) => asset.alt));
   }, 300_000);
@@ -429,10 +432,10 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const rows = [saved.filter((file) => file.name.startsWith('morning-')), saved.filter((file) => file.name.startsWith('noon-') && !file.name.startsWith('noon-edited')), saved.filter((file) => file.name.startsWith('noon-edited'))];
     const width = 324, height = 405, gap = 12;
     const tiles = await Promise.all(rows.flatMap((row, y) => row.map(async (file, x) => ({ input: await sharp(file.bytes).resize(width, height).toBuffer(), left: gap + x * (width + gap), top: gap + y * (height + gap) }))));
-    const sheet = await sharp({ create: { width: gap + 4 * (width + gap), height: gap + rows.length * (height + gap), channels: 3, background: '#d9d9d9' } }).composite(tiles).jpeg({ quality: 90 }).toBuffer();
+    const sheet = await sharp({ create: { width: gap + 5 * (width + gap), height: gap + rows.length * (height + gap), channels: 3, background: '#d9d9d9' } }).composite(tiles).jpeg({ quality: 90 }).toBuffer();
     writeFileSync(`${OUT}/contact-sheet.jpg`, sheet);
     writeFileSync(`${OUT}/ticks.json`, JSON.stringify(ticks.map((entry) => ({ at: entry.at, ms: entry.ms, did: entry.result.did.map((item) => ({ category: item.category, status: item.status, code: item.code, detail: item.detail })) })), null, 1));
-    expect(saved).toHaveLength(12);
+    expect(saved).toHaveLength(15);
     console.info(`DNESKAi dry-day slides and contact sheet: ${OUT}`);
   });
 });

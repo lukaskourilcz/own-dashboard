@@ -16,7 +16,7 @@ import { carouselTextFits, renderCarouselSlidePng, validateTemplateAsRendered } 
 
 /** What a hand-placed slide may fail without refusing: contrast is reported as advice, cut copy is refused per field. */
 const DNESKAI_PLACED_RELAXED_CHECKS = ["contrast", "apca", "overflow"] as const;
-import { ImageCropSchema, type CarouselPayload, type CarouselTemplate, type ImageCrop } from "./schema";
+import { ImageCropSchema, leadingOf, type CarouselPayload, type CarouselTemplate, type ImageCrop } from "./schema";
 import { applyDneskaiBoxes, dneskaiAutoBoxes, type DneskaiBoxes, type DneskaiLaidBlock } from "./dneskai-boxes";
 export { DNESKAI_EDITABLE_FIELDS, DNESKAI_BOX_LIMITS, clampDneskaiBox, type DneskaiBox, type DneskaiBoxes, type DneskaiEditableField, type DneskaiLaidBlock } from "./dneskai-boxes";
 
@@ -217,12 +217,45 @@ function isBleed(layer: { x: number; y: number; width: number; height: number })
   return layer.x <= 0 && layer.y <= 0 && layer.width >= 1 && layer.height >= 1;
 }
 
+/**
+ * Key words a writer marks `[[like this]]` in a headline, text or label (DNESKAi plakat, 8 November 2026): the plain
+ * words without the brackets, and one flag per word saying whether it was marked. Whitespace splits the words, as the
+ * renderer splits them. Text without brackets returns no flags.
+ */
+export function dneskaiMarkedWords(value: string): { plain: string; flags: boolean[] | null } {
+  if (!value.includes("[[")) return { plain: value, flags: null };
+  const flags: boolean[] = [];
+  let inside = false, plain = "", word = "", marked = false;
+  const close = () => { if (word) { flags.push(marked); word = ""; marked = false; } };
+  for (const part of value.split(/(\[\[|\]\]|\s+)/u)) {
+    if (part === "[[") { inside = true; continue; }
+    if (part === "]]") { inside = false; continue; }
+    if (!part) continue;
+    if (/^\s+$/u.test(part)) { close(); plain += " "; continue; }
+    word += part; plain += part; if (inside) marked = true;
+  }
+  close();
+  return { plain: plain.replace(/\s+/gu, " ").trim(), flags };
+}
+/** The text without its `[[…]]` marks, as a reader sees it. */
+export const dneskaiPlainText = (value: string): string => value.replace(/\[\[|\]\]/gu, "");
+
+function emphasis(input: DneskaiSlideInput, template: CarouselTemplate): Record<string, boolean[]> {
+  const slots = new Set(template.slides[0]!.layers.flatMap((layer) => layer.type === "text" && layer.emphasisColorToken ? [layer.slot] : []));
+  const found: Record<string, boolean[]> = {};
+  for (const slot of ["headline", "body", "kicker"] as const) {
+    const flags = dneskaiMarkedWords(input[slot]?.trim() ?? "").flags;
+    if (slots.has(slot) && flags?.some(Boolean)) found[slot] = flags;
+  }
+  return found;
+}
+
 function strings(input: DneskaiSlideInput, template: CarouselTemplate): Record<string, string> {
   const fixed = FIXED_STRINGS[input.locale ?? "cs"];
   const all: Record<string, string> = {
-    headline: input.headline?.trim() ?? "",
-    body: input.body?.trim() ?? "",
-    kicker: input.kicker?.trim() ?? "",
+    headline: dneskaiMarkedWords(input.headline?.trim() ?? "").plain,
+    body: dneskaiMarkedWords(input.body?.trim() ?? "").plain,
+    kicker: dneskaiMarkedWords(input.kicker?.trim() ?? "").plain,
     credit: input.credit?.trim() ?? "",
     title: fixed.title,
     "images-label": fixed.imagesLabel,
@@ -357,7 +390,8 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
     locale: input.locale ?? "cs",
     strings: strings(input, template),
     ...(input.type === "statement" && input.variant === "ink" ? { variant: DNESKAI_INK_VARIANT } : {}),
-    ...(Object.keys(crops).length ? { images: crops } : {})
+    ...(Object.keys(crops).length ? { images: crops } : {}),
+    ...(Object.keys(emphasis(input, template)).length ? { emphasis: emphasis(input, template) } : {})
   };
   // The words fitted in the template's declared frames: what would be cut, found without the
   // photographs so it is reported even when an image problem stops the render, and the lines
@@ -382,8 +416,9 @@ async function inspect(input: DneskaiSlideInput): Promise<Inspection> {
   if (laid !== auto) {
     clipped.length = 0;
     for (const fit of carouselTextFits({ template: laid, payload, brand: CAROUSEL_BRANDS["caught-up"], format: MASTER_FORMAT, look: kit.look })) {
-      // The renderer sets lines 1.12 em apart (renderer.ts).
-      if (input.layout && fit.slot in input.layout) heights[fit.slot] = fit.fitted.lines.length * fit.fitted.fontSize * 1.12;
+      // The renderer sets lines the layer's leading apart (1.12 em unless the kit sets its own; renderer.ts).
+      const layer = laid.slides[0]!.layers.find((entry) => entry.type === "text" && entry.slot === fit.slot);
+      if (input.layout && fit.slot in input.layout) heights[fit.slot] = fit.fitted.lines.length * fit.fitted.fontSize * leadingOf(layer as { leading?: number } | undefined);
       if (fit.fitted.truncated && payload.strings[fit.slot]) {
         const field = fieldOf(fit.slot, input);
         clipped.push(problem("text-clipped", false, field, `The ${field} does not fit its placed frame whole and would be cut; make it smaller, wider or shorter.`));

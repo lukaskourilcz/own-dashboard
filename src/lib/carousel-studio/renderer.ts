@@ -4,6 +4,7 @@ import {
   CarouselPayloadSchema,
   CarouselTemplateSchema,
   carouselCanvas,
+  leadingOf,
   type BrandTokens,
   type CarouselFormat,
   type CarouselLayer,
@@ -216,7 +217,7 @@ function layerSvg(input: {
   if (fitted.truncated) input.truncatedSlots?.push(layer.slot);
   const anchor = layer.align === "start" ? "start" : layer.align;
   const textX = layer.align === "start" ? x : layer.align === "middle" ? x + w / 2 : x + w;
-  const lineHeight = fitted.fontSize * 1.12;
+  const lineHeight = fitted.fontSize * leadingOf(layer);
   // The block is the same height a hugging panel measures, so a panel and its words agree.
   const block = fitted.lines.length * lineHeight;
   const baseline = layer.valign === "bottom"
@@ -224,8 +225,19 @@ function layerSvg(input: {
     : layer.valign === "middle"
       ? round(y + (h - block) / 2 + fitted.fontSize)
       : y + fitted.fontSize;
+  // Emphasised words (DNESKAi plakat, 8 November 2026) take the layer's emphasis colour; the flags follow the words
+  // in order through the fitted lines. A layer without an emphasis colour draws exactly the string it always did.
+  const flags = layer.emphasisColorToken ? payload.emphasis?.[layer.slot] : undefined;
+  let emphasisFill = layer.emphasisColorToken ? color(layer.emphasisColorToken) : "";
+  if (emphasisFill && emphasisFill.toLowerCase() === color(input.slide.rendering.background).toLowerCase()) emphasisFill = color("secondary");
+  let wordAt = 0;
+  const words = (line: string) => line.split(" ").map((word, at) => {
+    const emphasised = flags?.[wordAt++] === true;
+    const shown = escapeXml(word);
+    return (at === 0 ? "" : " ") + (emphasised ? `<tspan fill="${emphasisFill}">${shown}</tspan>` : shown);
+  }).join("");
   const tspans = fitted.lines.map((line, index) =>
-    `<tspan x="${textX}" dy="${index === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
+    `<tspan x="${textX}" dy="${index === 0 ? 0 : lineHeight}">${flags?.some(Boolean) ? words(line) : escapeXml(line)}</tspan>`
   ).join("");
   // Both optional and both default to off, so a v1 layer renders the string it always did.
   const tracking = layer.tracking === 0 ? "" : ` letter-spacing="${Math.round(layer.tracking * fitted.fontSize * 1_000) / 1_000}"`;
@@ -333,7 +345,8 @@ function fitTextLayer(
     fontFamily: brand.fonts[layer.fontToken],
     fontWeight: layer.fontWeight,
     // Absent on every v1 layer (the schema refuses it there), so v1 lines break where they did.
-    ...(layer.keepWithNext ? { keepWithNext: layer.keepWithNext } : {})
+    ...(layer.keepWithNext ? { keepWithNext: layer.keepWithNext } : {}),
+    ...(layer.leading ? { leading: layer.leading } : {})
   });
 }
 
@@ -524,7 +537,7 @@ function renderSlides(input: CarouselRenderInput, wanted?: number): RenderedSlid
     const hugged = Object.fromEntries(slide.layers.flatMap((layer) => {
       if (layer.type !== "text") return [];
       const fitted = fitTextLayer(layer, payload, slideTokens, canvas.width, canvas.height);
-      return [[layer.slot, fitted.lines.length * fitted.fontSize * 1.12] as const];
+      return [[layer.slot, fitted.lines.length * fitted.fontSize * leadingOf(layer)] as const];
     }));
     const rendering = { background: backgroundToken, accent: variant?.accentToken ?? "accent" };
     const content = slide.layers.map((layer, layerIndex) => layerSvg({
