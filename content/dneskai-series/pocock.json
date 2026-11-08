@@ -216,6 +216,193 @@
     "https://github.com/mattpocock/skills/blob/main/skills/misc/git-guardrails-claude-code/SKILL.md",
     "https://github.com/mattpocock/skills/blob/main/skills/misc/git-guardrails-claude-code/scripts/block-dangerous-git.sh"
    ]
+  },
+  {
+   "order": 17,
+   "slug": "prototyp-na-jednu-otazku",
+   "said": "AI Hero, stránka skillu prototype (aktualizováno 24. 8. 2026) a článek „9 Ways AI Coding Has Rewired My Brain“ (aktualizováno 11. 3. 2026); skill prototype v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Debata se zasekla. Prototyp na zahození odpoví na jednu otázku.",
+   "keyword": "prototyp",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, sahá po prototypu, až když se otázka nedá vyřešit rozhovorem. Prototyp má odpovědět na jedinou otázku, třeba jestli sedí logika aplikace nebo jak má vypadat obrazovka. Na logiku stačí jeden HTML soubor s tlačítky, na vzhled několik výrazně odlišných variant jedné stránky. Bez testů a uhlazování. Rozhodnutí pak přenese do skutečného kódu a prototyp nechá na zvláštní větvi. Když zabere víc než jedno sezení, byla otázka moc velká.",
+   "urls": [
+    "https://www.besthub.dev/articles/matt-pocock-skills-selection-guide-match-your-workflow-gaps-first-c2ad05cb3011",
+    "https://www.aihero.dev/skills-prototype",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/prototype/SKILL.md"
+   ]
+  },
+  {
+   "order": 18,
+   "slug": "revize-ve-dvou-osach",
+   "said": "AI Hero, stránka skillu code-review; skill code-review v repu mattpocock/skills (stav listopad 2026)",
+   "confidence": "high",
+   "title": "Úhledný kód ještě není správný kód. Revize má kontrolovat dvě věci.",
+   "keyword": "codereview",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, nechává revizi kódu dělat dva subagenty souběžně. Jeden kontroluje, jestli kód dodržuje pravidla projektu, druhý, jestli dělá to, co chtělo zadání. Výsledky schválně neslučuje, protože kód může projít jednou kontrolou a neprojít druhou. Revizi radí pouštět v nové relaci, ne v té, která kód psala. Nálezy bere jako vodítka a nespouští revizi pořád dokola, dokud nevyjde čistá.",
+   "urls": [
+    "https://www.besthub.dev/articles/matt-pocock-skills-selection-guide-match-your-workflow-gaps-first-c2ad05cb3011",
+    "https://www.aihero.dev/skills-code-review",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/code-review/SKILL.md"
+   ]
+  },
+  {
+   "order": 19,
+   "slug": "pull-request-s-dukazem",
+   "said": "AI Hero, changelog skills v1.3 „implement-spec, pr, retro and GLOSSARY.md“ (5. 10. 2026); skill pr v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "„Asi to funguje“ nestačí. Agent má k pull requestu přiložit důkaz.",
+   "keyword": "pullrequest",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, považuje pull requesty za úzké hrdlo, kterým musí projít práce agentů. Jeho skill pr proto žádá tři části: krátké shrnutí se schématem, důkaz před a po, třeba test, který dřív padal a teď prochází, a odhad rizika. Agent v něm napíše, jestli jde změnu snadno vrátit, nebo jsou to dveře jen jedním směrem, a jak velkou část aplikace může rozbít. Recenzent pak ví, kam se dívat.",
+   "urls": [
+    "https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/pr/SKILL.md"
+   ]
+  },
+  {
+   "order": 20,
+   "slug": "retro-opravi-prostredi",
+   "said": "AI Hero, changelog skills v1.3 (5. 10. 2026) a stránka skillu retro; skill retro v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Agent se v relaci trápil. Retro opraví jeho prostředí, ne kód.",
+   "keyword": "retro",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, po náročné relaci spouští skill retro. Ten projde, kde se agent zasekl, a navrhne seřazené úpravy prostředí, ne kódu: lepší navigaci, chybějící kontroly, pravidla pro revizi nebo škrty v AGENTS.md. Mechanická pravidla mají být automatické kontroly, třeba linter nebo hook, do textových standardů patří jen věci k posouzení. Sám nic nemění, vybírá člověk. Cílem je, aby AGENTS.md časem ubýval.",
+   "urls": [
+    "https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md",
+    "https://www.aihero.dev/skills-retro",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/retro/SKILL.md"
+   ]
+  },
+  {
+   "order": 21,
+   "slug": "nespoustejte-init",
+   "said": "AI Hero, článek „Never Run Claude /init“ (aktualizováno 24. 2. 2026), ke kterému vydal i stejnojmenné video na YouTube",
+   "confidence": "high",
+   "title": "Příkaz init agentovi nepomůže. CLAUDE.md nechte skoro prázdný.",
+   "keyword": "claudemd",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, radí nespouštět v Claude Code příkaz init, který vygeneruje soubor CLAUDE.md s popisem projektu. Soubor se načítá do každé relace, zabírá místo v kontextu, zvyšuje náklady a rychle zastará. Většinu z něj si agent stejně zjistí z kódu sám. Pokyny pro konkrétní práci radí přesunout do skills, které se načtou jen při potřebě. Do CLAUDE.md patří jen to, co agent nezjistí a co platí vždy. On sám tam má jediný řádek.",
+   "urls": [
+    "https://www.aihero.dev/never-run-claude-init"
+   ]
+  },
+  {
+   "order": 22,
+   "slug": "reserse-z-primarnich-zdroju",
+   "said": "AI Hero, stránka skillu research (aktualizováno 24. 8. 2026); skill research v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Rešerši svěřte agentovi v pozadí. Ať čte původní dokumentaci.",
+   "keyword": "reserse",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, posílá rešerše agentovi, který běží na pozadí s čistým kontextem, zatímco on pracuje dál. Agent má číst primární zdroje, tedy oficiální dokumentaci, zdrojový kód a specifikace, ne převyprávění z druhé ruky, která bývají zastaralá. Výsledek uloží do jednoho souboru s odkazem na zdroj u každého tvrzení. Rozhodnutí zůstává na člověku. Pocock radí klást úzké otázky a citace namátkou kontrolovat.",
+   "urls": [
+    "https://www.besthub.dev/articles/matt-pocock-skills-selection-guide-match-your-workflow-gaps-first-c2ad05cb3011",
+    "https://www.aihero.dev/skills-research",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/research/SKILL.md"
+   ]
+  },
+  {
+   "order": 23,
+   "slug": "pruvodce-pro-rucni-kroky",
+   "said": "AI Hero, stránka skillu wizard (aktualizováno 24. 8. 2026); skill wizard v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Návod v chatu se ztratí. Agent napíše průvodce, který vás provede.",
+   "keyword": "wizard",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, řeší kroky, které musí udělat člověk, třeba založit účet nebo zkopírovat API klíč z cizího dashboardu, skillem wizard. Seznam pokynů v chatu se podle něj snadno ztratí, a tak agent napíše bash skript, který vás provede krok po kroku. Otevře správnou stránku, řekne, co zkopírovat, a hodnotu uloží, kam patří. Agent skript jen napíše a nespouští, takže klíče se k modelu nedostanou. Před nevratnými kroky žádá potvrzení.",
+   "urls": [
+    "https://www.besthub.dev/articles/matt-pocock-skills-selection-guide-match-your-workflow-gaps-first-c2ad05cb3011",
+    "https://www.aihero.dev/skills-wizard",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/wizard/SKILL.md"
+   ]
+  },
+  {
+   "order": 24,
+   "slug": "dotaznik-pro-kolegu",
+   "said": "AI Hero, stránka skillu to-questionnaire (aktualizováno 24. 8. 2026); skill to-questionnaire v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Někdy odpověď zná jen kolega. Agent mu připraví srozumitelný dotazník.",
+   "keyword": "dotaznik",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, má skill to-questionnaire pro rozhodnutí, která sami neuděláte, protože potřebné znalosti má jiný člověk, třeba klient nebo kolega z jiného týmu. Agent se zeptá jen na to, kdo je adresát a co potřebujete zjistit. Pak sepíše dotazník s nejdůležitějšími otázkami na začátku, každá řeší jedinou věc. Odpověď „nevím“ je vítaná, protože přiznaná nejistota je cennější než sebejistý odhad. Odeslání nechává na vás.",
+   "urls": [
+    "https://www.aihero.dev/skills-to-questionnaire",
+    "https://github.com/mattpocock/skills/blob/main/skills/productivity/to-questionnaire/SKILL.md"
+   ]
+  },
+  {
+   "order": 25,
+   "slug": "vysvetli-to-znovu",
+   "said": "AI Hero, stránka skillu wait-what (aktualizováno 24. 8. 2026); skill wait-what v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Odpovědi agenta nerozumíte. Ať ji zopakuje jednodušeji a s kontextem.",
+   "keyword": "waitwhat",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, používá skill wait-what, když přestane rozumět poslední zprávě agenta. Agent ji pak napíše znovu, doplní chybějící souvislosti a použije zjednodušenou technickou angličtinu a pojmy ze slovníku projektu. Skill drží schválně velmi krátký: dlouhé pokyny proti upovídanosti podle něj nefungují, protože modely napodobují délku svých instrukcí. Spouští ho jen člověk, protože jen on ví, kdy se ztratil.",
+   "urls": [
+    "https://www.aihero.dev/skills-wait-what",
+    "https://github.com/mattpocock/skills/blob/main/skills/productivity/wait-what/SKILL.md"
+   ]
+  },
+  {
+   "order": 26,
+   "slug": "agent-jako-ucitel",
+   "said": "AI Hero, článek „Learn Anything With My /teach Skill“ (aktualizováno 8. 6. 2026); skill teach v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Agent může být i učitel. Skill teach vede lekce přes víc sezení.",
+   "keyword": "teach",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, nabízí skill teach, se kterým se lze učit cokoli, třeba francouzštinu. Pro téma založíte vlastní složku a agent se nejdřív zeptá, proč se chcete učit, co už umíte a jak rádi studujete. Pak připraví krátké interaktivní lekce v prohlížeči s kvízy, seznam ověřených zdrojů a záznamy o pokroku. Znalosti má čerpat z důvěryhodných zdrojů, ne z paměti modelu. Po lekci mu řeknete, co šlo a co ne, a on naváže.",
+   "urls": [
+    "https://www.aihero.dev/learn-anything-with-my-teach-skill",
+    "https://github.com/mattpocock/skills/blob/main/skills/productivity/teach/SKILL.md"
+   ]
+  },
+  {
+   "order": 27,
+   "slug": "triage-agent-nebo-clovek",
+   "said": "AI Hero, článek „triage: Turn Backlog Mess Into Agent-Ready Work“ (aktualizováno 5. 5. 2026); skill triage v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Ne každý úkol je pro agenta. Triage rozliší, co zvládne sám.",
+   "keyword": "triage",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, třídí cizí hlášení chyb a návrhy skillem triage. Každá položka dostane jeden stav, například čeká na doplnění, připraveno pro agenta, připraveno pro člověka, nebo nebude řešeno. U úkolu pro člověka agent vysvětlí, proč ho nejde delegovat, třeba kvůli designovému rozhodnutí nebo ručnímu testování. Chybu se nejdřív pokusí zreprodukovat a ověří, jestli podobný požadavek už dřív nezamítli. Nic nezmění, dokud to neschválíte.",
+   "urls": [
+    "https://www.besthub.dev/articles/matt-pocock-skills-selection-guide-match-your-workflow-gaps-first-c2ad05cb3011",
+    "https://www.aihero.dev/burn-through-your-backlog-with-my-triage-skill",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/triage/SKILL.md"
+   ]
+  },
+  {
+   "order": 28,
+   "slug": "ralph-nejdriv-pod-dohledem",
+   "said": "YouTube video o technice Ralph Wiggum, o kterém psal VentureBeat (6. 1. 2026); AI Hero, článek „11 Tips For AI Coding With Ralph Wiggum“ (aktualizováno 8. 1. 2026)",
+   "confidence": "high",
+   "title": "Agent může pracovat, když spíte. Nejdřív ho ale sledujte.",
+   "keyword": "ralph",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, popularizoval techniku Ralph Wiggum: jednoduchou smyčku, která spouští agenta pořád dokola nad stejným zadáním. Agent si v každém kole vybere jeden úkol, dokončí ho, spustí kontroly a commitne. Pocock radí začít pod dohledem, sledovat jednotlivá kola a ladit zadání. Až smyčce věříte, pusťte ji bez dozoru, vždy s omezeným počtem kol, třeba 5 až 10 na malou práci. Pokrok má agent zapisovat do souboru v repozitáři.",
+   "urls": [
+    "https://venturebeat.com/ai/how-ralph-wiggum-went-from-the-simpsons-to-the-biggest-name-in-ai-right-now",
+    "https://www.aihero.dev/tips-for-ai-coding-with-ralph-wiggum"
+   ]
+  },
+  {
+   "order": 29,
+   "slug": "rizikove-ukoly-napred",
+   "said": "AI Hero, článek „11 Tips For AI Coding With Ralph Wiggum“ (aktualizováno 8. 1. 2026), tipy 7 a 8",
+   "confidence": "high",
+   "title": "Riskantní práci nenechávejte na konec. Agent ji má udělat první.",
+   "keyword": "riziko",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, radí dávat agentovi jako první nejrizikovější úkoly: architekturu, napojení na jiné systémy a věci, které zatím nikdo nezná. Chyby v nich se totiž rozšíří do celého projektu. Na tuto práci chce sedět u počítače a bez dozoru nechává agenta až snazší úkoly na hotových základech. Agentovi má navíc výslovně říct, jestli staví prototyp, produkční systém, nebo veřejnou knihovnu, protože podle toho volí kvalitu.",
+   "urls": [
+    "https://www.aihero.dev/tips-for-ai-coding-with-ralph-wiggum"
+   ]
+  },
+  {
+   "order": 30,
+   "slug": "adr-jen-pro-draha-rozhodnuti",
+   "said": "AI Hero, stránka skillu domain-modeling (aktualizováno 24. 8. 2026); skill domain-modeling v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Ne každé rozhodnutí potřebuje zápis. ADR jen pro ta drahá a nečekaná.",
+   "keyword": "adr",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, nechává agenta zapisovat architektonická rozhodnutí, takzvané ADR, jen výjimečně. Zápis má smysl, jen když platí tři věci zároveň: rozhodnutí jde těžko vrátit, budoucího čtenáře by bez vysvětlení překvapilo a vzniklo volbou mezi skutečnými alternativami. Když jedna chybí, zápis se nedělá. Agent ADR jen nabídne, nepíše ho sám od sebe, a stačí na něj jedna až tři věty: kontext, volba a důvod.",
+   "urls": [
+    "https://www.besthub.dev/articles/matt-pocock-skills-selection-guide-match-your-workflow-gaps-first-c2ad05cb3011",
+    "https://www.aihero.dev/skills-domain-modeling",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/domain-modeling/SKILL.md"
+   ]
   }
  ]
 }
