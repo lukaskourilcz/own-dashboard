@@ -1018,3 +1018,27 @@ Both tables are service role only. The pipeline itself is described in `docs/hey
 `{ tick, kind }` to `/api/heydarlink/ambient/tick` at the scheduler's base URL, and the pg_cron job
 `heydarlink-ambient-tick` (`2-59/5 * * * *`). The marketing tick no longer runs HeyDarlink frames: its DNESKAi steps
 used the whole budget.
+
+## Sharing switches, 8 November 2026
+
+`20261108230000_publishing_switches.sql` creates `marketing_publishing_switches`: one row per switched-off version of a
+plan slot (`brand`, `slot_id`, `channel` story, instagram, threads, linkedin, facebook, or `all` for the whole post).
+A trigger keeps a switch on the owner's own DNESKAi or devShark slot; RLS keeps rows own-only. The switch belongs to
+the slot, not to a revision, so it survives an edit in the Design Lab. `marketing_publication_switched_off` names the
+revisions a switch turns off, and `marketing_claim_due` is redefined with one more condition so the publishers never
+claim them; the rest of the function is unchanged. A switched-off publication stays queued: switched back on in time,
+it goes out at its slot. Replayed in PGlite (`tests/lib/publishing-switches-database.test.ts`).
+
+## Backlog notes and hand-over, 8 November 2026
+
+`20261108240000_backlog_notes.sql` adds `note` (the owner's answer or input, up to 20,000 characters) and
+`note_updated_at` to `backlog_items`, and the status `ready_for_agent` between `open` and `in_progress`. The owner
+trigger sets `note_updated_at` whenever the note changes. A partial index serves the agents' query for items ready
+for them. The contract columns and the agents' insert are unchanged. Replayed in PGlite
+(`tests/lib/backlog-database.test.ts`).
+
+## Comment replies carry no signature, 8 November 2026
+
+`20261108250000_drop_comment_reply_signature.sql` drops `signature` from `marketing_comment_reply_drafts`. The owner
+decided comment replies get no signature or sign-off (no "— Lukáš"): neither a drafted reply nor what is sent appends
+one. The column was never written by shipped code, so the drop is safe.
