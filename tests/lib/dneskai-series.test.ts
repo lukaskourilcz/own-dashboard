@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DNESKAI_SERIES, DNESKAI_SERIES_GRID, DNESKAI_SERIES_LABELS, DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesHeading, dneskaiSeriesNumbers, dneskaiSeriesOf, dneskaiSeriesSlot } from '@/lib/marketing/dneskai-series';
+import { DNESKAI_SERIES, DNESKAI_SERIES_GRID, DNESKAI_SERIES_LABELS, DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesCaption, dneskaiSeriesDeck, dneskaiSeriesHeading, dneskaiSeriesNumbers, dneskaiSeriesOf, dneskaiSeriesSlot } from '@/lib/marketing/dneskai-series';
 
 const topic = (id: string, series?: string) => ({ id, evidence: series ? { series } : {} });
 const slot = (date: string, time: string) => ({ date, time });
@@ -72,4 +72,16 @@ describe('the DNESKAi series', () => {
     ]);
     expect(Object.fromEntries(numbers)).toEqual({ m1: 1, m3: 2, m4: 3, e1: 1 });
   });
+
+  it('puts the heading on the first caption line, replacing an older number, and on the cover only', () => {
+    expect(dneskaiSeriesCaption('Harness je software kolem modelu.\n\n#dneskai #ai', 'Slovník AI #1')).toBe('Slovník AI #1\nHarness je software kolem modelu.\n\n#dneskai #ai');
+    expect(dneskaiSeriesCaption('Slovník AI #1\nHarness je software kolem modelu.', 'Slovník AI #2')).toBe('Slovník AI #2\nHarness je software kolem modelu.');
+    expect(dneskaiSeriesCaption('Tipy od šéfa Instagramu Mosseriho #4\nText.', 'Tipy od šéfa Instagramu Mosseriho #3')).toBe('Tipy od šéfa Instagramu Mosseriho #3\nText.');
+    expect(dneskaiSeriesCaption('Slovník AI je naše nová série.', 'Slovník AI #1')).toBe('Slovník AI #1\nSlovník AI je naše nová série.');
+    const deck = { slides: [{ type: 'cover-photo', headline: 'A' }, { type: 'figure', headline: 'B' }] };
+    expect(dneskaiSeriesDeck(deck, 'Slovník AI #1').slides).toEqual([{ type: 'cover-photo', headline: 'A', series: 'Slovník AI #1' }, { type: 'figure', headline: 'B' }]);
+    const single = { slides: [{ type: 'single', headline: 'A' }] };
+    expect(dneskaiSeriesDeck(single, 'Slovník AI #1')).toBe(single);
+  });
 });
+
