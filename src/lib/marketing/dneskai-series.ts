@@ -1,14 +1,18 @@
 /**
  * The DNESKAi recurring series (owner decisions, 8 November 2026). A series post is an education topic tagged with
  * `evidence.series`; the plan step seats it in its fixed slot before it fills the rest of the plan with ordinary
- * topics. Every series slot is at 12:30 (Instagram and Threads) from 16 November 2026:
+ * topics. Every series posts at least twice a week (owner rule, 8 November 2026), from 16 November 2026, on the two
+ * daytime slots that post on Instagram and Threads; 08:00 and Threads at 20:00 stay with the news every day:
  *
- * | Day | Series |
- * |---|---|
- * | Monday, Wednesday, Friday | `explainer`, "Slovník AI #N" |
- * | Tuesday, Thursday | `mosseri`, "Tipy od šéfa Instagramu Mosseriho #N" |
- * | Saturday | `karpathy`, "Tipy od leadera vibecodingu Karpathyho #N" |
- * | Sunday, by turns week after week | `cherny`, `mollick`, `pocock` |
+ * | Day | 12:30 | 17:00 |
+ * |---|---|---|
+ * | Monday | `explainer` | `karpathy` |
+ * | Tuesday | `mosseri` | `cherny` |
+ * | Wednesday | `explainer` | `mollick` |
+ * | Thursday | `mosseri` | `pocock` |
+ * | Friday | `explainer` | `karpathy` |
+ * | Saturday | `cherny` | `mollick` |
+ * | Sunday | `pocock` | news |
  *
  * Each post carries its series label and running number (`dneskaiSeriesNumber`) on the cover, at the start of the
  * Instagram caption and of the Threads post. Pure and browser-safe.
@@ -16,9 +20,7 @@
 export const DNESKAI_SERIES = ['explainer', 'mosseri', 'karpathy', 'cherny', 'mollick', 'pocock'] as const;
 export type DneskaiSeries = (typeof DNESKAI_SERIES)[number];
 
-/** The series slot time; 12:30 posts on Instagram and Threads. */
-export const DNESKAI_SERIES_TIME = '12:30';
-/** The first day the plan gives the series their slots (a Monday; Sunday turns count weeks from it). */
+/** The first day the plan gives the series their slots. */
 export const DNESKAI_SERIES_START = '2026-11-16';
 
 /** The label each post of a series carries before its number, in the owner's words. */
@@ -31,13 +33,20 @@ export const DNESKAI_SERIES_LABELS: Readonly<Record<DneskaiSeries, string>> = {
   pocock: 'Tipy Matta Pococka na AI skills',
 };
 
-/** Weekday (0 = Sunday) to the series that own it; a day with several series gives them the day by turns. */
-export const DNESKAI_SERIES_WEEK: Readonly<Record<number, readonly DneskaiSeries[]>> = {
-  1: ['explainer'], 2: ['mosseri'], 3: ['explainer'], 4: ['mosseri'], 5: ['explainer'], 6: ['karpathy'], 0: ['cherny', 'mollick', 'pocock'],
+/** The weekly grid: weekday (0 = Sunday) to the series that own its slots. */
+export const DNESKAI_SERIES_GRID: Readonly<Record<number, Readonly<Partial<Record<string, DneskaiSeries>>>>> = {
+  1: { '12:30': 'explainer', '17:00': 'karpathy' },
+  2: { '12:30': 'mosseri', '17:00': 'cherny' },
+  3: { '12:30': 'explainer', '17:00': 'mollick' },
+  4: { '12:30': 'mosseri', '17:00': 'pocock' },
+  5: { '12:30': 'explainer', '17:00': 'karpathy' },
+  6: { '12:30': 'cherny', '17:00': 'mollick' },
+  0: { '12:30': 'pocock' },
 };
+/** The slot times the grid uses; both post on Instagram and Threads. */
+export const DNESKAI_SERIES_TIMES = ['12:30', '17:00'] as const;
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const DAY_MS = 86_400_000;
 
 /** The series a topic belongs to, from its evidence, or null for an ordinary topic. */
 export function dneskaiSeriesOf(evidence: Record<string, unknown> | null | undefined): DneskaiSeries | null {
@@ -45,16 +54,10 @@ export function dneskaiSeriesOf(evidence: Record<string, unknown> | null | undef
   return typeof value === 'string' && (DNESKAI_SERIES as readonly string[]).includes(value) ? value as DneskaiSeries : null;
 }
 
-/** Noon UTC of a Prague `YYYY-MM-DD` date: always the same calendar day. */
-const noon = (date: string) => Date.parse(`${date}T12:00:00Z`);
-
-/** The series that owns the slot at `date` and `time`, or null. */
+/** The series that owns the slot at `date` and `time`, or null. Noon UTC always falls on the Prague calendar day. */
 export function dneskaiSeriesSlot(date: string, time: string): DneskaiSeries | null {
-  if (!DATE.test(date) || time !== DNESKAI_SERIES_TIME || date < DNESKAI_SERIES_START) return null;
-  const owners = DNESKAI_SERIES_WEEK[new Date(noon(date)).getUTCDay()] ?? [];
-  if (owners.length <= 1) return owners[0] ?? null;
-  const week = Math.floor((noon(date) - noon(DNESKAI_SERIES_START)) / (7 * DAY_MS));
-  return owners[week % owners.length]!;
+  if (!DATE.test(date) || date < DNESKAI_SERIES_START) return null;
+  return DNESKAI_SERIES_GRID[new Date(`${date}T12:00:00Z`).getUTCDay()]?.[time] ?? null;
 }
 
 /** The label with the running number, as the cover, the caption and the Threads post start: "Slovník AI #3". */
