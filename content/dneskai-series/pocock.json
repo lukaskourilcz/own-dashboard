@@ -1,0 +1,221 @@
+{
+ "series": "pocock",
+ "note": "Owner decision 8 Nov 2026: \"Tipy Matta Pococka na AI skills #N\", twice a week (Thu 17:00, Sun 12:30). Repo mattpocock/skills checked through the GitHub API on 8 Nov 2026: 318,209 stars, MIT. Pocock is named as the speaker; URLs stay in the database only. Paraphrase only, no skill text copied. Skill names as of Nov 2026 (to-spec, to-tickets, GLOSSARY.md).",
+ "topics": [
+  {
+   "order": 1,
+   "slug": "skill-je-kratky-navod",
+   "said": "AI Hero, článek „5 Agent Skills I Use Every Day“ (aktualizováno 16. 3. 2026); GitHub repo mattpocock/skills, skill grill-me",
+   "confidence": "high",
+   "title": "Skill nemusí být román. Stačí krátký soubor s návodem pro agenta.",
+   "keyword": "skill",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, vysvětluje, že skill je obyčejný markdown soubor s pokyny, který si agent jako Claude Code nebo Codex načte, když ho potřebuje. Podle něj skills nemusí být dlouhé, aby fungovaly. Jeho nejoblíbenější skill grill-me má jen pár řádků a odkazuje na sdílený skill grilling. Doporučuje malé, snadno upravitelné skills místo velkých frameworků, které proces řídí za vás.",
+   "urls": [
+    "https://www.implicator.ai/matt-pocock-skills-repo-jumps-past-45k-stars-with-reusable-ai-instructions/",
+    "https://www.aihero.dev/5-agent-skills-i-use-every-day",
+    "https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md"
+   ]
+  },
+  {
+   "order": 2,
+   "slug": "nechte-se-vyzpovidat",
+   "said": "AI Hero, článek „My Grill Me Skill Went Viral“ (aktualizováno 23. 3. 2026); skill grill-me / grilling v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Nejdřív výslech, pak kód. Agent se vás má ptát, dokud si nerozumíte.",
+   "keyword": "grillme",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, radí nezačínat psaním kódu, ale nechat agenta, ať vás podrobně vyzpovídá. Skill grill-me prochází strom rozhodnutí, ke každé otázce nabídne doporučenou odpověď a fakta si dohledá v kódu sám. Taková sezení mu často trvají kolem 45 minut. Je to jeho nejpopulárnější skill a podle README řeší nejčastější chybu: agent nepochopil, co chcete.",
+   "urls": [
+    "https://www.implicator.ai/matt-pocock-skills-repo-jumps-past-45k-stars-with-reusable-ai-instructions/",
+    "https://www.aihero.dev/my-grill-me-skill-has-gone-viral",
+    "https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md"
+   ]
+  },
+  {
+   "order": 3,
+   "slug": "spolecny-slovnik-projektu",
+   "said": "GitHub, README repa mattpocock/skills, sekce „The Agent Is Way Too Verbose“; skill grill-with-docs",
+   "confidence": "high",
+   "title": "Agent mluví moc. Pomůže společný slovník pojmů projektu.",
+   "keyword": "glosar",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, upozorňuje, že agent hozený do cizího projektu neumí jeho žargon, a tak používá dvacet slov tam, kde stačí jedno. Řešením je sdílený slovník (soubor GLOSSARY.md), který skill grill-with-docs buduje během zpovídání. Kód pak má konzistentní názvy, agent se v něm lépe orientuje a spotřebuje méně tokenů. Pocock to označuje možná za nejlepší techniku v celém repu.",
+   "urls": [
+    "https://github.com/mattpocock/skills/blob/main/README.md",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/grill-with-docs/SKILL.md"
+   ]
+  },
+  {
+   "order": 4,
+   "slug": "tdd-cerveny-test-napred",
+   "said": "AI Hero, „5 Agent Skills I Use Every Day“ (16. 3. 2026); skill tdd; podcast The Pragmatic Engineer „AI Skills with Matt Pocock“ (17. 9. 2026)",
+   "confidence": "high",
+   "title": "Nejdřív padající test. Agent pak píše výrazně lepší kód.",
+   "keyword": "tdd",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, v březnu napsal, že kvalitní TDD je nejspolehlivější způsob, jak zlepšit výstupy agenta. Skill tdd vede agenta smyčkou red–green: napřed test, který selže, pak jen tolik kódu, aby prošel, vždy po jednom tenkém řezu. V zářijovém podcastu dodal, že dnes chce od agenta hlavně důkaz, že kód funguje, ať už s TDD, nebo bez něj.",
+   "urls": [
+    "https://www.implicator.ai/matt-pocock-skills-repo-jumps-past-45k-stars-with-reusable-ai-instructions/",
+    "https://www.aihero.dev/5-agent-skills-i-use-every-day",
+    "https://newsletter.pragmaticengineer.com/p/ai-skills-with-matt-pocock"
+   ]
+  },
+  {
+   "order": 5,
+   "slug": "testy-chovani-ne-vnitrku",
+   "said": "GitHub, skill tdd v repu mattpocock/skills, soubory SKILL.md, tests.md a mocking.md",
+   "confidence": "high",
+   "title": "Test má hlídat chování, ne vnitřnosti. Mockujte jen hranice systému.",
+   "keyword": "testy",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, učí agenty psát testy přes veřejné rozhraní: test má popisovat, co kód dělá, a přežít refaktoring. Varuje před testy, které jen přepočítají výsledek stejně jako kód, a tak nikdy neselžou. Mockovat radí jen na hranicích systému, třeba platební API, e-mail nebo čas, nikdy vlastní moduly. Místa, kde se bude testovat, si má agent předem odsouhlasit s vámi.",
+   "urls": [
+    "https://dev.to/yimtheppariyapol/mattpocockskills-review-a-real-engineers-claude-160k-stars-4d3f",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/tests.md",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/mocking.md"
+   ]
+  },
+  {
+   "order": 6,
+   "slug": "bug-nejdriv-smycka",
+   "said": "GitHub, skill diagnosing-bugs v repu mattpocock/skills (poslední úprava 7. 10. 2026)",
+   "confidence": "high",
+   "title": "Chybu nehledejte čtením kódu. Nejdřív test, který ji spolehlivě chytí.",
+   "keyword": "debugging",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, staví ladění s agentem na jedné věci: rychlé a spolehlivé smyčce, která na konkrétní chybě zčervená. Může to být test, curl skript nebo skript v prohlížeči. Teprve pak má agent chybu zmenšit, navrhnout tři až pět ověřitelných hypotéz a měnit vždy jen jednu věc. Ladicí logy má označit unikátní značkou, aby je šlo na konci snadno smazat.",
+   "urls": [
+    "https://dev.to/yimtheppariyapol/mattpocockskills-review-a-real-engineers-claude-160k-stars-4d3f",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/diagnosing-bugs/SKILL.md"
+   ]
+  },
+  {
+   "order": 7,
+   "slug": "svisle-rezy-tracer-bullets",
+   "said": "AI Hero, „5 Agent Skills I Use Every Day“ (16. 3. 2026), skill to-tickets (dříve to-issues); podcast The Pragmatic Engineer (17. 9. 2026)",
+   "confidence": "high",
+   "title": "Nestavte aplikaci po vrstvách. Každý úkol má projít celou aplikací.",
+   "keyword": "tickety",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, rozděluje práci pro agenty na tenké svislé řezy, tzv. tracer bullets. Každý tiket prochází všemi vrstvami od databáze po UI a testy a dá se sám ověřit. U každého je uvedeno, co ho blokuje, takže víc agentů může pracovat souběžně. V podcastu vysvětlil, že agenti jinak staví po vrstvách a chyby pak vznikají mezi nimi.",
+   "urls": [
+    "https://newsletter.pragmaticengineer.com/p/ai-skills-with-matt-pocock",
+    "https://www.aihero.dev/5-agent-skills-i-use-every-day",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/to-tickets/SKILL.md"
+   ]
+  },
+  {
+   "order": 8,
+   "slug": "chytra-zona-kontextu",
+   "said": "YouTube, kanál AI Engineer, workshop „Full Walkthrough: Workflow for AI Coding“ na AI Engineer Europe (24. 4. 2026); podcast The Pragmatic Engineer (17. 9. 2026)",
+   "confidence": "high",
+   "title": "Plný kontext agenta otupí. Malé úkoly a čistý start drží agenta v kondici.",
+   "keyword": "kontext",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, mluví o chytré a hloupé zóně: čím víc je kontext agenta zaplněný, tím víc agent chybuje a zapomíná. Radí proto mít malé úkoly, krátký systémový prompt a drahé průzkumy posílat subagentům. Místo zhušťování dlouhé konverzace raději začne novou relaci.",
+   "urls": [
+    "https://newsletter.pragmaticengineer.com/p/ai-skills-with-matt-pocock",
+    "https://www.youtube.com/watch?v=-QFHIoCo-Ko",
+    "https://ai.engineer/talks/ai-coding-workflow"
+   ]
+  },
+  {
+   "order": 9,
+   "slug": "specifikace-z-rozhovoru",
+   "said": "AI Hero, „5 Agent Skills I Use Every Day“ (16. 3. 2026); skill to-spec (dříve to-prd) v repu mattpocock/skills",
+   "confidence": "high",
+   "title": "Po rozhovoru přijde specifikace. Agent ji sepíše sám, bez dalšího vyptávání.",
+   "keyword": "specifikace",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, po zpovídání nechá agenta skillem to-spec shrnout, na čem jste se dohodli, do specifikace v issue trackeru. Agent se už na nic neptá, jen to sepíše. Nejdůležitější částí jsou podle něj uživatelské příběhy. Do specifikace nepatří konkrétní cesty k souborům ani kód, protože rychle zastarají.",
+   "urls": [
+    "https://www.aihero.dev/5-agent-skills-i-use-every-day",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/to-spec/SKILL.md"
+   ]
+  },
+  {
+   "order": 10,
+   "slug": "spatny-kod-spatny-agent",
+   "said": "AI Hero, „How To Make Codebases AI Agents Love“ (26. 2. 2026) a „5 Agent Skills I Use Every Day“ (16. 3. 2026); skills improve-codebase-architecture a codebase-design",
+   "confidence": "high",
+   "title": "Ve špatném kódu píše AI špatně. Pomáhají hluboké moduly.",
+   "keyword": "architektura",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, tvrdí, že ve špatném kódu bude AI psát zase špatný kód. Doporučuje hluboké moduly: hodně funkcí za malým, srozumitelným rozhraním, které uzamknou testy. Rozhraní a architekturu má navrhovat člověk, vnitřek může psát agent. Skill improve-codebase-architecture hledá místa ke zlepšení a Pocock ho radí pouštět každých pár dní.",
+   "urls": [
+    "https://dev.to/yimtheppariyapol/mattpocockskills-review-a-real-engineers-claude-160k-stars-4d3f",
+    "https://www.aihero.dev/how-to-make-codebases-ai-agents-love",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/improve-codebase-architecture/SKILL.md"
+   ]
+  },
+  {
+   "order": 11,
+   "slug": "kod-pro-novacka-bez-pameti",
+   "said": "Podcast The Pragmatic Engineer, „AI Skills with Matt Pocock“ (17. 9. 2026), téma „Memento-driven development“",
+   "confidence": "medium",
+   "title": "Agent každý den začíná od nuly. Pište kód pro nováčka bez paměti.",
+   "keyword": "memento",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, v podcastu The Pragmatic Engineer mluvil o vývoji podle filmu Memento. Agent v každé relaci přichází do projektu jako nováček bez paměti a na špatný kód si nezvykne jako člověk. Kód je proto potřeba psát tak, aby se v něm rychle zorientoval někdo, kdo ho vidí poprvé. Podle Pococka to ostatně vždycky byl cíl dobrých základů softwarového inženýrství.",
+   "urls": [
+    "https://newsletter.pragmaticengineer.com/p/ai-skills-with-matt-pocock"
+   ]
+  },
+  {
+   "order": 12,
+   "slug": "vudci-slova-pro-agenty",
+   "said": "YouTube, kanál AI Engineer, přednáška „Building Great Agent Skills: The Missing Manual“ (29. 6. 2026); skill writing-for-agents",
+   "confidence": "high",
+   "title": "Jedno přesné slovo nahradí odstavec. Pocock tomu říká leading words.",
+   "keyword": "leadingwords",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, radí psát skills pomocí takzvaných leading words. Jsou to krátké pojmy, které model zná z tréninku, například svislý řez nebo mlha války. Když se v návodu opakují, agent se podle nich chová pokaždé stejně a ušetří se tokeny. Doporučuje kontrolovat v úvahách agenta, jestli pojem opravdu převzal. Klasické knihy o softwarovém inženýrství podle něj nabízejí další taková slova.",
+   "urls": [
+    "https://newsletter.pragmaticengineer.com/p/ai-skills-with-matt-pocock",
+    "https://www.youtube.com/watch?v=UNzCG3lw6O0",
+    "https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md"
+   ]
+  },
+  {
+   "order": 13,
+   "slug": "rikejte-co-delat",
+   "said": "GitHub, skill writing-for-agents v repu mattpocock/skills, sekce o negaci a prořezávání (poslední úprava 19. 8. 2026)",
+   "confidence": "high",
+   "title": "Zákaz agentovi věc připomene. Napište mu raději, co má udělat.",
+   "keyword": "negace",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, upozorňuje, že zákaz typu „nedělej X“ dostane X do kontextu a agent ho pak spíš udělá. Radí formulovat žádoucí chování pozitivně. Zákaz má smysl jen jako tvrdá pojistka, a i tehdy s ním napsat, co dělat místo toho. Dále radí mazat věty, které nemění chování, protože je model dodržuje i bez nich, a každou informaci držet jen na jednom místě.",
+   "urls": [
+    "https://www.besthub.dev/articles/can-ai-coding-run-wild-matt-pocock-s-21-skills-enforce-engineering-discipline-for-agents-824fd05e9c79",
+    "https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md"
+   ]
+  },
+  {
+   "order": 14,
+   "slug": "wayfinder-mlha-valky",
+   "said": "Latent Space, rozhovor Richarda MacManuse „The /wayfinder Skill: Navigating the Fog of War of Planning“ (20. 8. 2026); skill wayfinder",
+   "confidence": "high",
+   "title": "Velký projekt je zahalený mlhou. Wayfinder ji rozhání rozhodnutí po rozhodnutí.",
+   "keyword": "wayfinder",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, používá grill-me, když se celý plán vejde do jedné relace. Na velkou práci, kde ještě nevidíte cestu, napsal skill wayfinder. Ten vede v issue trackeru mapu a jednotlivé tikety, které jsou otázkami k rozhodnutí, ne úkoly k naprogramování. Každé rozhodnutí odkryje další kus mapy, podobně jako mlha války ve strategických hrách.",
+   "urls": [
+    "https://www.latent.space/p/wayfinder-skill",
+    "https://github.com/mattpocock/skills/blob/main/skills/engineering/wayfinder/SKILL.md"
+   ]
+  },
+  {
+   "order": 15,
+   "slug": "handoff-misto-compact",
+   "said": "YouTube, kanál Matt Pocock, video „/handoff is my new favourite skill“ (21. 5. 2026); skill handoff",
+   "confidence": "high",
+   "title": "Když práce odbočí, předejte ji. Handoff udrží hlavní relaci čistou.",
+   "keyword": "handoff",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, zhušťuje konverzaci příkazem compact jen tehdy, když chce pokračovat v jedné dlouhé relaci. Když chce část práce poslat jinam, použije skill handoff. Ten sepíše předávací dokument pro novou relaci nebo jiného agenta, odkáže na existující specifikace a commity místo jejich kopírování a začerní hesla a osobní údaje. Hlavní relace tak zůstane čistá.",
+   "urls": [
+    "https://www.youtube.com/watch?v=dtAJ2dOd3ko",
+    "https://github.com/mattpocock/skills/blob/main/skills/productivity/handoff/SKILL.md"
+   ]
+  },
+  {
+   "order": 16,
+   "slug": "pojistka-proti-git-push",
+   "said": "GitHub, skill git-guardrails-claude-code v repu mattpocock/skills (složka misc)",
+   "confidence": "high",
+   "title": "Agent nemusí smět všechno. Pojistka zablokuje nebezpečné příkazy gitu.",
+   "keyword": "guardrails",
+   "summary": "Matt Pocock, autor populární sbírky AI skills, sdílí skill, který do Claude Code přidá hook spouštěný před každým příkazem. Ten zablokuje nebezpečné příkazy gitu, třeba push, reset --hard, clean nebo mazání větví, dřív než se provedou. Agent se dozví, že na ně nemá oprávnění. Pojistku lze zapnout pro jeden projekt nebo pro všechny a seznam blokovaných příkazů si můžete upravit.",
+   "urls": [
+    "https://github.com/mattpocock/skills/blob/main/skills/misc/git-guardrails-claude-code/SKILL.md",
+    "https://github.com/mattpocock/skills/blob/main/skills/misc/git-guardrails-claude-code/scripts/block-dangerous-git.sh"
+   ]
+  }
+ ]
+}
