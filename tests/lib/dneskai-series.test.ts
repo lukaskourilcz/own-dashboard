@@ -13,12 +13,12 @@ describe('the DNESKAi series', () => {
     expect(dneskaiSeriesOf(null)).toBeNull();
   });
 
-  it('follows the weekly grid from the start date, at 12:30 and 17:00 only', () => {
+  it('follows the weekly grid from the start date, at 12:30 and 19:00 only', () => {
     expect(DNESKAI_SERIES_START).toBe('2026-11-16');
     const week = ['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22'];
     expect(week.map((date) => dneskaiSeriesSlot(date, '12:30'))).toEqual(['explainer', 'mosseri', 'explainer', 'mosseri', 'explainer', 'cherny', 'pocock']);
-    expect(week.map((date) => dneskaiSeriesSlot(date, '17:00'))).toEqual(['karpathy', 'cherny', 'mollick', 'pocock', 'karpathy', 'mollick', null]);
-    for (const date of week) for (const time of ['08:00', '20:00']) expect(dneskaiSeriesSlot(date, time)).toBeNull();
+    expect(week.map((date) => dneskaiSeriesSlot(date, '19:00'))).toEqual(['karpathy', 'cherny', 'mollick', 'pocock', 'karpathy', 'mollick', null]);
+    for (const date of week) for (const time of ['08:00', '21:00']) expect(dneskaiSeriesSlot(date, time)).toBeNull();
     expect(dneskaiSeriesSlot('2026-11-13', '12:30')).toBeNull(); // before the start
     expect(dneskaiSeriesSlot('16. 11.', '12:30')).toBeNull();
   });
@@ -30,22 +30,22 @@ describe('the DNESKAi series', () => {
   });
 
   it('seats series topics in their slots and ordinary topics in the rest, in slot order', () => {
-    const empty = [slot('2026-11-16', '08:00'), slot('2026-11-16', '12:30'), slot('2026-11-17', '12:30'), slot('2026-11-17', '20:00')];
+    const empty = [slot('2026-11-16', '08:00'), slot('2026-11-16', '12:30'), slot('2026-11-17', '12:30'), slot('2026-11-17', '21:00')];
     const pairs = dneskaiSeriesAssignment(empty, [topic('a'), topic('m1', 'mosseri'), topic('b'), topic('e1', 'explainer'), topic('m2', 'mosseri')], '2026-11-10');
     expect(pairs.map((pair) => [pair.slot.date, pair.slot.time, pair.topic.id])).toEqual([
       ['2026-11-16', '08:00', 'a'],
       ['2026-11-16', '12:30', 'e1'],
       ['2026-11-17', '12:30', 'm1'],
-      ['2026-11-17', '20:00', 'b'],
+      ['2026-11-17', '21:00', 'b'],
     ]);
   });
 
   it('keeps a series slot free for a later series topic, until it is about to be prepared', () => {
-    const empty = [slot('2026-11-16', '12:30'), slot('2026-11-18', '12:30'), slot('2026-11-18', '20:00')];
+    const empty = [slot('2026-11-16', '12:30'), slot('2026-11-18', '12:30'), slot('2026-11-18', '21:00')];
     const reserved = dneskaiSeriesAssignment(empty, [topic('a'), topic('b')], '2026-11-15');
-    expect(reserved.map((pair) => [pair.slot.date, pair.slot.time, pair.topic.id])).toEqual([['2026-11-18', '20:00', 'a']]);
+    expect(reserved.map((pair) => [pair.slot.date, pair.slot.time, pair.topic.id])).toEqual([['2026-11-18', '21:00', 'a']]);
     const released = dneskaiSeriesAssignment(empty, [topic('a'), topic('b')], '2026-11-16');
-    expect(released.map((pair) => [pair.slot.date, pair.slot.time, pair.topic.id])).toEqual([['2026-11-16', '12:30', 'a'], ['2026-11-18', '20:00', 'b']]);
+    expect(released.map((pair) => [pair.slot.date, pair.slot.time, pair.topic.id])).toEqual([['2026-11-16', '12:30', 'a'], ['2026-11-18', '21:00', 'b']]);
   });
 
   it('never puts a series topic outside its series slots', () => {

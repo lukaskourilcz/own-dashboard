@@ -2,9 +2,9 @@
 
 Owner decisions of 8 November 2026. Six recurring series run next to the news and the ordinary education
 topics. Each one posts at least twice a week, from 16 November 2026, on the two daytime slots that post on
-Instagram and Threads. 08:00 and the Threads post at 20:00 stay with the news every day, and so does Sunday 17:00.
+Instagram and Threads. 08:00 and the Threads post at 21:00 stay with the news every day, and so does Sunday 19:00.
 
-| Day | 12:30 | 17:00 |
+| Day | 12:30 | 19:00 |
 |---|---|---|
 | Monday | Slovník AI | Karpathy |
 | Tuesday | Mosseri | Cherny |
@@ -30,7 +30,7 @@ Instagram and Threads. 08:00 and the Threads post at 20:00 stay with the news ev
    Náměty, where it shows its series badge. Every tip is a paraphrase with the person named as the speaker. The URLs
    stay in the database; the post names no source (owner rule of 22 October 2026, confirmed for the series).
 2. **Plan.** `fillPlan` (`dneskai-plan.ts`) seats approved series topics in their series' slots in `seriesOrder`, even
-   at 17:00, which is otherwise a news time. A series slot without a topic stays free until the plan prepares that day
+   at 19:00, which is otherwise a news time. A series slot without a topic stays free until the plan prepares that day
    (today and two days ahead), then an ordinary topic takes it. The night's news never takes a series slot.
 3. **Sources and pictures.** The topic bridge reads every URL through Jina Reader. The first page, led by the topic's
    own summary, is the brief's lead; the others are further members, so their pictures are collected too. An
