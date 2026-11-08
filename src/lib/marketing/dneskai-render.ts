@@ -7,7 +7,7 @@ import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-la
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { DNESKAI_CLOSING_FILE, DNESKAI_CLOSING_SHA256 } from "./dneskai-closing";
+import { DNESKAI_CLOSING_CARD_FILE, DNESKAI_CLOSING_CARD_SHA256, DNESKAI_CLOSING_CARD_TEMPLATE, DNESKAI_CLOSING_FILE, DNESKAI_CLOSING_SHA256, isDneskaiClosingSlide } from "./dneskai-closing";
 
 /** The closing slide's picture, read from the app's files and checked against its pinned hash. */
 let closingBytes: Promise<Buffer> | null = null;
@@ -17,6 +17,16 @@ export function dneskaiClosingBytes(): Promise<Buffer> {
     return bytes;
   }).catch((error: unknown) => { closingBytes = null; throw error; });
   return closingBytes;
+}
+
+/** The finished closing card as a PNG, read once and checked against its pinned hash. */
+let closingCard: Promise<Buffer> | null = null;
+export function dneskaiClosingCardBytes(): Promise<Buffer> {
+  closingCard ??= readFile(path.join(process.cwd(), ...DNESKAI_CLOSING_CARD_FILE)).then((bytes) => {
+    if (createHash("sha256").update(bytes).digest("hex") !== DNESKAI_CLOSING_CARD_SHA256) throw new Error("closing-card-changed");
+    return bytes;
+  }).catch((error: unknown) => { closingCard = null; throw error; });
+  return closingCard;
 }
 
 /**
@@ -237,6 +247,8 @@ export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encode
     ...(slide.series?.trim() ? { series: slide.series.trim() } : {}),
     // Keyed only when the owner placed words by hand, so every other key stays what it was.
     ...(slide.layout && Object.keys(slide.layout).length ? { layout: slide.layout } : {}),
+    // The closing slide is the finished card, so a new card is a new key.
+    ...(isDneskaiClosingSlide(slide) ? { closingCard: DNESKAI_CLOSING_CARD_SHA256 } : {}),
   }));
 }
 
@@ -381,6 +393,14 @@ function storageStage<T>(run: () => Promise<T>): Promise<T> {
 
 type RenderedSlide = { png: Buffer; pngHash: string; svgHash: string; template: { id: string; version: string }; problems: DneskaiSlideRenderProblem[] };
 
+/** The closing slide drawn as the finished card, whatever the deck's kit (owner, 8 November 2026). */
+async function closingCardRender(): Promise<RenderedSlide> {
+  let png: Buffer;
+  try { png = await dneskaiClosingCardBytes(); }
+  catch { throw new DneskaiRenderError("render-rasterization-failed"); }
+  return { png, pngHash: sha256(png), svgHash: "", template: { ...DNESKAI_CLOSING_CARD_TEMPLATE }, problems: [] };
+}
+
 /**
  * The `RenderDneskaiDeck` port (dneskai-ports.ts). `storage` returns the owner's slide store; the
  * worker runtime passes `createDneskaiSlideStorage`.
@@ -410,6 +430,7 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
       problems.push(...ownProblems[index]!);
       const hit = cached[index];
       if (hit) { problems.push(...cachedProblems(index, hit)); rendered.push(null); continue; }
+      if (isDneskaiClosingSlide(slide)) { rendered.push(refusedByText ? null : await closingCardRender()); continue; }
       const loaded = await slideImages(slide, index, load, input.signal);
       abortCheck();
       problems.push(...loaded.problems);
@@ -508,6 +529,12 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   if (hit && !own.length) {
     previewCache.delete(renderKey); previewCache.set(renderKey, hit);
     return { status: "rendered", image: hit.image, renderKey, problems: [], cached: true, blocks: hit.blocks };
+  }
+  if (isDneskaiClosingSlide(slide) && !own.length) {
+    const card = await closingCardRender();
+    const sharp = await sharpModule();
+    const image = await sharp(card.png).resize(DNESKAI_PREVIEW_IMAGE.width, DNESKAI_PREVIEW_IMAGE.height, { fit: "fill" }).webp({ quality: DNESKAI_PREVIEW_IMAGE.quality }).toBuffer();
+    return { status: "rendered", image, renderKey, problems: [], cached: false, blocks: [] };
   }
   const loaded = await slideImages(slide, index, mediaLoader(loadMedia), options.signal);
   abortCheck();
