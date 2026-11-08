@@ -252,3 +252,16 @@ The repository cannot safely configure external account secrets, OAuth consent s
 Career source research, operating limits and optional Apify setup: [Career workspace](docs/career-workspace.md).
 
 Career tracking and integration decisions: [Career pipeline](docs/career-pipeline.md).
+
+## Backlog for agents
+
+The Backlog section (`backlog_items` in the OwnDashboard Supabase project) is shared by every agent session on the
+owner's laptop. Statuses: `open`, `ready_for_agent`, `in_progress`, `done`, `dropped`.
+
+- **Add a task:** `insert into public.backlog_items(project, title, description, source, external_ref) values (...)`,
+  with `project` one of `heyDarlink`, `DNESKAi`, `devShark`, `personal` and `source` like `claude:<session>`.
+- **Pick up handed-over work:** the owner writes `note` and moves the item to `ready_for_agent` ("Save and hand to an
+  agent"). A session reads them with `select id, project, title, description, note, external_ref from
+  public.backlog_items where status = 'ready_for_agent' order by created_at`, sets `status = 'in_progress'` before it
+  starts, and `status = 'done'` when finished (`dropped` if it will not be done). Put the outcome in `note` when the
+  owner should read it.

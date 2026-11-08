@@ -84,6 +84,14 @@ for (const lang of ["en", "cs"] as const) {
     await page.getByRole("option", { name: lang === "cs" ? "Všechny stavy" : "All statuses", exact: true }).click();
     await expect(list.getByRole("listitem")).toHaveCount(4);
     await expect(panel.getByRole("link", { name: /LDEV-1/ })).toHaveAttribute("href", "https://linka.atlassian.net/browse/LDEV-1");
+    await expect(panel.getByTestId("backlog-note")).toContainText("Moved the message under the search field.");
+    // A note and the hand-over to an agent in one action.
+    const item = list.getByRole("listitem").filter({ hasText: "Shorter closing slide on Threads" });
+    await item.getByRole("button", { name: lang === "cs" ? "Přidat poznámku" : "Add a note" }).click();
+    await item.getByRole("textbox", { name: lang === "cs" ? "Poznámka k úkolu Shorter closing slide on Threads" : "Note for Shorter closing slide on Threads" }).fill("Keep the line short.\nTwo rows at most.");
+    await item.getByRole("button", { name: lang === "cs" ? "Uložit a předat agentovi" : "Save and hand to an agent" }).click();
+    await expect(item.getByTestId("backlog-note")).toContainText("Two rows at most.");
+    await expect(item.getByRole("combobox")).toContainText(lang === "cs" ? "Připraven pro agenta" : "Ready for an agent");
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     const scan = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="backlog-panel"]').withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
     expect(scan.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`)).toEqual([]);
