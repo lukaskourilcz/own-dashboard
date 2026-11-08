@@ -976,3 +976,13 @@ concepts by time. The `devshark-concepts` step sums the last 24 hours before eac
 `generated`. The function is rewritten in place, so the rest of it stays as it was. The migration adds `vision_score`, `vision_flags`,
 `focal_x`, `focal_y` and `ranked_at` to the links, and `ranked_at` and `rank_cost_usd` to `marketing_media_collections`
 for the daily vision ceiling. It is replayed in PGlite (`tests/lib/marketing-dneskai-media.test.ts`).
+
+## Shared backlog, 8 November 2026
+
+`20261108200000_backlog_items.sql` creates `backlog_items`: one task per row with `project` (heyDarlink, DNESKAi,
+devShark, personal), `title`, `description`, `status` (open, in_progress, done, dropped), `source`, `external_ref` and
+the two timestamps. The global agent instructions insert into it as postgres through the Supabase MCP with only
+`project`, `title`, `description`, `source` and `external_ref`, so those columns are a fixed contract. The table also
+has `user_id` for own-only RLS: a trigger fills it from the session, or with the dashboard's single owner when there is
+none, and keeps it and `created_at` on every update. The Backlog section reads and changes rows through the owner's
+session. Replayed in PGlite (`tests/lib/backlog-database.test.ts`).
