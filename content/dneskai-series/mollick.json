@@ -1,0 +1,226 @@
+{
+ "series": "mollick",
+ "note": "Owner decision 8 Nov 2026: \"Tipy profesora AI Ethana Mollicka #N\", twice a week (Wed 17:00, Sat 17:00). Mollick is named as the speaker; URLs stay in the database only. Paraphrase only. The first URL is an editorial article.",
+ "topics": [
+  {
+   "order": 1,
+   "slug": "pozvete-ai-ke-vsemu",
+   "said": "18. 2. 2026, One Useful Thing: A Guide to Which AI to Use in the Agentic Era; dříve webinář Knowledge at Wharton (2. 7. 2024) a CNBC Workforce Executive Council Summit (7. 10. 2025)",
+   "confidence": "high",
+   "title": "Pozvěte AI ke všemu. Jen tak zjistíte, v čem vám opravdu pomůže.",
+   "keyword": "pozvani",
+   "summary": "Ethan Mollick, profesor z Wharton School, radí zkoušet AI na všem, co v práci nebo ve škole legálně děláte, i na úkolech, u kterých nečekáte, že je zvládne. Podle něj jen tak zjistíte, v čem je dobrá a kde selhává. Doporučuje jí nosit skutečnou práci a reálné dokumenty, ne jen zkušební dotazy.",
+   "urls": [
+    "https://knowledge.wharton.upenn.edu/article/co-intelligence-how-to-live-and-work-with-ai/",
+    "https://www.oneusefulthing.org/p/a-guide-to-which-ai-to-use-in-the",
+    "https://www.cnbc.com/2025/10/07/generative-ai-knowledge-learning-jobs-education-skills-wharton-ethan-mollick.html"
+   ]
+  },
+  {
+   "order": 2,
+   "slug": "vyberte-si-silny-model",
+   "said": "18. 2. 2026 a 23. 7. 2026, One Useful Thing (průvodci výběrem AI); Fortune 15. 7. 2025",
+   "confidence": "high",
+   "title": "Výchozí model nestačí. Pro skutečnou práci si ručně vyberte ten nejschopnější.",
+   "keyword": "model",
+   "summary": "Ethan Mollick, profesor z Wharton School, doporučuje vybrat si jednoho z hlavních asistentů, zaplatit zhruba 20 dolarů měsíčně a ručně zvolit pokročilý model. Bezplatné výchozí modely jsou podle něj laděné na rychlé povídání, ne na přesnost. Na běžné dotazy stačí, na skutečnou práci a těžké problémy ale sáhněte po nejsilnějším modelu s delším přemýšlením.",
+   "urls": [
+    "https://fortune.com/2025/07/15/how-to-decide-between-ai-tools-best-for-business-needs-with-examples-chatgpt-gemini-claude-copilot/",
+    "https://www.oneusefulthing.org/p/a-guide-to-which-ai-to-use-in-the",
+    "https://www.oneusefulthing.org/p/an-opinionated-guide-to-which-ai-b22"
+   ]
+  },
+  {
+   "order": 3,
+   "slug": "kontext-misto-formulek",
+   "said": "7. 10. 2025, CNBC Workforce Executive Council Summit; One Useful Thing 24. 11. 2024: Getting started with AI: Good enough prompting",
+   "confidence": "high",
+   "title": "Na kouzelných formulkách nezáleží. AI potřebuje hlavně kontext jako nový kolega.",
+   "keyword": "kontext",
+   "summary": "Ethan Mollick, profesor z Wharton School, tvrdí, že hledání dokonalé formulace zadání ztratilo smysl. Mnohem víc záleží na tom, abyste AI dali stejné informace jako člověku, který by úkol řešil: pro koho výstup je, k čemu slouží, podklady a dokumenty. Radí jednat s ní jako s novým kolegou, který o vaší práci nic neví.",
+   "urls": [
+    "https://www.cnbc.com/2025/10/07/generative-ai-knowledge-learning-jobs-education-skills-wharton-ethan-mollick.html",
+    "https://www.oneusefulthing.org/p/getting-started-with-ai-good-enough"
+   ]
+  },
+  {
+   "order": 4,
+   "slug": "ptejte-se-dal-a-chtejte-varianty",
+   "said": "25. 5. 2023, CNBC; One Useful Thing 24. 11. 2024: Good enough prompting",
+   "confidence": "high",
+   "title": "Jeden dotaz nestačí. Pokračujte v rozhovoru a chtějte víc variant najednou.",
+   "keyword": "varianty",
+   "summary": "Ethan Mollick, profesor z Wharton School, upozorňuje, že kdo se zeptá jednou a skončí, dostane obecnou odpověď. Většina užitku podle něj plyne z rozhovoru: dávejte zpětnou vazbu a nechte AI doptat se na nejasnosti. Protože je trpělivá, chtějte po ní hodně možností najednou a pak z nich vybírejte, kombinujte je nebo je nechte rozvinout.",
+   "urls": [
+    "https://www.cnbc.com/2023/05/25/how-to-use-chatgpt-bard-other-chatbots.html",
+    "https://www.oneusefulthing.org/p/getting-started-with-ai-good-enough"
+   ]
+  },
+  {
+   "order": 5,
+   "slug": "role-experta-nepomaha",
+   "said": "5. 12. 2025, studie Prompting Science Report 4: Playing Pretend; Knowledge at Wharton 28. 4. 2026",
+   "confidence": "high",
+   "title": "Role experta je zbytečná. Na přesnost odpovědí AI podle výzkumu nemá vliv.",
+   "keyword": "persona",
+   "summary": "Ethan Mollick, profesor z Wharton School, se svým týmem otestoval, zda pomáhá napsat AI „jsi expert na fyziku“. Šest modelů s rolí experta nebylo na těžkých otázkách z vědy, techniky a práva přesnějších a role laika nebo batolete přesnost často zhoršila. Autoři radí soustředit se na jasné zadání, dodané informace a kontrolu výsledků. Role má smysl leda pro tón a styl.",
+   "urls": [
+    "https://knowledge.wharton.upenn.edu/article/why-you-shouldnt-ask-chatbots-to-act-like-an-expert/",
+    "https://arxiv.org/abs/2512.05858"
+   ]
+  },
+  {
+   "order": 6,
+   "slug": "zubata-hranice-zkousejte-sami",
+   "said": "16. 9. 2023, One Useful Thing: Centaurs and Cyborgs on the Jagged Frontier; 30. 6. 2026, The twilight of the chatbots; Fortune 25. 5. 2026",
+   "confidence": "high",
+   "title": "Schopnosti AI jsou zubaté. Kde vám pomůže, zjistíte jen zkoušením na své práci.",
+   "keyword": "hranice",
+   "summary": "Ethan Mollick, profesor z Wharton School, popisuje schopnosti AI jako zubatou hranici: ze dvou zdánlivě stejně těžkých úkolů jeden zvládne skvěle a druhý vůbec, nebo nenápadně špatně. Žebříčkům modelů proto nevěřte a vyzkoušejte je na úkolech, na kterých vám záleží. Hotový návod podle něj nemá nikdo, takže vlastní zkušenost je výhoda.",
+   "urls": [
+    "https://fortune.com/2026/05/25/nobody-knows-anything-this-time-is-different-ethan-mollick-no-playbook-ai/",
+    "https://www.oneusefulthing.org/p/centaurs-and-cyborgs-on-the-jagged",
+    "https://www.oneusefulthing.org/p/the-twilight-of-the-chatbots"
+   ]
+  },
+  {
+   "order": 7,
+   "slug": "neusnete-za-volantem",
+   "said": "16. 9. 2023, One Useful Thing (studie „Falling Asleep at the Wheel“); 26. 5. 2026, Choosing to Stay Human; CNBC 25. 7. 2025",
+   "confidence": "high",
+   "title": "Neusněte za volantem. Úsudek nepřenechávejte AI, ani když je velmi dobrá.",
+   "keyword": "pozornost",
+   "summary": "Ethan Mollick, profesor z Wharton School, varuje před usnutím za volantem: náboráři s velmi kvalitní AI polevili v pozornosti, ztráceli vlastní úsudek a rozhodovali hůř. Lidé podle něj často přebírají odpověď, která zní sebejistě, i když je chybná. Radí zůstat aktivní, odpovědi ověřovat a vědomě volit, co AI svěříte a co si necháte.",
+   "urls": [
+    "https://www.cnbc.com/2025/07/25/ai-probably-wont-replace-you-just-yet-wharton-professor-says.html",
+    "https://www.oneusefulthing.org/p/centaurs-and-cyborgs-on-the-jagged",
+    "https://www.oneusefulthing.org/p/choosing-to-stay-human"
+   ]
+  },
+  {
+   "order": 8,
+   "slug": "agent-potrebuje-sefa",
+   "said": "27. 1. 2026, One Useful Thing: Management as AI Superpower; 30. 6. 2026, The twilight of the chatbots; keynote Workday Rising 14. 10. 2026",
+   "confidence": "high",
+   "title": "Agent potřebuje šéfa. Řekněte mu cíl, mantinely a jak vypadá hotová práce.",
+   "keyword": "delegovani",
+   "summary": "Ethan Mollick, profesor z Wharton School, říká, že práce s AI agenty je hlavně manažerská dovednost. Dobré zadání vysvětlí cíl a proč na něm záleží, vymezí pravomoci, popíše, jak vypadá hotová práce a co má agent před odevzdáním zkontrolovat. Pak výsledek projděte a případně ho nechte předělat. Vzácné je podle něj hlavně vědět, o co požádat.",
+   "urls": [
+    "https://fortune.com/2026/08/04/your-ai-agent-needs-a-boss-is-a-teammate/",
+    "https://www.oneusefulthing.org/p/management-as-ai-superpower",
+    "https://itwire.com/business-it-news/data/workday-rising-2026-community-day-bmo-intermountain-health-and-ethan-mollick-on-what-it-really-takes-to-put-ai-agents-to-work"
+   ]
+  },
+  {
+   "order": 9,
+   "slug": "agenti-se-schvalovanim",
+   "said": "23. 7. 2026, One Useful Thing: An opinionated guide to which AI to use to do stuff; 31. 8. 2026, Agency and Agents",
+   "confidence": "high",
+   "title": "Agentům nedávejte volnou ruku. Důležité kroky si nechte předem schvalovat.",
+   "keyword": "schvalovani",
+   "summary": "Ethan Mollick, profesor z Wharton School, radí připojovat k agentům jen aplikace, se kterými jste v pohodě, a nechat zapnuté schvalování, dokud systému nedůvěřujete a neznáte jeho chyby. Omezte, k čemu má agent přístup, protože skryté pokyny v textu, který čte, jsou dosud nevyřešené riziko. Utrácení peněz, kontakt s cizími lidmi a citlivá data mají podle něj schvalovat lidé.",
+   "urls": [
+    "https://fortune.com/2026/01/31/ai-agent-moltbot-clawdbot-openclaw-data-privacy-security-nightmare-moltbook-social-network/",
+    "https://www.oneusefulthing.org/p/an-opinionated-guide-to-which-ai-b22",
+    "https://www.oneusefulthing.org/p/agency-and-agents"
+   ]
+  },
+  {
+   "order": 10,
+   "slug": "ai-jako-ucitel-ne-tahak",
+   "said": "25. 7. 2025, WBUR On Point; 7. 7. 2025, One Useful Thing: Against \"Brain Damage\"; 26. 5. 2026, Choosing to Stay Human",
+   "confidence": "high",
+   "title": "AI jako učitel, ne tahák. Kdo jen přebírá odpovědi, nic se nenaučí.",
+   "keyword": "uceni",
+   "summary": "Ethan Mollick, profesor z Wharton School, upozorňuje, že kdo AI používá jen k získání odpovědí, nic se nenaučí, přestože má pocit, že ano. Učení vyžaduje námahu. Radí zapnout studijní režimy, třeba Guided Learning v Gemini, příkaz /learn v ChatGPT nebo styl learning v Claude, a chtít po AI, aby vás k řešení vedla, místo aby ho dala hotové.",
+   "urls": [
+    "https://www.wbur.org/onpoint/2025/07/25/ethan-mollick-ai",
+    "https://www.oneusefulthing.org/p/against-brain-damage",
+    "https://www.oneusefulthing.org/p/choosing-to-stay-human"
+   ]
+  },
+  {
+   "order": 11,
+   "slug": "nejdriv-piste-sami",
+   "said": "25. 7. 2025, WBUR On Point; 7. 7. 2025, One Useful Thing: Against \"Brain Damage\"; výňatek z knihy Co-Intelligence ve Fortune 18. 4. 2024",
+   "confidence": "high",
+   "title": "Nejdřív pište sami. AI přizvěte až jako editora hotového konceptu.",
+   "keyword": "psani",
+   "summary": "Ethan Mollick, profesor z Wharton School, píše každý první koncept sám, bez osnovy nebo návrhu od AI, protože psaní je přemýšlení. Kdo začne s textem od AI, drží se podle něj jejího prvního nápadu, i když ho přepíše. Teprve s hotovým konceptem chce, aby se AI chovala jako editor nebo čtenář, ukázala nejasná místa a navrhla alternativy.",
+   "urls": [
+    "https://www.wbur.org/onpoint/2025/07/25/ethan-mollick-ai",
+    "https://fortune.com/2024/04/18/ai-button-ethan-mollick-co-intelligence-book-excerpt/",
+    "https://www.oneusefulthing.org/p/against-brain-damage"
+   ]
+  },
+  {
+   "order": 12,
+   "slug": "co-muzete-prestat-delat",
+   "said": "3. 11. 2026, rozhovor pro Fortune; keynote Workday Rising, Las Vegas 14. 10. 2026; HBR IdeaCast 8. 10. 2026",
+   "confidence": "high",
+   "title": "Méně práce, ne víc. Zjistěte, co díky AI můžete úplně přestat dělat.",
+   "keyword": "rutina",
+   "summary": "Ethan Mollick, profesor z Wharton School, se firem ptá, co díky AI přestaly dělat, a téměř všechny podle něj neobstály. Radí hledat drobné rutiny, které ztratily smysl, i větší projekty, které AI udělala zbytečnými. Druhá otázka zní, jaký dosud nemožný úkol s AI zkoušíte. Pokud se nezmění postupy, úspora času se podle něj jen rozplyne ve větším množství výstupů.",
+   "urls": [
+    "https://fortune.com/2026/11/03/freshworks-1-billion-arr-dennis-woodside-ai-what-companies-stop-doing/",
+    "https://itwire.com/business-it-news/data/workday-rising-2026-community-day-bmo-intermountain-health-and-ethan-mollick-on-what-it-really-takes-to-put-ai-agents-to-work",
+    "https://hbr.org/podcast/2026/10/how-ai-is-changing-strategy-rethinking-what-your-business-is-designed-to-do"
+   ]
+  },
+  {
+   "order": 13,
+   "slug": "odbornost-jako-pojistka",
+   "said": "18. 9. 2026, One Useful Thing: The Overhang; Business Insider 8. 11. 2025; výrok pro WSJ citovaný ve Fortune 17. 3. 2026",
+   "confidence": "high",
+   "title": "Odbornost je pojistka. Kdo obor zná do hloubky, vytěží z AI víc.",
+   "keyword": "odbornost",
+   "summary": "Ethan Mollick, profesor z Wharton School, považuje za nejcennější lidské přednosti hlubokou znalost oboru, široký rozhled, vkus a vlastní iniciativu. Odborník pozná chyby AI a dostane z ní lepší výsledek. Když je výstup levný, rozhoduje schopnost vybrat, co nechat a co zahodit. Mladým radí stavět na širokém i hlubokém vzdělání, ne na dovednostech pro jeden nástroj.",
+   "urls": [
+    "https://fortune.com/2026/03/17/liberal-arts-education-future-of-work-age-of-ai-gen-z-hiring-microsoft-chief-scientist/",
+    "https://www.oneusefulthing.org/p/the-overhang",
+    "https://www.yahoo.com/news/articles/wharton-ai-expert-says-young-101701524.html"
+   ]
+  },
+  {
+   "order": 14,
+   "slug": "ai-jako-druhy-nazor",
+   "said": "25. 11. 2025, Knowledge at Wharton, podcast Ripple Effect; 23. 7. 2026, One Useful Thing: An opinionated guide to which AI to use to do stuff; HBR IdeaCast 8. 10. 2026",
+   "confidence": "high",
+   "title": "AI jako druhý názor. U zdraví a práva nemá být první instancí.",
+   "keyword": "nazor",
+   "summary": "Ethan Mollick, profesor z Wharton School, doporučuje brát AI u zdravotních otázek jako druhý názor, ne jako první. Na důležitá témata, třeba lékařská nebo právní, radí použít nejpokročilejší dostupný model s vysokou úrovní přemýšlení, protože bezplatné výchozí modely stačí na recepty a jednoduché dotazy. Odborníky ale AI podle něj nenahrazuje, i nadále je konzultujte.",
+   "urls": [
+    "https://knowledge.wharton.upenn.edu/podcast/ripple-effect/how-ais-persuasion-style-mirrors-humans-ethan-mollick/",
+    "https://www.oneusefulthing.org/p/an-opinionated-guide-to-which-ai-b22",
+    "https://hbr.org/podcast/2026/10/how-ai-is-changing-strategy-rethinking-what-your-business-is-designed-to-do"
+   ]
+  },
+  {
+   "order": 15,
+   "slug": "nepouzivejte-ai-potaji",
+   "said": "22. 5. 2025, One Useful Thing: Making AI Work: Leadership, Lab, and Crowd; Fortune 18. 6. 2023",
+   "confidence": "high",
+   "title": "Nepoužívejte AI potají. Sdílejte s kolegy, co vám v práci funguje.",
+   "keyword": "sdileni",
+   "summary": "Ethan Mollick, profesor z Wharton School, upozorňuje, že mnoho lidí používá AI v práci tajně, protože se bojí trestu, menšího respektu nebo propouštění. Firmám radí vymezit, kde se smí experimentovat, slíbit, že přiznané úspory nepovedou k propouštění, a dát zkušenějším prostor sdílet postupy s ostatními. Šéfové mají AI sami viditelně používat.",
+   "urls": [
+    "https://fortune.com/2023/06/18/wharton-professor-employees-hiding-ai-productivity-gains-from-employers/",
+    "https://www.oneusefulthing.org/p/making-ai-work-leadership-lab-and"
+   ]
+  },
+  {
+   "order": 16,
+   "slug": "zkuste-to-znovu",
+   "said": "19. 12. 2025, Knowledge at Wharton (předpovědi na rok 2026); 30. 6. 2026, One Useful Thing: The twilight of the chatbots; 18. 9. 2026, The Overhang",
+   "confidence": "high",
+   "title": "AI se zlepšuje rychleji než naše návyky. Co dřív nešlo, zkuste znovu.",
+   "keyword": "pokrok",
+   "summary": "Ethan Mollick, profesor z Wharton School, nevidí žádné zpomalení vývoje AI a měřítka jejích schopností podle něj rostou rychleji než exponenciálně. Postup, který jste si nastavili před pár měsíci, už nemusí být nejlepší. Mezi tím, co modely umí, a tím, jak je lidé používají, je velká mezera. Radí proto aktivně zkoušet, co AI ve vašem oboru zvládne, a nečekat, až vám to někdo řekne.",
+   "urls": [
+    "https://knowledge.wharton.upenn.edu/podcast/this-week-in-business/where-artificial-intelligence-stands-heading-into-2026/",
+    "https://www.oneusefulthing.org/p/the-twilight-of-the-chatbots",
+    "https://www.oneusefulthing.org/p/the-overhang"
+   ]
+  }
+ ]
+}
