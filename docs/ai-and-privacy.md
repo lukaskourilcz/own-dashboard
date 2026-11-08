@@ -58,3 +58,12 @@ Private `marketing-assets` storage contains immutable owner-prefixed JPEGs. Seve
 With `DEVSHARK_GENERATION_ENABLED`, the `devshark-concepts` step sends Claude a fixed web-development topic and the
 titles of the last 40 devShark concepts, nothing else, and stores the answer as a concept the owner reviews in the
 studio. Every call counts toward the daily devShark ceiling before it starts.
+
+## HeyDarlink ambient photos (8 November 2026)
+
+Part of the marketing exception, behind `HEYDARLINK_AMBIENT_ENABLED` and `MARKETING_AI_CONSENT`. fal receives only a
+fixed shot prompt from `src/lib/heydarlink/ambient-shots.ts` and, for landmark shots, a Pexels photo as an
+image-to-image seed. Claude receives only the generated frame (resized to 1024 px) and the same prompt, and answers
+whether it shows a person, body part, text, logo or NSFW content. No OwnDashboard data, owner data or photo of a
+person is sent to either. Accepted frames go to HeyDarlink's photo library with their prompt and cost
+(`docs/heydarlink-ambient.md`).

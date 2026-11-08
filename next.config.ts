@@ -75,6 +75,8 @@ const nextConfig: NextConfig = {
     // The devShark studio preview (7 November 2026) draws with the pinned fonts and brand SVGs.
     "/api/marketing/devshark/preview": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg"],
     "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
+    // HeyDarlink ambient batches load the grading code, which needs sharp.
+    "/api/heydarlink/**": [sharpLibvips],
     // The reel renderer (#163) spawns the ffmpeg-static executable, which no import reaches.
     "/api/marketing/dneskai/render-reel": ["./node_modules/ffmpeg-static/ffmpeg"],
     // The audio library (#164) measures each upload with the same binary.

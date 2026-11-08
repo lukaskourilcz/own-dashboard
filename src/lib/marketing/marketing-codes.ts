@@ -67,6 +67,8 @@ const CODES = {
   'restyle-brief-missing': ['investigate', 'The research brief of this post is gone, so it cannot be written again.', 'Podklad tohoto příspěvku už neexistuje, takže ho nejde přepsat.'],
   'restyle-source-missing': ['investigate', 'The source of this post could not be read again.', 'Zdroj tohoto příspěvku se nepodařilo znovu načíst.'],
   'restyle-job-missing': ['investigate', 'The first generation of this post is not on record, so it cannot be repeated.', 'První vygenerování tohoto příspěvku není zaznamenané, takže ho nejde zopakovat.'],
+  'plan-photos-short': ['none', 'The post had fewer than three photo slides even after it was written again, so the plan dropped it and fills the slot with another post.', 'Příspěvek měl i po přepsání méně než tři slidy s fotkou, plán ho vyřadil a slot obsadí jiným příspěvkem.'],
+  'plan-photos-restyle': ['none', 'The post had fewer than three photo slides, so it is being written again with more pictures.', 'Příspěvek měl méně než tři slidy s fotkou, proto se přepisuje s více fotkami.'],
   'plan-post-superseded': ['edit', 'A newer source replaced this post, so the plan cannot send it.', 'Novější zdroj tento příspěvek nahradil, takže ho plán nemůže odeslat.'],
   'publish-failed': ['investigate', 'Publishing this post failed.', 'Publikování tohoto příspěvku selhalo.'],
   'threads-account-missing': ['account', 'The Threads profile is not connected yet; the Threads post waits.', 'Profil na Threads ještě není napojený; příspěvek pro Threads čeká.'],

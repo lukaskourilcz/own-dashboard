@@ -7,9 +7,9 @@ import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
 import { DevsharkDeckSchema } from './devshark-deck';
-import { renderDevsharkDeck } from './devshark-render';
+import { renderDevsharkDeck, renderDevsharkStory } from './devshark-render';
 import { devsharkDraftPacket } from './devshark-source';
-import { STORY_HEIGHT, STORY_WIDTH, composeStoryFromCover, storyRenderKey } from './story-image';
+import { STORY_HEIGHT, STORY_WIDTH, storyRenderKey } from './story-image';
 import { createDneskaiSlideStorage } from './worker-runtime';
 import { ingestSource, saveRevision } from './store';
 
@@ -110,9 +110,9 @@ export async function prepareDevsharkPosts(db: Database, owner: string, project:
         }
         if (want.story) {
           const cover = slides[0]!;
-          const renderKey = storyRenderKey(cover.sha256);
+          const renderKey = storyRenderKey(cover.sha256, 'devshark-story/2');
           let story = await storage.find(renderKey);
-          if (!story) { const image = await composeStoryFromCover(cover.jpeg); story = await storage.put({ renderKey, bytes: image.jpeg, sha256: image.sha256, metadata: { kind: 'devshark-story', draftId: draft.id } }); }
+          if (!story) { const image = await renderDevsharkStory(draft.deck); story = await storage.put({ renderKey, bytes: image.jpeg, sha256: image.sha256, metadata: { kind: 'devshark-story', draftId: draft.id } }); }
           const saved = await saveRevision(db, owner, parseContentRevision({ ...common, caption: `Story: ${draft.title}`.slice(0, 2200), format: 'story',
             assets: [{ url: story.url, sha256: story.sha256, mimeType: 'image/jpeg', width: STORY_WIDTH, height: STORY_HEIGHT, alt: cover.alt || draft.title }], account: { id: instagram!.remote_account_id, platform: 'instagram', handle: instagram!.handle },
             scheduledAt: new Date(at + DEVSHARK_STORY_DELAY_MS).toISOString() }), {});

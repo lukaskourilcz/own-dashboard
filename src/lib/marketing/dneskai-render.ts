@@ -59,7 +59,8 @@ export const DNESKAI_STUDIO = {
   treeSha256: "fdacdb3ff9f6b909b6ca3712279efb63c6b3390385aaa1c7e17532dab688faa1",
 } as const;
 /** OwnDashboard's own rules on top of the studio's: the clip, glyph and placement gates and the JPEG below. Bump on any change. */
-export const DNESKAI_RENDER_POLICY = "dneskai-render/2";
+// 3 (8 November 2026): the icy blue #6ec1ff and the new logo; slides drawn before are drawn again.
+export const DNESKAI_RENDER_POLICY = "dneskai-render/3";
 export const DNESKAI_RENDERER_VERSION = `carousel-studio/${DNESKAI_STUDIO.version}+${DNESKAI_STUDIO.commit.slice(0, 7)}`;
 /** Instagram portrait: exactly 1080 × 1350, baseline JPEG at quality 92 without chroma subsampling, sRGB, at most 8 MiB. */
 export const DNESKAI_SLIDE_JPEG = { width: 1080, height: 1350, quality: 92, chromaSubsampling: "4:4:4", maxBytes: 8 * 1024 * 1024 } as const;

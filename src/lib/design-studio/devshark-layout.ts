@@ -163,13 +163,14 @@ export function devsharkAutoBoxes(slide: DevsharkSlide, index: number): Partial<
   return boxes;
 }
 
-/** Lays out one slide: its blocks, their warnings and the SVG both the editor and the renderer draw. */
-export function layoutDevsharkSlide(deck: Pick<DevsharkDeck, 'cover' | 'slides'>, index: number, assets: StudioAssets): StudioSlide {
-  const slide = deck.slides[index]!;
-  const theme = devsharkSlideTheme(deck, index);
-  const palette = themes[theme];
-  const green = theme === 'green' ? '#132019' : palette.accent;
-  const auto = devsharkAutoBoxes(slide, index);
+/**
+ * Draws a slide's text blocks into SVG fragments, measuring each and warning when a block runs off the frame. Shared
+ * by the 1080 × 1350 slide and the 1080 × 1920 story, which differ only in the frame they sit in.
+ */
+function drawDevsharkBlocks(
+  slide: DevsharkSlide, index: number, auto: Partial<Record<StudioBlockKey, Required<DevsharkBox>>>,
+  theme: Theme, palette: { background: string; foreground: string; muted: string; accent: string }, green: string, frameHeight: number,
+): { parts: string; blocks: StudioBlock[]; warnings: StudioWarning[] } {
   const blocks: StudioBlock[] = [];
   const warnings: StudioWarning[] = [];
   let parts = '';
@@ -209,15 +210,66 @@ export function layoutDevsharkSlide(deck: Pick<DevsharkDeck, 'cover' | 'slides'>
       height = (wrapped.lines.length - 1) * box.size * leading + box.size;
       parts += wrapped.lines.map((line, at) => `<text xml:space="preserve" x="${anchorX(box)}" y="${box.y + box.size * ASCENT + at * box.size * leading}" text-anchor="${anchor(box)}" font-family="${escapeXml(f.rasterFamily)}" font-size="${box.size}" font-weight="${f.weight}">${line.map((token, n) => `<tspan fill="${token.green ? green : palette.foreground}">${escapeXml((n && !token.glue ? ' ' : '') + token.text)}</tspan>`).join('')}</text>`).join('');
     }
-    if (box.x < 0 || box.y < 0 || box.x + box.w > SLIDE_WIDTH || box.y + height > SLIDE_HEIGHT) warnings.push({ block: key, code: 'outside-slide' });
+    if (box.x < 0 || box.y < 0 || box.x + box.w > SLIDE_WIDTH || box.y + height > frameHeight) warnings.push({ block: key, code: 'outside-slide' });
     blocks.push({ key, box, height, text: value });
   }
+  return { parts, blocks, warnings };
+}
+
+/** Lays out one slide: its blocks, their warnings and the SVG both the editor and the renderer draw. */
+export function layoutDevsharkSlide(deck: Pick<DevsharkDeck, 'cover' | 'slides'>, index: number, assets: StudioAssets): StudioSlide {
+  const slide = deck.slides[index]!;
+  const theme = devsharkSlideTheme(deck, index);
+  const palette = themes[theme];
+  const green = theme === 'green' ? '#132019' : palette.accent;
+  const auto = devsharkAutoBoxes(slide, index);
+  const drawn = drawDevsharkBlocks(slide, index, auto, theme, palette, green, SLIDE_HEIGHT);
+  let parts = drawn.parts;
   if (slide.kind === 'closing') {
-    const after = Math.max(...blocks.map((block) => block.box.y + block.height), 0);
+    const after = Math.max(...drawn.blocks.map((block) => block.box.y + block.height), 0);
     parts = `<image x="${MARGIN}" y="104" width="400" height="64" xlink:href="${assets.logoWhite}"/>` + parts
       + `<text x="${MARGIN}" y="${Math.max(after + 60, 760)}" fill="${palette.accent}" font-family="Manrope" font-size="52" font-weight="800">devshark.app</text>`;
   }
   const fin = `<image x="${FIN.x}" y="${SLIDE_HEIGHT - FIN.height}" width="${FIN.width}" height="${FIN.height}" xlink:href="${theme === 'green' ? assets.finInk : assets.finGreen}"/>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${SLIDE_WIDTH}" height="${SLIDE_HEIGHT}" viewBox="0 0 ${SLIDE_WIDTH} ${SLIDE_HEIGHT}"><rect width="${SLIDE_WIDTH}" height="${SLIDE_HEIGHT}" fill="${palette.background}"/>${fin}${parts}</svg>`;
-  return { svg, theme, blocks, warnings };
+  return { svg, theme, blocks: drawn.blocks, warnings: drawn.warnings };
+}
+
+/**
+ * Instagram story frame (owner rule, 8 November 2026): one native image that fills the whole 1080 × 1920 (9:16) frame —
+ * no letterbox, no blurred bands. A story re-lays out the post's cover for 9:16: the same ground fills the frame, and
+ * the same kicker, headline and body are centred within the Instagram safe zone (clear of the top and bottom 250 px,
+ * where Instagram draws its own chrome). The fin sits at the bottom corner as it does on a slide.
+ */
+export const STORY_WIDTH = 1080;
+export const STORY_HEIGHT = 1920;
+export const STORY_SAFE_TOP = 250;
+export const STORY_SAFE_BOTTOM = 250;
+
+/** Lays out a deck's cover as a full-frame 1080 × 1920 story: same design, text centred inside the Instagram safe zone. */
+export function layoutDevsharkStory(deck: Pick<DevsharkDeck, 'cover' | 'slides'>, assets: StudioAssets): StudioSlide {
+  const index = 0;
+  // Re-flow the cover with the house layout: the owner's per-block boxes were placed for the 1350 slide and would
+  // leave a 1920 story top-heavy, so the story ignores them and centres the stack in the safe zone instead.
+  const slide: DevsharkSlide = { ...deck.slides[index]!, layout: undefined };
+  const theme = devsharkSlideTheme(deck, index);
+  const palette = themes[theme];
+  const green = theme === 'green' ? '#132019' : palette.accent;
+  const auto = devsharkAutoBoxes(slide, index);
+  // Measure the stack once in the taller frame, then translate every box so the stack's middle sits at the centre of
+  // the Instagram safe band. The inter-block gaps and the 8 px grid are preserved by shifting a grid-aligned delta.
+  const dry = drawDevsharkBlocks(slide, index, auto, theme, palette, green, STORY_HEIGHT);
+  const safeCentre = (STORY_SAFE_TOP + (STORY_HEIGHT - STORY_SAFE_BOTTOM)) / 2;
+  let delta = 0;
+  if (dry.blocks.length) {
+    const top = Math.min(...dry.blocks.map((block) => block.box.y));
+    const bottom = Math.max(...dry.blocks.map((block) => block.box.y + block.height));
+    delta = grid(safeCentre - (top + bottom) / 2);
+  }
+  const moved: Partial<Record<StudioBlockKey, Required<DevsharkBox>>> = {};
+  for (const key of STUDIO_BLOCKS) { const box = auto[key]; if (box) moved[key] = { ...box, y: box.y + delta }; }
+  const drawn = drawDevsharkBlocks(slide, index, moved, theme, palette, green, STORY_HEIGHT);
+  const fin = `<image x="${FIN.x}" y="${STORY_HEIGHT - FIN.height}" width="${FIN.width}" height="${FIN.height}" xlink:href="${theme === 'green' ? assets.finInk : assets.finGreen}"/>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${STORY_WIDTH}" height="${STORY_HEIGHT}" viewBox="0 0 ${STORY_WIDTH} ${STORY_HEIGHT}"><rect width="${STORY_WIDTH}" height="${STORY_HEIGHT}" fill="${palette.background}"/>${fin}${drawn.parts}</svg>`;
+  return { svg, theme, blocks: drawn.blocks, warnings: drawn.warnings };
 }
