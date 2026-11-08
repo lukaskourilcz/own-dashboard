@@ -6,7 +6,7 @@ import { DNESKAI_GENERATION_KIT, DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type
 import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
-import { dneskaiKeywordLine } from "./dneskai-caption";
+import { dneskaiKeywordLine, dneskaiTopicName } from "./dneskai-caption";
 
 /**
  * Generation v5 for DNESKAi (#116): one structured Claude call turns a research brief (#115) into the
@@ -92,6 +92,8 @@ export const DneskaiCopySchema = z.strictObject({
   title: z.string().min(1).max(160),
   caption: z.string().min(1).max(1500),
   hashtags: z.array(z.string().min(1).max(40)).max(DNESKAI_HASHTAG_LIMIT),
+  /** The Threads topic (8 November 2026): the main name as people write it, normalised by `dneskaiTopicName`. */
+  topic: z.string().min(1).max(60).optional(),
   format: z.enum(["carousel", "single-image"]),
   slides: z.array(DneskaiCopySlideSchema).min(1).max(DNESKAI_MAX_CONTENT_SLIDES),
 });
@@ -140,6 +142,7 @@ const SYSTEM_RULES = [
   "alt: one or two Czech sentences for a reader who cannot see the slide: what kind of slide it is, its message, and whose picture it carries, named from its credit, without describing the picture. Never repeat the headline as the alt text.",
   `caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what comes next. Its first sentence, at most 125 characters, states the cover's fact in fuller form under the same rules as the cover hook. Code appends the AI disclosure and the hashtags; the caption names no source and no picture credit. hashtags: up to ${DNESKAI_HASHTAG_LIMIT - 1} topic tags, the most specific first (product, company, field), Latin letters and digits only, lowercase, without #; code adds #${DNESKAI_BRAND_HASHTAG} and keeps the post at ${DNESKAI_HASHTAG_LIMIT} hashtags.`,
   "title: a short internal working title for the editor.",
+  "topic: the post's main subject as one proper name written the way people write it, capitalised, without spaces, dots or ampersands, at most 50 characters: the company, product or field the post is about (FioBanka, Alexa, OpenAI, GitHub, ClaudeCode).",
   `Local response limits remain mandatory: title 1-160 characters; caption 1-1500; headline 1-200; body 1-700; kicker 1-80; alt 1-200; at most ${DNESKAI_HASHTAG_LIMIT} hashtags; 1-${DNESKAI_MAX_CONTENT_SLIDES} slides; at most 2 images per slide.`,
 ].join("\n");
 
@@ -519,11 +522,13 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): D
       alt: slide.alt.trim(),
     };
   });
+  const topic = dneskaiTopicName(copy.topic ?? "");
   // Every generated deck is drawn in Spotlight (owner decision, 6 November 2026).
-  return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, kit: DNESKAI_GENERATION_KIT, slides });
+  return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, kit: DNESKAI_GENERATION_KIT, ...(topic ? { topic } : {}), slides });
 }
 
 export { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
+export { dneskaiTopicName } from "./dneskai-caption";
 
 /**
  * The published caption: the model's text, the keyword line when the post has a keyword (#158) and the hashtags (no

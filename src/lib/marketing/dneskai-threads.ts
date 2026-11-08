@@ -1,5 +1,5 @@
 import { parseContentRevision, type ContentRevision } from './contracts';
-import { DNESKAI_AI_DISCLOSURE, dneskaiTopic } from './dneskai-caption';
+import { DNESKAI_AI_DISCLOSURE, dneskaiTopic, dneskaiTopicName } from './dneskai-caption';
 
 /**
  * DNESKAi on Threads (owner decision, 7 November 2026). Every Instagram post of the plan also goes to Threads, and
@@ -9,7 +9,7 @@ import { DNESKAI_AI_DISCLOSURE, dneskaiTopic } from './dneskai-caption';
  */
 export const THREADS_TEXT_MAX = 500;
 /** The topic when a caption has no hashtag of its own. */
-export const DNESKAI_THREADS_FALLBACK_TOPIC = 'umelainteligence';
+export const DNESKAI_THREADS_FALLBACK_TOPIC = 'UmelaInteligence';
 const KEYWORD_LINE = /^Napište do komentáře „[A-Z0-9]{1,24}“ a pošleme vám návod do zpráv\.$/;
 const HASHTAG = /(^|\s)#[\p{L}\p{N}_]+/gu;
 
@@ -24,19 +24,19 @@ function shorten(text: string, max: number): string {
 }
 
 /**
- * The Threads text of an Instagram caption: the written paragraphs without hashtags, the AI disclosure and the keyword
- * line (no comment-to-DM on Threads), shortened to fit, then the post's topic as one hashtag: the caption's first
- * hashtag after #dneskai (owner decision, 8 November 2026). The publisher sends that hashtag as the Threads
- * `topic_tag`, not as text. Always at most 500 characters.
+ * The Threads text of an Instagram caption (owner decisions, 8 November 2026): only the caption's first written
+ * paragraph (no hashtags, AI disclosure or keyword line), shortened to fit, then the post's topic as one hashtag. The
+ * topic is the deck's `topic` (the name as people write it, `FioBanka`), else the caption's first hashtag after
+ * #dneskai with a capital letter. The publisher sends that hashtag as the Threads `topic_tag`, not as text. The rest
+ * of the story is on the slides. Always at most 500 characters.
  */
-export function dneskaiThreadsText(caption: string): string {
+export function dneskaiThreadsText(caption: string, topic?: string | null): string {
   const paragraphs = caption.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
   const body = paragraphs
     .filter((paragraph) => paragraph !== DNESKAI_AI_DISCLOSURE && !KEYWORD_LINE.test(paragraph))
     .map((paragraph) => paragraph.replace(HASHTAG, '$1').replace(/[ \t]{2,}/g, ' ').trim())
-    .filter(Boolean)
-    .join('\n\n');
-  const tail = `#${dneskaiTopic(caption) ?? DNESKAI_THREADS_FALLBACK_TOPIC}`;
+    .filter(Boolean)[0] ?? '';
+  const tail = `#${dneskaiTopicName(topic ?? '') ?? dneskaiTopicName(dneskaiTopic(caption) ?? '') ?? DNESKAI_THREADS_FALLBACK_TOPIC}`;
   const room = THREADS_TEXT_MAX - tail.length - 2;
   const text = body ? `${shorten(body, room)}\n\n${tail}` : tail;
   return text.slice(0, THREADS_TEXT_MAX);
@@ -58,7 +58,7 @@ export function dneskaiThreadsTwin(instagram: ContentRevision, account: DneskaiT
   return parseContentRevision({
     ...rest,
     account: { id: account.remote_account_id, platform: 'threads', handle: account.handle.replace(/^@/, '') },
-    caption: dneskaiThreadsText(instagram.caption),
+    caption: dneskaiThreadsText(instagram.caption, instagram.deck?.topic),
     format: images.length >= 2 ? 'carousel' : 'post',
     scheduledAt,
   });

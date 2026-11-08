@@ -4,11 +4,11 @@ vi.mock('server-only', () => ({}));
 import { dneskaiDefaultRevisionFormat } from '@/lib/marketing/dneskai-reel-format';
 import { requestDneskaiReelRender } from '@/lib/marketing/dneskai-reel';
 
-describe('default format of a new post (#165)', () => {
-  it('starts education posts as a Reel and news as a carousel, only while Reels are on', () => {
+describe('default format of a new post (owner, 8 November 2026: never a Reel)', () => {
+  it('starts every carousel deck as a carousel, even with Reels switched on', () => {
     const on = { MARKETING_DNESKAI_REELS_ENABLED: 'true' };
-    expect(dneskaiDefaultRevisionFormat('carousel', 'tool', on)).toBe('reel');
-    expect(dneskaiDefaultRevisionFormat('carousel', 'ai-project', on)).toBe('reel');
+    expect(dneskaiDefaultRevisionFormat('carousel', 'tool', on)).toBe('carousel');
+    expect(dneskaiDefaultRevisionFormat('carousel', 'ai-project', on)).toBe('carousel');
     expect(dneskaiDefaultRevisionFormat('carousel', 'ai-news', on)).toBe('carousel');
     expect(dneskaiDefaultRevisionFormat('carousel', 'tool', {})).toBe('carousel');
     expect(dneskaiDefaultRevisionFormat('single-image', 'tool', on)).toBe('post');

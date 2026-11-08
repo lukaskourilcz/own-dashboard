@@ -40,7 +40,7 @@ describe("marketing-copy/7 prompt (#116, #158, owner rules of 22 October 2026)",
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
     expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/7");
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("24356ba931aba2be763b512c0561a89d37bfd01011f75a3987f12496c36e7f4c");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("2fc6c7715cb858ede97864cf5faec41e6865ff946214890ae62c0f0ede9d625a");
     expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/7+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("asks for a factual cover hook and a matching first caption sentence, inside the truth rules (owner decision 1, option B)", () => {
@@ -303,6 +303,10 @@ describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", 
     expect(tags).toHaveLength(DNESKAI_HASHTAG_LIMIT);
     expect(tags[0]).toBe("#dneskai");
     expect(tags.every((tag) => /^#[a-z0-9]+$/.test(tag))).toBe(true);
+  });
+  it("carries the model's topic into the deck as people write it, and none when the model gives none", () => {
+    expect(buildDneskaiDeck({ ...validCopy(pictures), topic: "fio banka" }, offerFor()).topic).toBe("FioBanka");
+    expect(buildDneskaiDeck(validCopy(pictures), offerFor()).topic).toBeUndefined();
   });
   it("tidies the body's line breaks without touching its words", () => {
     expect(captionOf({ ...validCopy(pictures), caption: "První odstavec.  \r\n\r\n\r\nDruhý odstavec." }).split("\n\n").slice(0, 2)).toEqual(["První odstavec.", "Druhý odstavec."]);

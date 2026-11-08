@@ -165,9 +165,11 @@ The owner approved every education topic and the last week's news into a rolling
 times plus 20:00, so three Instagram posts and four Threads posts a day. The tick's `plan` step (`dneskai-plan.ts`)
 fills empty slots with approved education topics and prepares the slots of today and the next two days: it renders
 the post in Spotlight, moves it to its slot, approves the exact version for the owner and derives a Threads twin
-(`dneskai-threads.ts`: the same slides, the caption without hashtags or keyword line, shortened to 500 characters,
-then the article's topic as one hashtag, which the publisher sends as the Threads `topic_tag`, so the post shows
-"dneskai › <topic>"; no AI disclosure since 8 November 2026). The topic bridge briefs a planned topic for exactly its slot. A news post's
+(`dneskai-threads.ts`: the same slides, only the caption's first paragraph without hashtags or keyword line,
+shortened to 500 characters, then the article's topic as one hashtag, which the publisher sends as the Threads
+`topic_tag`, so the post shows "dneskai › <topic>"; the topic is the deck's `topic`, the name as people write it,
+such as `FioBanka`; no AI disclosure since 8 November 2026). DNESKAi publishes only carousels and single-photo posts:
+since 8 November 2026 generation never starts a post as a Reel, whatever `MARKETING_DNESKAI_REELS_ENABLED` says. The topic bridge briefs a planned topic for exactly its slot. A news post's
 brief stays current until a day after its slot. The owner sees today and tomorrow in the tab **Dnes a zítra** and the
 30 days below it (`GET /api/marketing/dneskai/plan`); every post opens in the Design Lab with one click. An edit saved
 in the Lab wins: the plan approves the owner's version and derives a new Threads twin. Threads twins stay out of the
@@ -249,7 +251,9 @@ The DNESKAi workspace has four tabs and a `⋯` menu (#169; the project header i
   expiry, the comment-reply switch and the webhook subscription), Obnova témat (last night's collection, held topics and
   the recovery actions) and Klávesové zkratky, then the general project sections.
 
-### Reels and music (prepared, off)
+### Reels and music (retired for DNESKAi, 8 November 2026)
+
+The owner decided that DNESKAi publishes only carousels and single-photo posts; generation never makes a Reel.
 
 `renderDneskaiReel` (`dneskai-reel-render.ts`, #163) turns a post's rendered slides into a 1080 × 1920 MP4 with
 `ffmpeg-static`: 3.5 s per slide, 0.5 s crossfades, a gentle zoom, AAC audio or a silent track. The route

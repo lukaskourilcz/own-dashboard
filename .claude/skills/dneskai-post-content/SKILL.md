@@ -31,8 +31,11 @@ enforce them; a change that lets any of them through is a bug.
 - No source list, no links, no picture credits.
 - It ends with the hashtags. **No AI disclosure line** ("Text připravil jazykový model…"): the owner removed it
   from every post on 8 November 2026; the publisher drops it from captions stored before that.
-- On Threads the post's topic tag is always the article's topic (the caption's first hashtag after `#dneskai`),
-  sent as `topic_tag`, never `dneskai` and never a hashtag line in the text.
+- On Threads the post's topic tag is always the article's topic, written the way people write the name with a
+  capital (`FioBanka`, `Alexa`, `OpenAI`): the deck's `topic`, else the caption's first hashtag after `#dneskai`.
+  It goes out as `topic_tag`, never `dneskai` and never a hashtag line in the text. The Threads text is only the
+  caption's first paragraph; the rest of the story is on the slides.
+- **Only carousels and classic single-photo posts, never Reels** (owner, 8 November 2026).
 - **No call to comment or follow in model text.** The one allowed call is the keyword line, and code writes it
   from the approved keyword, in its own paragraph before the hashtags: „Napište do komentáře „SKILL“ a pošleme
   vám návod do zpráv.“ Only posts with a keyword (education) carry it; news posts do not. It holds no hashtag.

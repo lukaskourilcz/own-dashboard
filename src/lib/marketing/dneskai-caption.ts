@@ -52,6 +52,17 @@ export function dneskaiTopic(caption: string): string | null {
 }
 
 /**
+ * A topic as Threads takes it and as the owner wants it shown (8 November 2026): the name as people write it, with a
+ * capital first letter, letters, digits and underscores only (no spaces, dots or ampersands), at most 50 characters.
+ * `fio banka` becomes `FioBanka` only when written so; a lowercase hashtag `alexa` becomes `Alexa`. Null when empty.
+ */
+export function dneskaiTopicName(value: string): string | null {
+  const words = value.normalize('NFC').split(/[^\p{L}\p{N}_]+/u).filter(Boolean);
+  const name = words.map((word, index) => index === 0 || /^\p{Ll}/u.test(word) ? word.charAt(0).toLocaleUpperCase('cs') + word.slice(1) : word).join('').slice(0, 50);
+  return name || null;
+}
+
+/**
  * What a DNESKAi post sends as its public text (owner decision, 8 November 2026): the stored caption without the AI
  * disclosure. On Threads the closing hashtag paragraph is not shown either; its topic goes out as the post's
  * `topic_tag`, so Threads shows "dneskai › <topic>" instead of a hashtag line.
