@@ -7,7 +7,7 @@ import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
 import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
 import { dneskaiEmphasisFor } from './dneskai-palette';
-import { DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, restyleDneskaiPost } from './dneskai-restyle';
+import { DNESKAI_RESTYLE_FAILED, DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, dneskaiRestyleJobKey, restyleDneskaiPost } from './dneskai-restyle';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
 import { prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from './dneskai-revision-edit';
@@ -400,21 +400,24 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) break;
           const restyled = await restyleDneskaiPost(db, owner, { slot: { date: slot.date, local_time: slot.local_time, scheduledAt: dneskaiPlanSlotAt(slot) }, head, env: input.env ?? process.env, signal: input.signal });
           result.rendered++;
-          // A published post comes back as a new post; a topic's slot follows the new job through its topic.
-          const fresh = head.status === 'published' && !!slot.topic_id && !!restyled.jobId;
-          if (fresh) {
-            const topic = read(await db.from('marketing_dneskai_topics').select('evidence').eq('user_id', owner).eq('id', slot.topic_id!).maybeSingle(), 'plan-topic-unavailable') as { evidence: Record<string, unknown> | null } | null;
-            const { error } = await db.from('marketing_dneskai_topics').update({ status: 'briefed', updated_at: new Date().toISOString(),
-              evidence: { ...(topic?.evidence ?? {}), jobId: restyled.jobId, revisionId: null, planDate: slot.date, planTime: slot.local_time } }).eq('user_id', owner).eq('id', slot.topic_id!);
-            if (error) throw new Error('plan-topic-write-failed');
-          }
-          const patch: Partial<DneskaiPlanRow> = { head_revision_id: fresh ? null : head.id, written_revision_id: null, threads_revision_id: fresh ? null : slot.threads_revision_id,
-            story_revision_id: fresh ? null : slot.story_revision_id, status: 'generating', code: restyled.code };
+          // The slot keeps the version the restyle started from: the job key is derived from it (`dneskaiRestyleJobKey`).
+          const patch: Partial<DneskaiPlanRow> = { head_revision_id: head.id, written_revision_id: null, status: 'generating', code: restyled.code };
           await record(slot, patch); Object.assign(slot, patch);
           result.codes[restyled.code] = (result.codes[restyled.code] ?? 0) + 1;
           break;
         }
-        if (slot.code === DNESKAI_RESTYLE_QUEUED && head?.status === 'returned') { await record(slot, { status: 'generating' }); break; }
+        if (slot.code === DNESKAI_RESTYLE_QUEUED && head && (head.status === 'returned' || head.status === 'published')) {
+          // The restyle job of this version: a failure is shown on the slot; a published post's new version is a new post the slot takes over.
+          const key = dneskaiRestyleJobKey(owner, head.id, head.content_hash, dneskaiPlanSlotAt(slot));
+          const job = read(await db.from('marketing_jobs').select('status').eq('user_id', owner).eq('idempotency_key', key).maybeSingle(), 'plan-job-unavailable') as { status: string } | null;
+          if (job?.status === 'failed') { const patch = { status: 'failed' as const, code: DNESKAI_RESTYLE_FAILED }; await record(slot, patch); Object.assign(slot, patch); break; }
+          if (head.status === 'published' && job?.status === 'review' && await revisionRow(db, owner, key)) {
+            const patch: Partial<DneskaiPlanRow> = { head_revision_id: key, written_revision_id: null, threads_revision_id: null, threads_base_revision_id: null, story_revision_id: null, story_base_revision_id: null, status: 'ready', code: null };
+            await record(slot, patch); Object.assign(slot, patch);
+            continue;
+          }
+          await record(slot, { status: 'generating' }); break;
+        }
         const twin = slot.threads_revision_id ? await revisionRow(db, owner, slot.threads_revision_id) : null;
         const story = slot.story_revision_id ? await revisionRow(db, owner, slot.story_revision_id) : null;
         const action = !head && slot.topic_id && await topicLacksPhoto(db, owner, slot.topic_id) ? { kind: 'drop' as const, status: 'skipped' as const, code: 'plan-photo-missing' as const } : dneskaiPlanAction(slot, head, twin, !!account, input.now, story, headings.get(slot.id) ?? null);

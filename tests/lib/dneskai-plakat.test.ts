@@ -37,8 +37,8 @@ describe("key-word marks (Plakát, 8 November 2026)", () => {
     const lime = await studio.renderDneskaiSlide({ ...marked, emphasisColor: "#a3e635" });
     expect([own.status, pink.status, lime.status]).toEqual(["rendered", "rendered", "rendered"]);
     expect(new Set([own.pngHash, pink.pngHash, lime.pngHash]).size).toBe(3);
-    // The look's own light blue as an explicit colour draws the same picture.
-    expect((await studio.renderDneskaiSlide({ ...marked, emphasisColor: "#7c95ff" })).pngHash).toBe(own.pngHash);
+    // The look's own icy blue as an explicit colour draws the same picture.
+    expect((await studio.renderDneskaiSlide({ ...marked, emphasisColor: "#6ec1ff" })).pngHash).toBe(own.pngHash);
     // Words without a mark do not change colour.
     const plain = { ...marked, headline: "Alexa umí 100+ nových nákupních funkcí" };
     expect((await studio.renderDneskaiSlide({ ...plain, emphasisColor: "#f472b6" })).pngHash).toBe((await studio.renderDneskaiSlide(plain)).pngHash);
