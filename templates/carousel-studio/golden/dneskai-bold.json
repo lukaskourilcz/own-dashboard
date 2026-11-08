@@ -22,7 +22,7 @@
       "name": "figure",
       "templateId": "dneskai-bold-figure",
       "version": "1.1.0",
-      "pngHash": "c70b3d962095df483f0948d892af39fc6c98fe5c98cba79897e358ba1c00cbe1"
+      "pngHash": "a263f3f1219bdd2c09f0507c05ec2e0748120aa9c3cab5ebb3b49989d2b048dd"
     },
     {
       "name": "split",
@@ -52,7 +52,7 @@
       "name": "sources",
       "templateId": "dneskai-bold-sources-4",
       "version": "1.1.0",
-      "pngHash": "edc6b8b8628126464d7f591e54cad64c97c30bc617c056992fb9778708dbaa59"
+      "pngHash": "0e4399f05ce5e6b08047820bac59d91f380e61700212e3b6b42646512a6c208d"
     },
     {
       "name": "single-photo",
