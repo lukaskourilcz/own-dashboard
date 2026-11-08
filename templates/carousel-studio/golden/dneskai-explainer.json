@@ -4,7 +4,7 @@
     "width": 1080,
     "height": 1350
   },
-  "updatedAt": "2026-10-22",
+  "updatedAt": "2026-11-08",
   "entries": [
     {
       "name": "acceptance-01",
@@ -52,31 +52,31 @@
       "name": "cover-photo",
       "templateId": "dneskai-explainer-cover-photo",
       "version": "1.1.0",
-      "pngHash": "e5811e8e47ac5b1b24605d3d230be88f1a6f3896ccd2ee6a5e04668b2b7f2401"
+      "pngHash": "b4027e267f3a6d2edd07609e19fbc1b179a67179178479292e1c8cf0e5fb0a3a"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-explainer-cover-photo",
       "version": "1.1.0",
-      "pngHash": "1d3d0bac2331033c06d3e1fb63306a321b01788bb02977096938b2db161f0eb2"
+      "pngHash": "7fae47c6133c9aa780941694e8f8f639bcaaf75bfcaf45217dd2a6c6b0aec631"
     },
     {
       "name": "figure",
       "templateId": "dneskai-explainer-figure",
       "version": "1.1.0",
-      "pngHash": "6aa9537fd1cc3670a4bca2f682a37cefe4234c440f009a63ce4dc81d73882f02"
+      "pngHash": "54a452448d568993f504fa0cc611be1c603c9b62ef76ad196710def604aeba4f"
     },
     {
       "name": "split",
       "templateId": "dneskai-explainer-split",
       "version": "1.1.0",
-      "pngHash": "bdbe1e0f19492b24e0fad20f86c91629bc9bfbac635a49e2fb736b2c04bc951c"
+      "pngHash": "620174f0c65fd9bfae1ca999116514d037f04128aa0bd1a70d6d86eb7d95d5a9"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-explainer-split-pair",
       "version": "1.1.0",
-      "pngHash": "b343013b67a393ab4252f7c2b44d21466c5fcd26ffc3a8297be2ec1fd105f883"
+      "pngHash": "8549055d261fc00117a80be33e64c8ec1e55be8911bfc4270955d37f30be3258"
     },
     {
       "name": "statement",
@@ -88,31 +88,31 @@
       "name": "statement-ink",
       "templateId": "dneskai-explainer-statement",
       "version": "1.1.0",
-      "pngHash": "285b2495e742f3bec4b693e5b91f3871d70cb1d324c65a8ab4114b159aca69e7"
+      "pngHash": "01709f976f5acf89d45d1c1881b69daac4764601e54a43a7517c66c41208e41e"
     },
     {
       "name": "sources",
       "templateId": "dneskai-explainer-sources-4",
       "version": "1.1.0",
-      "pngHash": "9cf75261f1fa2e247a83bb8d28797995490563dbba1536f92338dc0bd5fcd7f3"
+      "pngHash": "74a5e3397ab2f9c18a220067fb35af90c9fbe1af25d3d3e1addfcbfe4ee4dac8"
     },
     {
       "name": "single-photo",
       "templateId": "dneskai-explainer-single-photo",
       "version": "1.1.0",
-      "pngHash": "1044ad37a46b4557926f4641df2a74ff0283fcf35067fdbe615fcc6843de3905"
+      "pngHash": "fd3c01f40c9a3ab82afab9ae418eb468b9db67a85f91ecb813f5725e33cd33b2"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-explainer-single-photo",
       "version": "1.1.0",
-      "pngHash": "185ad1789bc5309720fe67b757fd6ed3a4f77177533afb47249df6fe490c68f3"
+      "pngHash": "515e41a3f4936a556f13d36dd3555c3e507a0791e9f5bec18cc2b166225d32b1"
     },
     {
       "name": "single-type",
       "templateId": "dneskai-explainer-single-type",
       "version": "1.1.0",
-      "pngHash": "c10310c6c63184daeeb714346fcbbe0e22820b0d915d1c0a9e2e7f859b2577b3"
+      "pngHash": "d3ea30ccee84a2046cd9c83467a38de9685a68efd7fcb5761e13a04b89036444"
     }
   ]
 }
