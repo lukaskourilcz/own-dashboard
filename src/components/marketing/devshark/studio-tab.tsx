@@ -10,20 +10,13 @@ import { designStudio } from '@/lib/i18n/sections/design-studio';
 import { SlideCanvas } from '@/components/design-studio/slide-canvas';
 import type { DevsharkDeck, DevsharkSlide } from '@/lib/marketing/devshark-deck';
 import { decideDevsharkDraft, devsharkEditable, devsharkStudioErrorCode, fetchDevsharkDrafts, renderDevsharkPreview, saveDevsharkDraft,
-  type DevsharkDraft, type DevsharkDraftsRead, type DevsharkPreview } from '@/lib/marketing/devshark-studio';
+  type DevsharkDraft, type DevsharkPreview } from '@/lib/marketing/devshark-studio';
+import { demoDevsharkStudio } from '@/lib/demo/devshark-studio-demo';
 
 type Lang = 'en' | 'cs';
 type Draft = { title: string; caption: string; deck: DevsharkDeck };
 const same = (a: Draft, b: Draft) => JSON.stringify(a) === JSON.stringify(b);
 const fieldClass = 'w-full min-w-0 rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring';
-
-/** Sample concepts for /dev-preview: the studio never calls a server there. */
-const PREVIEW_READ: DevsharkDraftsRead = { plan: [], drafts: [{ id: '00000000-0000-4000-8000-000000000001', title: 'typeof null', origin: 'concept', status: 'draft', decided_at: null, created_at: '2026-11-07T17:00:00.000Z',
-  caption: 'Guess before you swipe: what does typeof null return?\n\n#javascript #devshark',
-  deck: { schemaVersion: 'devshark-deck/1', cover: 'light', slides: [
-    { kind: 'cover', kicker: 'JavaScript quiz', headline: 'typeof null', body: 'One line of JavaScript. [[What does it return?]]' },
-    { kind: 'answer', headline: 'B. "object"', body: 'A bug from the first JavaScript, kept so old code still works.' },
-    { kind: 'closing', headline: 'Quizzes, lessons and [[coding tasks]] for web developers.' }] } }] };
 
 /**
  * devShark studio (owner request, 7 November 2026): the owner edits a concept's slides and caption, renders a preview,
@@ -32,8 +25,9 @@ const PREVIEW_READ: DevsharkDraftsRead = { plan: [], drafts: [{ id: '00000000-00
  */
 export function DevsharkStudioTab({ lang, preview = false }: { lang: Lang; preview?: boolean }) {
   const t = devsharkStudio[lang];
-  const query = useQuery({ queryKey: qk.devsharkDrafts, queryFn: fetchDevsharkDrafts, enabled: !preview, staleTime: 30_000 });
-  const read = preview ? PREVIEW_READ : query.data;
+  // /dev-preview edits the in-memory sample concepts, so the calendar shows the saved version too (8 November 2026).
+  const query = useQuery({ queryKey: preview ? [...qk.devsharkDrafts, 'preview'] : qk.devsharkDrafts, queryFn: preview ? demoDevsharkStudio.load : fetchDevsharkDrafts, staleTime: preview ? 0 : 30_000 });
+  const read = query.data;
   // The publishing calendar opens a concept here with `?studioDraft=<id>` (8 November 2026).
   const [selected, setSelected] = useState<string | null>(() => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('studioDraft'));
   const drafts = read?.drafts ?? [];
@@ -44,8 +38,8 @@ export function DevsharkStudioTab({ lang, preview = false }: { lang: Lang; previ
       <p className="max-w-3xl text-sm text-foreground-muted">{t.intro}</p>
       {preview && <p className="text-xs text-foreground-muted">{t.previewOnly}</p>}
     </div>
-    {!preview && query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
-      : !preview && query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p>
+    {query.isPending ? <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>
+      : query.isError ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p>
       : drafts.length === 0 ? <p className="text-sm text-foreground-muted">{t.empty}</p>
       : <div className="grid min-w-0 gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <nav aria-label={t.concepts} className="min-w-0">
@@ -85,6 +79,8 @@ function Editor({ draft, lang, preview }: { draft: DevsharkDraft; lang: Lang; pr
     return next;
   }) } }));
   const refresh = () => queryClient.invalidateQueries({ queryKey: qk.devsharkDrafts });
+  const save = preview ? demoDevsharkStudio.save : saveDevsharkDraft;
+  const decide = preview ? demoDevsharkStudio.decide : decideDevsharkDraft;
   const run = async (kind: NonNullable<typeof busy>, action: () => Promise<string | void>) => {
     setBusy(kind); setMessage(null);
     try { const text = await action(); if (text) setMessage({ tone: 'info', text }); }
@@ -97,14 +93,14 @@ function Editor({ draft, lang, preview }: { draft: DevsharkDraft; lang: Lang; pr
       <span className="rounded-sm border border-border bg-surface-inset px-1.5 py-0.5 text-[11px] font-medium text-foreground-muted">{t.statuses[draft.status]}</span>
     </div>
     {!editable && <p className="text-xs text-foreground-muted">{t.locked}</p>}
-    <fieldset disabled={!editable || preview || busy !== null} className="min-w-0 space-y-4">
+    <fieldset disabled={!editable || busy !== null} className="min-w-0 space-y-4">
       <label className="block space-y-1 text-xs font-medium text-foreground-muted">{t.fields.title}
         <input id={`${ids}-title`} className={fieldClass} value={value.title} maxLength={160} onChange={(event) => setValue((prev) => ({ ...prev, title: event.target.value }))} />
       </label>
       <div className="min-w-0 space-y-2" data-testid="design-studio">
         <div role="tablist" aria-label={s.slides} className="flex flex-wrap gap-1">{value.deck.slides.map((slide, index) => <button key={index} type="button" role="tab" aria-selected={index === active}
           onClick={() => setActive(index)} className={cn('min-h-9 rounded-md px-3 text-xs font-medium focus-ring', index === active ? 'bg-accent text-foreground' : 'text-foreground-muted hover:bg-surface-hover')}>{s.slideTab(index + 1)} · {t.kinds[slide.kind]}</button>)}</div>
-        <div className="max-w-xl"><SlideCanvas deck={value.deck} index={Math.min(active, value.deck.slides.length - 1)} lang={lang} disabled={!editable || preview || busy !== null}
+        <div className="max-w-xl"><SlideCanvas deck={value.deck} index={Math.min(active, value.deck.slides.length - 1)} lang={lang} disabled={!editable || busy !== null}
           onChange={(slide) => setValue((prev) => ({ ...prev, deck: { ...prev.deck, slides: prev.deck.slides.map((item, at) => at === Math.min(active, prev.deck.slides.length - 1) ? slide : item) } }))} /></div>
       </div>
       <details className="min-w-0 rounded-lg border border-border bg-surface p-3"><summary className="min-h-9 cursor-pointer text-sm font-medium">{s.formTitle}</summary>
@@ -126,10 +122,10 @@ function Editor({ draft, lang, preview }: { draft: DevsharkDraft; lang: Lang; pr
     </fieldset>
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" disabled={preview || busy !== null} onClick={() => run('render', async () => { const result = await renderDevsharkPreview(value.deck); setRendered({ for: value, slides: result.slides }); })}>{busy === 'render' ? t.rendering : t.render}</Button>
-      {editable && <Button variant="outline" disabled={preview || !dirty || busy !== null} onClick={() => run('save', async () => { await saveDevsharkDraft({ id: draft.id, title: value.title, caption: value.caption, deck: value.deck }); await refresh(); return t.saved; })}>{busy === 'save' ? t.saving : t.save}</Button>}
-      {editable && draft.status !== 'approved' && <Button disabled={preview || dirty || busy !== null} title={dirty ? t.unsavedBeforeApprove : undefined} onClick={() => run('approve', async () => { await decideDevsharkDraft(draft.id, 'approved'); await refresh(); return t.approved; })}>{t.approve}</Button>}
-      {editable && draft.status !== 'rejected' && <Button variant="ghost" disabled={preview || busy !== null} onClick={() => run('reject', async () => { await decideDevsharkDraft(draft.id, 'rejected'); await refresh(); return t.rejected; })}>{t.reject}</Button>}
-      {editable && draft.status !== 'draft' && <Button variant="ghost" disabled={preview || busy !== null} onClick={() => run('reopen', async () => { await decideDevsharkDraft(draft.id, 'draft'); await refresh(); })}>{t.reopen}</Button>}
+      {editable && <Button variant="outline" disabled={!dirty || busy !== null} onClick={() => run('save', async () => { await save({ id: draft.id, title: value.title, caption: value.caption, deck: value.deck }); await refresh(); return t.saved; })}>{busy === 'save' ? t.saving : t.save}</Button>}
+      {editable && draft.status !== 'approved' && <Button disabled={dirty || busy !== null} title={dirty ? t.unsavedBeforeApprove : undefined} onClick={() => run('approve', async () => { await decide(draft.id, 'approved'); await refresh(); return t.approved; })}>{t.approve}</Button>}
+      {editable && draft.status !== 'rejected' && <Button variant="ghost" disabled={busy !== null} onClick={() => run('reject', async () => { await decide(draft.id, 'rejected'); await refresh(); return t.rejected; })}>{t.reject}</Button>}
+      {editable && draft.status !== 'draft' && <Button variant="ghost" disabled={busy !== null} onClick={() => run('reopen', async () => { await decide(draft.id, 'draft'); await refresh(); })}>{t.reopen}</Button>}
     </div>
     {dirty && editable && <p className="text-xs text-foreground-muted">{t.unsavedBeforeApprove}</p>}
     {message && <p role={message.tone === 'risk' ? 'alert' : 'status'} className={cn('text-sm', message.tone === 'risk' ? 'text-risk' : 'text-foreground')}>{message.text}</p>}

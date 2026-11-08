@@ -11,6 +11,7 @@ import {
   PUBLISHING_CALENDAR_VERSION,
   PUBLISHING_CONNECTED,
   PublishingCalendarSchema,
+  coverHeadline,
   type PublishingBrand,
   type PublishingCalendar,
   type PublishingPicture,
@@ -70,7 +71,7 @@ type DraftVersion = Draft["versions"][number];
 
 async function dneskaiPosts(db: Database, owner: string, now: Date, from: string, switches: Switches): Promise<PublishingPost[]> {
   const plan = await readDneskaiPlan(db, owner, now, { from, days: PUBLISHING_CALENDAR_DAYS, enabled: dneskaiPlanEnabled() });
-  const stories = await revisionsById(db, owner, plan.slots.flatMap((slot) => slot.story?.revisionId ? [slot.story.revisionId] : []));
+  const stories = await revisionsById(db, owner, plan.slots.flatMap((slot) => [slot.story?.revisionId, slot.labPostId].filter((id): id is string => !!id)));
   return plan.slots.map((slot): PublishingPost => {
     const slides = slot.slides.filter((slide) => https(slide.url)).map((slide) => ({ url: slide.url, alt: (slide.alt || slot.title).slice(0, 500), width: slide.width, height: slide.height }));
     const versions: DraftVersion[] = [];
@@ -83,6 +84,7 @@ async function dneskaiPosts(db: Database, owner: string, now: Date, from: string
     if (slot.threads) versions.push({ channel: "threads", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.threads.publicationStatus ?? slot.status, caption: slot.threads.caption, pictures: slides });
     return withSwitches({
       id: `dneskai:${slot.id}`, brand: "dneskai", slotId: slot.id, date: slot.date, time: slot.time, scheduledAt: slot.scheduledAt, title: slot.title, status: slot.status,
+      headline: slot.labPostId ? coverHeadline((stories.get(slot.labPostId) as { deck?: unknown } | undefined)?.deck) : null,
       thumbnail: slides[0] ?? null, target: slot.labPostId ? { kind: "dneskai-lab", postId: slot.labPostId } : null, versions,
     }, switches);
   }).filter((post) => post.versions.length > 0);
@@ -98,11 +100,11 @@ async function devsharkPosts(db: Database, owner: string, from: string, until: s
   const rows = ((slots.data ?? []) as DevsharkSlotRow[]).filter((row) => z.iso.date().safeParse(row.date).success);
   const draftIds = [...new Set(rows.map((row) => row.draft_id))];
   const [drafts, revisions] = await Promise.all([
-    draftIds.length ? db.from("marketing_devshark_drafts").select("id,title,caption").eq("user_id", owner).in("id", draftIds) : Promise.resolve({ data: [], error: null }),
+    draftIds.length ? db.from("marketing_devshark_drafts").select("id,title,caption,deck").eq("user_id", owner).in("id", draftIds) : Promise.resolve({ data: [], error: null }),
     revisionsById(db, owner, [...new Set(rows.flatMap((row) => [row.instagram_revision_id, row.threads_revision_id, row.story_revision_id]).filter((id): id is string => !!id))]),
   ]);
   if (drafts.error) throw new Error("devshark-plan-unavailable");
-  const concepts = new Map(((drafts.data ?? []) as Array<{ id: string; title: string; caption: string }>).map((row) => [row.id, row]));
+  const concepts = new Map(((drafts.data ?? []) as Array<{ id: string; title: string; caption: string; deck: unknown }>).map((row) => [row.id, row]));
   return rows.map((row): PublishingPost => {
     const concept = concepts.get(row.draft_id);
     const title = (concept?.title ?? "devShark").slice(0, 300) || "devShark";
@@ -119,7 +121,7 @@ async function devsharkPosts(db: Database, owner: string, from: string, until: s
     }
     if (row.threads) versions.push({ channel: "threads", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(threads), pictures: pictures(threads ?? post ?? null, title) });
     return withSwitches({
-      id: `devshark:${row.id}`, brand: "devshark", slotId: row.id, date: row.date, time: row.local_time, scheduledAt, title, status: row.status,
+      id: `devshark:${row.id}`, brand: "devshark", slotId: row.id, date: row.date, time: row.local_time, scheduledAt, title, status: row.status, headline: coverHeadline(concept?.deck),
       thumbnail: slides[0] ?? null, target: { kind: "devshark-studio", draftId: row.draft_id }, versions,
     }, switches);
   }).filter((post) => post.versions.length > 0);

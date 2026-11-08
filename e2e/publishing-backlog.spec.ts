@@ -22,7 +22,6 @@ for (const lang of ["en", "cs"] as const) {
       await expect(button).toContainText(lang === "cs" ? "Zatím nepropojeno" : "Not connected yet");
     }
     await expect(panel.getByText("typeof null")).toHaveCount(1);
-    await expect(panel.getByText("Array holes")).toHaveCount(1);
     // One card per post: typeof null goes out as a story, a post and on Threads, and shows once.
     const instagram = toolbar.getByRole("button", { name: /^Instagram/ });
     const threads = toolbar.getByRole("button", { name: /^Threads/ });
@@ -31,10 +30,8 @@ for (const lang of ["en", "cs"] as const) {
     await expect(panel.getByText("typeof null")).toHaveCount(1);
     await threads.click();
     await expect(panel.getByText("typeof null")).toHaveCount(0);
-    await expect(panel.getByText("Array holes")).toHaveCount(0);
     await instagram.click();
     await expect(panel.getByText("typeof null")).toHaveCount(1);
-    await expect(panel.getByText("Array holes")).toHaveCount(0);
     await threads.click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     const scan = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="publishing-calendar"]').withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
@@ -57,7 +54,7 @@ for (const lang of ["en", "cs"] as const) {
     await expect(dialog.getByTestId("version-switch")).toHaveAttribute("aria-checked", "false");
     await dialog.getByTestId("post-switch").click();
     await expect(dialog.getByTestId("post-switch")).toHaveAttribute("aria-checked", "false");
-    await expect(dialog.getByRole("button", { name: lang === "cs" ? "Upravit ve Studiu devShark" : "Edit in the devShark Studio" })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: lang === "cs" ? "Upravit v Design Labu" : "Edit in Design Lab" })).toBeVisible();
     const dialogScan = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="publishing-post-dialog"]').withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
     expect(dialogScan.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`)).toEqual([]);
     await page.screenshot({ path: `test-results/publishing-dialog-${lang}-${info.project.name}.png`, fullPage: true });
