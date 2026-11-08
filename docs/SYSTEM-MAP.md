@@ -189,6 +189,14 @@ account since 7 November 2026, which the Stories API requires. With `DNESKAI_NEW
 08:00, 17:00 and 20:00 free ahead; the night's news topics take them, best brief rank first, and the plan approves
 them for the owner; from 05:00 education fills whatever is still free that day.
 
+**Extra times and restyle (8 November 2026).** Slots may also sit at 10:00 and 14:30 (Instagram and Threads); the
+plan never fills those by itself. A slot with the code `restyle-requested` is written again in the house style
+(`docs/dneskai-style-guide.md`) for its time (`dneskai-restyle.ts`): the step tops its brief up to four pictures from
+Pexels (`MARKETING_DNESKAI_STOCK_ENABLED`, `PEXELS_API_KEY`; credits stay in the database), keeps the brief current,
+moves its calendar entry to the slot, returns the old version and enqueues one regeneration job with a restyle note.
+The finished job supersedes the old version and the plan carries the new one on as usual. One restyle per tick; the
+job cap is 24 per 24 hours since that day.
+
 ### devShark posts (7 November 2026)
 
 devShark gets its own concepts and plan, separate from DNESKAi. `devshark-render.ts` draws a `devshark-deck/1` in the
