@@ -103,10 +103,13 @@ export async function processAmbientInbox(db: Database, settings: AmbientSetting
     const common = { aspect, phash: hash, sha256: ambientSha256(jpeg), cost_usd: Number(costUsd.toFixed(6)) };
     if (found.length) { result.rejected++; await record('rejected', { ...common, reasons: found.slice(0, 40) }); continue; }
     const sent = await uploadAmbientFrame({ url: settings.ingestUrl, token: settings.ingestToken, jpeg, fetchImpl: input.fetchImpl, signal: input.signal, meta: {
-      persona_key: parsed.persona, aspect, pillar: ambientInboxPillar(parsed.shotId), shot_id: parsed.shotId, prompt: brief, provider: 'owner', model: 'owner-supplied',
+      persona_key: parsed.persona, aspect, pillar: ambientInboxPillar(parsed.shotId), shot_id: parsed.shotId, prompt: brief, provider: 'openai', model: 'owner-codex',
       cost_usd: Number(costUsd.toFixed(6)), seed: null, phash: hash, source_ref: `inbox:${file.path}`.slice(0, 200) } });
     if (sent.kind === 'stored') { result.uploaded++; await record('uploaded', { ...common, reasons: [], ingest_id: sent.id }); continue; }
-    // A failed upload stays in the inbox for the next tick; a duplicate the server already holds is done.
+    // HeyDarlink takes provider fal, openai or gemini; the owner's pictures come from Codex, which draws with OpenAI.
+    // A failed upload stays in the inbox for the next tick; a duplicate the server already holds is done, and so is
+    // a refusal no retry can change (a 4xx other than 429), so one bad file never holds the rest.
+    if (sent.kind === 'failed' && sent.status >= 400 && sent.status < 500 && sent.status !== 429) { result.rejected++; await record('rejected', { ...common, reasons: [`ingest:${sent.code}`] }); continue; }
     if (sent.kind === 'duplicate') { result.rejected++; await record('rejected', { ...common, reasons: [`ingest:${sent.code}`] }); continue; }
     await db.from('heydarlink_ambient_imports').upsert({ name: file.path, persona: parsed.persona, shot_id: parsed.shotId, status: 'upload-failed', gate, reasons: [`ingest:${sent.code}`], updated_at: now, ...common }, { onConflict: 'name' });
     break;
