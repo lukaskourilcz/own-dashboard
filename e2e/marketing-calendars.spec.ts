@@ -23,8 +23,8 @@ const entry = (id: string, offset: number, time: string, title: string, tipRefs:
 const calendar = (extra: Record<string, unknown>) => ({ name: "x", launch: null, periodStart: null, periodEnd: null, entries: [], prelaunch: [], skipped: 0, ...extra });
 
 /**
- * Stands in for GET /api/marketing/calendars, which reads GitHub on the
- * server. Returns the request count so a test can see "Check again" ask again.
+ * Stands in for GET /api/marketing/calendars, which reads the committed calendar
+ * files on the server. Returns the request count so a test can see "Check again" ask again.
  */
 async function stubCalendars(page: Page, body: unknown, status = 200) {
   let requests = 0;
@@ -229,7 +229,7 @@ test("the Work overview lists the next seven marketing days across calendars, re
   // No calendar readable, then no answer at all.
   await stubCalendars(page, { checkedAt: new Date().toISOString(), sources: [{ ...DEVSHARK, status: "error", detail: "502", calendar: null }] });
   await page.reload();
-  await expect(card).toContainText("GitHub answered 502.");
+  await expect(card).toContainText("the file could not be read (502).");
   await expect(card).toContainText("No marketing calendar could be read, so the week's plan is unknown.");
   await stubCalendars(page, { error: "boom" }, 500);
   await page.reload();
