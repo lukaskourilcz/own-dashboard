@@ -34,3 +34,14 @@ describe('devShark publishing (7 November 2026)', () => {
     expect(revision.brand).toBe('devshark');
   });
 });
+
+describe('devShark Instagram hashtags (Apify research, owner, 8 November 2026)', () => {
+  it('keeps up to two topic tags, drops blocked ones and always carries the base set, seven at most', async () => {
+    const { devsharkInstagramCaption, DEVSHARK_HASHTAG_LIMIT } = await import('@/lib/marketing/devshark-publish');
+    const caption = 'Guess before you swipe: what does typeof null return?\n\nMore JavaScript quizzes on devShark: devshark.app 🦈\n#css #python #closures #git #reactjs #programmerhumor #javascript #async #devshark';
+    expect(devsharkInstagramCaption(caption)).toBe('Guess before you swipe: what does typeof null return?\n\nMore JavaScript quizzes on devShark: devshark.app 🦈\n#closures #async #typescript #javascript #webdevelopment #frontend #devshark');
+    const tags = devsharkInstagramCaption(caption).split('\n').at(-1)!.split(' ');
+    expect(tags.length).toBeLessThanOrEqual(DEVSHARK_HASHTAG_LIMIT);
+    expect(devsharkInstagramCaption('No tags here.')).toBe('No tags here.\n#typescript #javascript #webdevelopment #frontend #devshark');
+  });
+});
