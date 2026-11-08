@@ -200,6 +200,7 @@ The migrations, in the order they run:
 102. `20261108220000_heydarlink_ambient_tick.sql` — the HeyDarlink ambient batches get their own signed tick every five minutes.
 103. `20261108230000_publishing_switches.sql` — per-channel sharing switches for planned posts; the publishers' claim skips a switched-off version.
 104. `20261108240000_backlog_notes.sql` — the owner's note on a backlog item and the `ready_for_agent` status for handing it to an agent.
+105. `20261108250000_drop_comment_reply_signature.sql` — comment replies carry no signature; the per-reply signature column is removed.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.

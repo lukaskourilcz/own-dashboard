@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import sharp from 'sharp';
 import { AMBIENT_PERSONAS, ambientFalUsd, ambientShotList, heydarlinkAmbientSettings, pickAmbientShots } from '@/lib/heydarlink/ambient-config';
-import { ambientDuplicateGate, ambientFormatGate, ambientVerdictReasons, parseAmbientVerdict, readAmbientFormat } from '@/lib/heydarlink/ambient-gates';
+import { ambientDuplicateGate, ambientFormatGate, ambientVerdictFromContent, ambientVerdictReasons, parseAmbientVerdict, readAmbientFormat } from '@/lib/heydarlink/ambient-gates';
 import { gradeAmbientFrame } from '@/lib/heydarlink/ambient-grade';
 import { ambientIngestForm, ambientSha256, uploadAmbientFrame } from '@/lib/heydarlink/ambient-ingest';
 import { ambientHamming, ambientPhash } from '@/lib/heydarlink/ambient-phash';
@@ -51,7 +51,11 @@ describe('HeyDarlink ambient gates', () => {
     expect(ambientVerdictReasons({ ...clean, body_parts: true, matches_brief: false })).toEqual(['vision:body_parts', 'vision:off-brief']);
     expect(parseAmbientVerdict(`Here: ${JSON.stringify(clean)}`)).toEqual(clean);
     expect(parseAmbientVerdict('{"people":false}')).toBeNull();
-    expect(parseAmbientVerdict(JSON.stringify({ ...clean, extra: true }))).toBeNull();
+    // An extra key no longer rejects a complete verdict.
+    expect(parseAmbientVerdict(JSON.stringify({ ...clean, extra: true }))).toEqual(clean);
+    // The forced tool's input is read first; prose around it does not matter.
+    expect(ambientVerdictFromContent([{ type: 'text', text: 'Looking at it.' }, { type: 'tool_use', name: 'record_verdict', input: clean }])).toEqual(clean);
+    expect(ambientVerdictFromContent([{ type: 'tool_use', name: 'record_verdict', input: { people: 'no' } }])).toBeNull();
   });
 
   it('checks the exact size and format, and near duplicates by perceptual hash', async () => {

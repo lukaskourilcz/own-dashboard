@@ -60,7 +60,7 @@ describe('comment inbox tables', () => {
 
   it('keeps one draft per comment, readable only by its owner, and ties sent to sent_at', async () => {
     await as('service_role', null, () => db.query(
-      "insert into public.marketing_comment_reply_drafts(user_id,comment_row_id,draft_text,signature,model) values($1,$2,'Díky za dotaz, zdroj je v popisku.','— Lukáš','claude-opus-4-8')",
+      "insert into public.marketing_comment_reply_drafts(user_id,comment_row_id,draft_text,model) values($1,$2,'Díky za dotaz, zdroj je v popisku.','claude-opus-4-8')",
       [owner, commentRow]));
     const mine = await as('authenticated', owner, () => db.query('select draft_text, status from public.marketing_comment_reply_drafts where comment_row_id=$1', [commentRow]));
     expect(mine.rows[0]).toMatchObject({ status: 'draft' });

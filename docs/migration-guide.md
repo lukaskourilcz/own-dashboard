@@ -1036,3 +1036,9 @@ it goes out at its slot. Replayed in PGlite (`tests/lib/publishing-switches-data
 trigger sets `note_updated_at` whenever the note changes. A partial index serves the agents' query for items ready
 for them. The contract columns and the agents' insert are unchanged. Replayed in PGlite
 (`tests/lib/backlog-database.test.ts`).
+
+## Comment replies carry no signature, 8 November 2026
+
+`20261108250000_drop_comment_reply_signature.sql` drops `signature` from `marketing_comment_reply_drafts`. The owner
+decided comment replies get no signature or sign-off (no "— Lukáš"): neither a drafted reply nor what is sent appends
+one. The column was never written by shipped code, so the drop is safe.
