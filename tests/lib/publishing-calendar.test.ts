@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { PREVIEW_PUBLISHING } from "@/components/panels/publishing-calendar-panel";
+import { PREVIEW_PUBLISHING, applySwitch } from "@/components/panels/publishing-calendar-panel";
 import { PREVIEW_BACKLOG } from "@/components/panels/backlog-panel";
-import { PublishingCalendarSchema, networkOfChannel, orderedVersions, publishingDays, publishingNetworkCounts, publishingTargetHref, PUBLISHING_CONNECTED } from "@/lib/publishing-calendar";
+import { PublishingCalendarSchema, PublishingSwitchSchema, networkOfChannel, orderedVersions, versionLive, publishingDays, publishingNetworkCounts, publishingTargetHref, PUBLISHING_CONNECTED } from "@/lib/publishing-calendar";
 import { backlogProjectCounts, backlogRefHref, filterBacklog } from "@/lib/backlog";
 import { isProjectsSectionProject } from "@/lib/portfolio";
 
@@ -29,6 +29,20 @@ describe("publishing calendar", () => {
   it("orders a post's versions story, post, Threads, LinkedIn, Facebook", () => {
     const post = { versions: [...PREVIEW_PUBLISHING.posts[0]!.versions].reverse() };
     expect(orderedVersions(post).map((version) => version.channel)).toEqual(["story", "instagram", "threads"]);
+  });
+
+  it("switches one version or the whole post off and back on", () => {
+    const slot = PREVIEW_PUBLISHING.posts[0]!.slotId;
+    const threadsOff = applySwitch(PREVIEW_PUBLISHING, { brand: "dneskai", slotId: slot, channel: "threads", off: true });
+    const post = threadsOff.posts[0]!;
+    expect(post.versions.map((version) => [version.channel, versionLive(post, version)])).toEqual([["story", true], ["instagram", true], ["threads", false]]);
+    const allOff = applySwitch(threadsOff, { brand: "dneskai", slotId: slot, channel: "all", off: true }).posts[0]!;
+    expect(allOff.versions.every((version) => !versionLive(allOff, version))).toBe(true);
+    const back = applySwitch(applySwitch(threadsOff, { brand: "dneskai", slotId: slot, channel: "threads", off: false }), { brand: "dneskai", slotId: slot, channel: "all", off: false });
+    expect(back.posts[0]).toEqual(PREVIEW_PUBLISHING.posts[0]);
+    // Another brand's slot with the same id is not touched.
+    expect(applySwitch(PREVIEW_PUBLISHING, { brand: "devshark", slotId: slot, channel: "all", off: true }).posts[0]!.off).toBe(false);
+    expect(PublishingSwitchSchema.safeParse({ brand: "dneskai", slotId: slot, channel: "tiktok", off: true }).success).toBe(false);
   });
 
   it("opens a DNESKAi post in the Design Lab and a devShark concept in the Studio", () => {
