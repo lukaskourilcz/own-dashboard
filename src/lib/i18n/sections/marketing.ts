@@ -64,7 +64,7 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
       "wrong-schema": "the file is not a marketing-calendar/1 document",
       "wrong-project": (project) => (project ? `the document is for ${project}` : "the document names no project"),
       "too-large": "the file is larger than 1 MB",
-      error: (status) => (status ? `GitHub answered ${status}` : "GitHub did not answer"),
+      error: (detail) => (detail ? `the file could not be read (${detail})` : "the file could not be read"),
     },
     skipped: (label, count) => `${label}: ${count} ${count === 1 ? "item" : "items"} without an id, a date or a title left out.`,
     unmatchedRefs: (count) => `${count} tip ${count === 1 ? "title" : "titles"} cited in the plans ${count === 1 ? "matches" : "match"} no tip here.`,
@@ -125,7 +125,7 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
       "wrong-schema": "soubor není dokument marketing-calendar/1",
       "wrong-project": (project) => (project ? `dokument patří k projektu ${project}` : "dokument neuvádí projekt"),
       "too-large": "soubor je větší než 1 MB",
-      error: (status) => (status ? `GitHub odpověděl ${status}` : "GitHub neodpověděl"),
+      error: (detail) => (detail ? `soubor nelze přečíst (${detail})` : "soubor nelze přečíst"),
     },
     skipped: (label, count) =>
       `${label}: vynecháno ${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"} bez id, data nebo názvu.`,

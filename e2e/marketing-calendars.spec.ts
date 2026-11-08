@@ -6,8 +6,8 @@ type AxePage = ConstructorParameters<typeof AxeBuilder>[0]["page"];
 
 const TIP_PLAN = "Plan a month of posts around two topics";
 const TIP_CAROUSEL = "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post";
-const DEVSHARK = { id: "marketingshark", label: "devShark", repo: "lukaskourilcz/quorum", path: "state/marketing-calendar/marketingshark.json", calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark" };
-const DNESKAI = { id: "caught-up", label: "DNESKAi", repo: "lukaskourilcz/quorum", path: "state/marketing-calendar/caught-up.json", calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=caught-up" };
+const DEVSHARK = { id: "marketingshark", label: "devShark", file: "content/marketing-calendars/marketingshark.json", calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark" };
+const DNESKAI = { id: "caught-up", label: "DNESKAi", file: "content/marketing-calendars/caught-up.json", calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=caught-up" };
 
 /** A local `yyyy-MM-dd`, `offset` days from today, as the browser counts days. */
 function day(offset: number): string {
@@ -83,7 +83,7 @@ test("tip cards say which plans apply them, read from the calendars, with a Not 
           ],
         }),
       },
-      { ...DNESKAI, status: "not-found", detail: null, calendar: null },
+      { ...DNESKAI, status: "error", detail: null, calendar: null },
     ],
   });
   await page.goto("/dev-preview?tab=ig-tips&calendars=live");
@@ -102,7 +102,7 @@ test("tip cards say which plans apply them, read from the calendars, with a Not 
 
   const status = main.locator("[data-plans-status]");
   await expect(status).toContainText("Marketing plans: devShark (3 entries)");
-  await expect(status).toContainText("Could not read lukaskourilcz/quorum/state/marketing-calendar/caught-up.json: the file is not on the default branch yet.");
+  await expect(status).toContainText("Could not read content/marketing-calendars/caught-up.json: the file could not be read.");
   await expect(status).toContainText("1 tip title cited in the plans matches no tip here.");
 
   const notApplied = main.getByRole("group", { name: "Filter by topic" }).getByRole("button", { name: /^Not yet applied/ });
@@ -150,7 +150,7 @@ test("the Work overview lists the next seven marketing days across calendars, re
           ],
         }),
       },
-      { ...DNESKAI, status: "disconnected", detail: null, calendar: null },
+      { ...DNESKAI, status: "error", detail: null, calendar: null },
     ],
   });
   await page.goto("/dev-preview?tab=work&calendars=live");
@@ -164,7 +164,7 @@ test("the Work overview lists the next seven marketing days across calendars, re
   await expect(overdue).toContainText("devShark · Owner");
   await expect(card.locator('[data-marketing-prelaunch="ds-pre-02"]').getByRole("link")).toHaveAttribute("href", "https://github.com/lukaskourilcz/react-express-app/issues/239");
   await expect(card.locator("[data-marketing-entry]")).toHaveCount(0);
-  await expect(card.locator('[data-calendar-problem="caught-up"]')).toHaveText("Could not read lukaskourilcz/quorum/state/marketing-calendar/caught-up.json: GitHub is not connected.");
+  await expect(card.locator('[data-calendar-problem="caught-up"]')).toHaveText("Could not read content/marketing-calendars/caught-up.json: the file could not be read.");
   await expect(card.getByRole("link", { name: /Open the devShark calendar/ })).toHaveAttribute("href", DEVSHARK.calendarUrl);
   if (testInfo.project.name === "desktop") {
     // Let the tab's entrance transition settle, as the a11y suite does.
