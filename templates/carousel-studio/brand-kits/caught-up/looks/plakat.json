@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "brand-kit-look/1",
+  "id": "plakat",
+  "label": "Plakát",
+  "purpose": "The owner's poster look of 8 November 2026: a colour photograph to every edge under a dark fade, one tall condensed headline in capitals at the foot with its key words in a lighter blue, and blue for the text-only slide.",
+  "palette": {
+    "background": {
+      "value": "#0e0f12",
+      "source": "The ink of the approved mockup: the ground and the shade every photograph fades into."
+    },
+    "surface": {
+      "value": "#e6e7ea",
+      "source": "The copy under a headline, a shade under white so the headline stays the brightest thing on the slide (the mockup's white at 88 %)."
+    },
+    "surface-strong": {
+      "value": "#3c4149",
+      "source": "--text-secondary in DESIGN_SYSTEM.md: hairlines and thumbnail frames on the legacy sources slide."
+    },
+    "foreground": {
+      "value": "#ffffff",
+      "source": "The headline on a photograph, on ink and on blue."
+    },
+    "muted": {
+      "value": "#8b919b",
+      "source": "Labels on ink, shared with the spotlight look; 5.7:1 on the ink ground."
+    },
+    "accent": {
+      "value": "#3b5bdb",
+      "source": "The approved mockup's blue: the ground of the text-only slide."
+    },
+    "secondary": {
+      "value": "#7c95ff",
+      "source": "The approved mockup's light blue: the key words of a headline on a photograph or on ink. On the blue slide the key words are ink instead."
+    }
+  },
+  "fonts": {
+    "headline": {
+      "family": "Anton",
+      "source": "The approved mockup's condensed display face, set in capitals: the poster headline, with drawn Czech accents."
+    },
+    "body": {
+      "family": "Inter",
+      "source": "The copy under a headline, quieter than the display face."
+    },
+    "mono": {
+      "family": "IBM Plex Mono",
+      "source": "BRAND_SYSTEM.md: the legacy sources slide's disclosure line, the only mono text in the kit."
+    }
+  },
+  "style": {}
+}
