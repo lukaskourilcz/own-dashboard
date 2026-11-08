@@ -78,7 +78,7 @@ export async function runCommentInboxCapture(input: { store: InboxStore; graph: 
       let page: Awaited<ReturnType<InboxGraph['comments']>>;
       try { page = await graph.comments(target, after, signal); }
       catch (failure) {
-        const error = failure instanceof InboxGraphError ? failure : new InboxGraphError('graph-request-uncertain', 'media');
+        const error = failure instanceof InboxGraphError ? failure : new InboxGraphError('meta-request-uncertain', 'media');
         if (error.scope === 'run') result.stopCode = error.code;
         if (error.scope === 'account') blocked.add(target.accountId);
         break;
