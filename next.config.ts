@@ -74,7 +74,7 @@ const nextConfig: NextConfig = {
     "/api/marketing/n8n": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg", "./templates/marketing/claude-design/**/assets/*.svg"],
     // The devShark studio preview (7 November 2026) draws with the pinned fonts and brand SVGs.
     "/api/marketing/devshark/preview": ["./templates/marketing/fonts/**/*.ttf", "./templates/marketing/*/*.svg"],
-    "/api/marketing/**": [...carouselStudioFiles, sharpLibvips],
+    "/api/marketing/**": [...carouselStudioFiles, sharpLibvips, "./content/marketing-calendars/*.json"],
     // HeyDarlink ambient batches load the grading code, which needs sharp.
     "/api/heydarlink/**": [sharpLibvips],
     // The DNESKAi series refill cron reads topic pages through modules that can load sharp.
