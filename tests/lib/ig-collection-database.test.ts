@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 let db: PGlite;
 const owner = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
-type ImportResult = { added: number; skipped: number; addedOlderThanMark: number; previousHighWater: string | null; highWater: string | null; sourceIds: string[] };
+type ImportResult = { added: number; skipped: number; skippedCollection: number; skippedTips: number; addedOlderThanMark: number; previousHighWater: string | null; highWater: string | null; sourceIds: string[] };
 const importRows = async (rows: unknown[], provenance = "instagram-export", user = owner) =>
   (await db.query<{ r: ImportResult }>("select marketing_collection_import($1,$2,$3) as r", [user, JSON.stringify(rows), provenance])).rows[0].r;
 const row = (shortcode: string, saved_at: string | null, extra: Record<string, unknown> = {}) => ({ shortcode, saved_at, author: "creator", collections: [], ...extra });
@@ -19,13 +19,34 @@ beforeAll(async () => {
   create table public.ai_links(id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id),record_type text,title text,url text,description text,tip_group text,tip_summary text,source_urls text[] default '{}');
   create table public.projects(id uuid primary key,user_id uuid not null); create table public.notes(id uuid primary key,user_id uuid not null);
   create table public.prompts(id uuid primary key,user_id uuid not null); create table public.tools(id uuid primary key,user_id uuid not null);
-  insert into auth.users values('${owner}'),('${other}');`);
+  insert into auth.users values('${owner}'),('${other}');
+  insert into ai_links(user_id,record_type,title,url,tip_summary,source_urls) values
+   ('${owner}','idea','Hook tip','https://www.instagram.com/reel/TIP111/?igsh=x','Start with the result.','{}'),
+   ('${owner}','link','Saved link','https://example.com/article',null,'{https://instagram.com/creator/p/TIP222/}');`);
   await db.exec(readFileSync("supabase/migrations/20261013193106_marketing_knowledge_import.sql", "utf8"));
   await db.exec(readFileSync("supabase/migrations/20261109120000_ig_collection.sql", "utf8"));
 }, 30000);
 afterAll(async () => { await db?.close(); });
 
 describe("IG Kolekce import", () => {
+  it("backfills the shortcodes the owner's ai_links already hold as done and linked", async () => {
+    const rows = await db.query<{ shortcode: string; collection_status: string; ai_link_id: string | null; provenance: string; digest: { summary: string; fromTips: boolean } | null }>("select shortcode,collection_status,ai_link_id,provenance,digest from marketing_knowledge_sources where user_id=$1 order by shortcode", [owner]);
+    expect(rows.rows.map((r) => [r.shortcode, r.collection_status, r.provenance])).toEqual([["TIP111", "done", "existing-tip"], ["TIP222", "done", "existing-tip"]]);
+    expect(rows.rows[0].digest).toMatchObject({ summary: "Start with the result.", fromTips: true });
+    expect(rows.rows[1].digest).toBeNull();
+    expect(rows.rows.every((r) => r.ai_link_id)).toBe(true);
+  });
+
+  it("skips shortcodes in IG TIPS and Links, also ones added after the migration, without queueing them", async () => {
+    await db.query("insert into ai_links(user_id,record_type,title,url,tip_summary) values($1,'idea','Late tip','https://www.instagram.com/p/TIP333/','Late summary.')", [owner]);
+    const result = await importRows([row("TIP111", "2026-09-01T10:00:00Z"), row("TIP333", "2026-09-02T10:00:00Z")], "manual");
+    expect(result).toMatchObject({ added: 0, skippedTips: 2, skippedCollection: 0 });
+    const late = await db.query<{ collection_status: string; digest: { summary: string }; ai_link_id: string }>("select collection_status,digest,ai_link_id from marketing_knowledge_sources where user_id=$1 and shortcode='TIP333'", [owner]);
+    expect(late.rows[0]).toMatchObject({ collection_status: "done", digest: { summary: "Late summary." } });
+    expect(late.rows[0].ai_link_id).toBeTruthy();
+    await db.query("delete from marketing_knowledge_sources where user_id=$1 and shortcode like 'TIP%'", [owner]);
+  });
+
   it("stores new posts as queued and skips known shortcodes", async () => {
     const first = await importRows([row("AAA111", "2026-10-01T10:00:00Z"), row("BBB222", "2026-10-05T10:00:00Z", { collections: ["Tipy"] })]);
     expect(first).toMatchObject({ added: 2, skipped: 0, previousHighWater: null });
@@ -35,7 +56,7 @@ describe("IG Kolekce import", () => {
     expect(stored.rows[0]).toMatchObject({ status: "partial", saved_at_status: "unverified", canonical_url: "https://www.instagram.com/p/AAA111/" });
 
     const again = await importRows([row("BBB222", "2026-10-05T10:00:00Z", { collections: ["Reels"] }), row("CCC333", "2026-10-09T10:00:00Z")]);
-    expect(again).toMatchObject({ added: 1, skipped: 1, addedOlderThanMark: 0 });
+    expect(again).toMatchObject({ added: 1, skipped: 1, skippedCollection: 1, skippedTips: 0, addedOlderThanMark: 0 });
     expect(new Date(again.highWater!).toISOString()).toBe("2026-10-09T10:00:00.000Z");
     const merged = await db.query<{ collections: string[] }>("select collections from marketing_knowledge_sources where user_id=$1 and shortcode='BBB222'", [owner]);
     expect(merged.rows[0].collections.sort()).toEqual(["Reels", "Tipy"]);
@@ -88,7 +109,7 @@ describe("IG Kolekce processing state", () => {
     await db.query("select marketing_collection_finish($1,$2,'done',null,$3,$4,$5,'collection:test')", [owner, id, JSON.stringify(digest), JSON.stringify(source), JSON.stringify([item])]);
     const done = await db.query<{ collection_status: string; digest: { project: string }; status: string }>("select collection_status,digest,status from marketing_knowledge_sources where id=$1", [id]);
     expect(done.rows[0]).toMatchObject({ collection_status: "done", status: "review", digest: { project: "devShark" } });
-    expect((await db.query<{ n: number }>("select count(*)::int n from ai_links where user_id=$1 and record_type='idea'", [owner])).rows[0].n).toBe(1);
+    expect((await db.query<{ n: number }>("select count(*)::int n from ai_links where user_id=$1 and title='One-line hook'", [owner])).rows[0].n).toBe(1);
     // A finished post cannot be finished twice without a new claim.
     await expect(db.query("select marketing_collection_finish($1,$2,'failed','collection-test',null,null,null,'x')", [owner, id])).rejects.toThrow("not running");
     expect((await db.query<{ n: number }>("select marketing_collection_requeue($1,$2) as n", [other, [id]])).rows[0].n).toBe(0);
