@@ -1007,3 +1007,13 @@ session. Replayed in PGlite (`tests/lib/backlog-database.test.ts`).
 
 `20261108200100_project_heydarlink_name.sql` renames the `phone-app` project from LINKA to heyDarlink. The portfolio
 registry creates missing rows but never renames one, so the stored name changes here, and only while it is still LINKA.
+
+## Sharing switches, 8 November 2026
+
+`20261108230000_publishing_switches.sql` creates `marketing_publishing_switches`: one row per switched-off version of a
+plan slot (`brand`, `slot_id`, `channel` story, instagram, threads, linkedin, facebook, or `all` for the whole post).
+A trigger keeps a switch on the owner's own DNESKAi or devShark slot; RLS keeps rows own-only. The switch belongs to
+the slot, not to a revision, so it survives an edit in the Design Lab. `marketing_publication_switched_off` names the
+revisions a switch turns off, and `marketing_claim_due` is redefined with one more condition so the publishers never
+claim them; the rest of the function is unchanged. A switched-off publication stays queued: switched back on in time,
+it goes out at its slot. Replayed in PGlite (`tests/lib/publishing-switches-database.test.ts`).

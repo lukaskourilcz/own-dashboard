@@ -196,6 +196,7 @@ The migrations, in the order they run:
 98. `20261108160000_dneskai_restyle.sql` — stock pictures for an older brief and a calendar move, for the plan's restyle step.
 99. `20261108200000_backlog_items.sql` — the shared backlog every agent on the owner's laptop adds tasks to, with own-only RLS.
 100. `20261108200100_project_heydarlink_name.sql` — the phone-app project is called heyDarlink.
+101. `20261108230000_publishing_switches.sql` — per-channel sharing switches for planned posts; the publishers' claim skips a switched-off version.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.
