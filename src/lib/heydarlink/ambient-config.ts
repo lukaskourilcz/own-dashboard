@@ -12,6 +12,12 @@ export type AmbientAspect = (typeof AMBIENT_ASPECTS)[number];
 export const AMBIENT_PERSONAS = ['nina', 'fatimah', 'teresa', 'michaela'] as const;
 export type AmbientPersona = (typeof AMBIENT_PERSONAS)[number];
 export const AMBIENT_SIZES: Record<AmbientAspect, { width: number; height: number }> = { '4:5': { width: 1080, height: 1350 }, '9:16': { width: 1080, height: 1920 } };
+/**
+ * What fal renders (8 November 2026): just under one megapixel, so every attempt bills one megapixel ($0.025) instead
+ * of two (4:5) or three (9:16). The grade scales it to `AMBIENT_SIZES` with lanczos; FLUX dev at this size is sharp
+ * enough for Instagram, and a retry now costs a third to a half of what it did.
+ */
+export const AMBIENT_RENDER_SIZES: Record<AmbientAspect, { width: number; height: number }> = { '4:5': { width: 864, height: 1080 }, '9:16': { width: 720, height: 1280 } };
 
 export const AMBIENT_FAL = {
   host: 'fal.run', model: 'fal-ai/flux/dev', img2imgModel: 'fal-ai/flux/dev/image-to-image', steps: 28,
@@ -51,8 +57,8 @@ export function ambientShotList(raw: unknown = HEYDARLINK_AMBIENT_SHOTS): Ambien
   return list;
 }
 
-/** fal bills per megapixel rounded up: 4:5 is two megapixels, 9:16 three. */
-export const ambientFalUsd = (aspect: AmbientAspect) => Math.ceil((AMBIENT_SIZES[aspect].width * AMBIENT_SIZES[aspect].height) / 1_000_000) * AMBIENT_FAL.usdPerMegapixel;
+/** fal bills per megapixel rounded up: both render sizes are one megapixel. */
+export const ambientFalUsd = (aspect: AmbientAspect) => Math.ceil((AMBIENT_RENDER_SIZES[aspect].width * AMBIENT_RENDER_SIZES[aspect].height) / 1_000_000) * AMBIENT_FAL.usdPerMegapixel;
 
 type Environment = Record<string, string | undefined>;
 export type AmbientSettings = { falKey: string; anthropicKey: string; ingestUrl: string; ingestToken: string; pexelsKey: string | null; dailyUsd: number; gateModel: string };
