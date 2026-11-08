@@ -96,8 +96,8 @@ function dayLabel(date: string, from: string, lang: Lang): string {
 const CHANNEL_ICON = { story: CircleDashed, instagram: ImageIcon, threads: AtSign, linkedin: Link2, facebook: Users } as const;
 
 /** Opens the post's editor in its project workspace without leaving the shell. */
-function openTarget(target: NonNullable<PublishingPost["target"]>) {
-  window.history.pushState(null, "", publishingTargetHref(target));
+function openTarget(target: NonNullable<PublishingPost["target"]>, channel?: PublishingChannel) {
+  window.history.pushState(null, "", publishingTargetHref(target, channel));
   window.dispatchEvent(new PopStateEvent("popstate"));
   window.dispatchEvent(new Event("project-tab"));
 }
@@ -226,7 +226,7 @@ function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed }
         {current ? <VersionPreview version={current} lang={lang} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
       </div>
       {post.target && <div className="mt-4 flex justify-end">
-        <Button type="button" variant="outline" onClick={() => { const target = post.target!; onClose(); openTarget(target); }}>
+        <Button type="button" variant="outline" onClick={() => { const target = post.target!; onClose(); openTarget(target, selected); }}>
           <ExternalLink className="h-4 w-4" aria-hidden />{t.editInLab}
         </Button>
       </div>}

@@ -65,3 +65,24 @@ test("devShark: calendar → Design Lab → edit the headline → save → the c
   await page.screenshot({ path: "test-results/design-lab-devshark-calendar.png", fullPage: true });
   expect(errors).toEqual([]);
 });
+
+test("DNESKAi story: the calendar's Story version opens the Design Lab in Story 9:16, and the story follows a cover edit", async ({ page }) => {
+  const errors = watchConsole(page);
+  await gotoPreview(page);
+  await page.goto("/dev-preview?tab=schedule");
+  const dialog = await openPost(page, "DNESKAi");
+  await dialog.getByRole("tab", { name: /Story/ }).click();
+  await dialog.getByRole("button", { name: "Edit in Design Lab" }).click();
+  await expect(page).toHaveURL(/labView=story/);
+  const t = dneskaiLab.en;
+  const story = page.getByTestId("dneskai-story");
+  await expect(story.getByTestId("dneskai-story-image")).toBeVisible();
+  const box = await story.getByTestId("dneskai-story-image").boundingBox();
+  expect(box!.height / box!.width).toBeGreaterThan(1.7);
+  const before = await story.getByTestId("dneskai-story-image").getAttribute("src");
+  await page.getByTestId("dneskai-slide-inspector").getByRole("textbox", { name: t.slide.fields.headline, exact: true }).fill("Story follows the cover");
+  await expect.poll(() => story.getByTestId("dneskai-story-image").getAttribute("src"), { timeout: 15_000 }).not.toBe(before);
+  await page.screenshot({ path: "test-results/design-lab-dneskai-story.png", fullPage: true });
+  expect(errors).toEqual([]);
+});
+

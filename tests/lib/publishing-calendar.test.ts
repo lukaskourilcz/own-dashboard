@@ -49,6 +49,7 @@ describe("publishing calendar", () => {
     const id = "00000000-0000-4000-8000-0000000000c1";
     expect(publishingTargetHref({ kind: "dneskai-lab", postId: id })).toBe(`/projects/dneskai?projectTab=dneskai-review&labPost=${id}&labSlide=0&labView=studio`);
     expect(publishingTargetHref({ kind: "devshark-studio", draftId: id })).toBe(`/projects/devshark?projectTab=devshark-studio&studioDraft=${id}`);
+    expect(publishingTargetHref({ kind: "dneskai-lab", postId: id }, "story")).toContain("labView=story");
   });
 
   it("refuses a picture that is not https and a post without versions", () => {
