@@ -57,6 +57,8 @@ export const PublishingPostSchema = z.strictObject({
   scheduledAt: z.iso.datetime(),
   /** The DNESKAi topic or the devShark concept. */
   title: z.string().min(1).max(300),
+  /** The first slide's headline as the post will show it, `[[marks]]` removed; null while not written yet. */
+  headline: z.string().max(300).nullable(),
   status,
   thumbnail: Picture.nullable(),
   target: Target.nullable(),
@@ -123,3 +125,10 @@ export type PublishingSwitch = z.infer<typeof PublishingSwitchSchema>;
 
 /** A version goes out only when neither it nor its whole post is switched off. */
 export const versionLive = (post: Pick<PublishingPost, "off">, version: Pick<PublishingVersion, "off">) => !post.off && !version.off;
+
+/** The first slide's headline of a deck (DNESKAi revision deck or devShark concept deck), `[[marks]]` removed. */
+export function coverHeadline(deck: unknown): string | null {
+  const slides = (deck as { slides?: unknown } | null)?.slides;
+  const headline = Array.isArray(slides) ? (slides[0] as { headline?: unknown } | undefined)?.headline : undefined;
+  return typeof headline === "string" && headline.trim() ? headline.replace(/\[\[|\]\]/g, "").trim().slice(0, 300) : null;
+}
