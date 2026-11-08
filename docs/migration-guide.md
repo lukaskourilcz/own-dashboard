@@ -1069,3 +1069,9 @@ or WebP, at most 20 MB) and `public.heydarlink_ambient_imports`, service role on
 
 `20261109040000_heydarlink_ambient_import_gate.sql` adds `gate` (`claude` by default, or `owner-reviewed`) to
 `heydarlink_ambient_imports`. Additive.
+
+## DNESKAi daily pick cap, 9 November 2026
+
+`20261109050000_dneskai_finish_day_cap.sql` redefines `marketing_dneskai_finish`: the `picked` selection takes at most
+four minus the briefs the target day already has. Before, a run with one brief picked four more, `selected_count` became
+5 against its check (0 to 4) and every tick rolled back. Applied in production on 9 November 2026 to unblock collection.
