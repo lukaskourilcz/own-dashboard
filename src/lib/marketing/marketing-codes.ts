@@ -59,6 +59,13 @@ const CODES = {
   'plan-unreadable': ['retry', 'The plan arrived in a form this screen cannot read.', 'Plán přišel v podobě, kterou tato obrazovka neumí přečíst.'],
   'plan-post-missing': ['investigate', 'The post this slot was planned for no longer exists.', 'Příspěvek naplánovaný do tohoto slotu už neexistuje.'],
   'plan-photo-missing': ['none', 'The post had no photo, so the plan dropped it and fills the slot with another post.', 'Příspěvek neměl fotku, plán ho vyřadil a slot obsadí jiným příspěvkem.'],
+  // Restyle (owner request, 8 November 2026).
+  'restyle-requested': ['none', 'The post waits to be written again in the house style.', 'Příspěvek čeká na přepsání v domácím stylu.'],
+  'restyle-queued': ['none', 'The post is being written again in the house style.', 'Příspěvek se právě přepisuje v domácím stylu.'],
+  'restyle-unsupported': ['investigate', 'This post cannot be written again: it has no deck or source.', 'Tento příspěvek nejde přepsat: nemá slidy ani zdroj.'],
+  'restyle-brief-missing': ['investigate', 'The research brief of this post is gone, so it cannot be written again.', 'Podklad tohoto příspěvku už neexistuje, takže ho nejde přepsat.'],
+  'restyle-source-missing': ['investigate', 'The source of this post could not be read again.', 'Zdroj tohoto příspěvku se nepodařilo znovu načíst.'],
+  'restyle-job-missing': ['investigate', 'The first generation of this post is not on record, so it cannot be repeated.', 'První vygenerování tohoto příspěvku není zaznamenané, takže ho nejde zopakovat.'],
   'plan-post-superseded': ['edit', 'A newer source replaced this post, so the plan cannot send it.', 'Novější zdroj tento příspěvek nahradil, takže ho plán nemůže odeslat.'],
   'publish-failed': ['investigate', 'Publishing this post failed.', 'Publikování tohoto příspěvku selhalo.'],
   'threads-account-missing': ['account', 'The Threads profile is not connected yet; the Threads post waits.', 'Profil na Threads ještě není napojený; příspěvek pro Threads čeká.'],

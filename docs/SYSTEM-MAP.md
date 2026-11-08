@@ -114,7 +114,7 @@ headlines become one event. The deployed SQL (`marketing_dneskai_finish`) picks 
 relevance. A prepared migration switches this to relevance first, with at most one non-news story a day, and gives
 held stories one automatic second review (section 6).
 
-### Generation (`marketing-copy/7`)
+### Generation (`marketing-copy/8`)
 
 One structured Claude call per brief (Claude Sonnet 5.5, $2/$10 per million tokens). The model writes the title,
 caption, hashtags and 4 to 7 slides (types `cover-photo`, `figure`, `split`, `statement`, or one `single`), and picks
@@ -188,6 +188,14 @@ Every approved Instagram post also goes out as an Instagram story ten minutes la
 account since 7 November 2026, which the Stories API requires. With `DNESKAI_NEW_TOPICS_ENABLED=true` the plan keeps
 08:00, 17:00 and 20:00 free ahead; the night's news topics take them, best brief rank first, and the plan approves
 them for the owner; from 05:00 education fills whatever is still free that day.
+
+**Extra times and restyle (8 November 2026).** Slots may also sit at 10:00 and 14:30 (Instagram and Threads); the
+plan never fills those by itself. A slot with the code `restyle-requested` is written again in the house style
+(`docs/dneskai-style-guide.md`) for its time (`dneskai-restyle.ts`): the step tops its brief up to four pictures from
+Pexels (`MARKETING_DNESKAI_STOCK_ENABLED`, `PEXELS_API_KEY`; credits stay in the database), keeps the brief current,
+moves its calendar entry to the slot, returns the old version and enqueues one regeneration job with a restyle note.
+The finished job supersedes the old version and the plan carries the new one on as usual. One restyle per tick; the
+job cap is 24 per 24 hours since that day.
 
 ### devShark posts (7 November 2026)
 

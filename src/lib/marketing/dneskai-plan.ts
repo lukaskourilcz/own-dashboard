@@ -5,7 +5,8 @@ import { parseContentRevision, renderReportBlocks, type ContentRevision } from '
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
-import { DNESKAI_GENERATION_KIT, dneskaiKitOf } from './dneskai-slides';
+import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
+import { DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, restyleDneskaiPost } from './dneskai-restyle';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
 import { prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from './dneskai-revision-edit';
@@ -95,7 +96,8 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
       if (slot.written_revision_id === head.id && report?.status !== 'refused' && head.revision.deck && !head.revision.assets.length) return { kind: 'rerender', status: 'ready' };
       return { kind: 'wait', status: 'failed', code: 'render-blocked' };
     }
-    if (!ownerEdit && head.revision.deck && dneskaiKitOf(head.revision.deck) !== DNESKAI_GENERATION_KIT) return { kind: 'spotlight', status: 'ready' };
+    // A deck in a retired kit is redrawn in one of the rotating styles; Spotlight, Plakát and Video-first stay as drawn.
+    if (!ownerEdit && head.revision.deck && !DNESKAI_GENERATION_KITS.includes(dneskaiKitOf(head.revision.deck))) return { kind: 'spotlight', status: 'ready' };
     if (!ownerEdit && Date.parse(head.revision.scheduledAt) !== slotAt) return { kind: 'move', status: 'ready' };
     if (!slot.instagram && head.revision.account.platform === 'instagram') {
       return threadsAccount ? { kind: 'to-threads', status: 'ready' } : { kind: 'wait', status: 'ready', code: 'threads-account-missing' };
@@ -237,7 +239,8 @@ async function keepNewsCurrent(db: Database, owner: string, slot: DneskaiPlanRow
 /** Saves the plan's own edit of the head (Spotlight and/or the slot's time) and renders it, reusing the JPEGs when the deck is unchanged. */
 async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit: { kit: boolean; scheduledAt: string }, wiring: Wiring, signal: AbortSignal) {
   const deck = head.revision.deck;
-  const deckEdit = edit.kit && deck ? { kit: DNESKAI_GENERATION_KIT, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
+  const kit = deck ? dneskaiGenerationKit([head.revision.title, ...deck.slides.map((slide) => slide.headline ?? '')].join('\n')) : null;
+  const deckEdit = edit.kit && deck && kit ? { kit, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
   const revision = await prepareDneskaiRevisionEdit(head.revision, { caption: head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
   let reuse = reusableDneskaiRender(head.revision, head.render_report, revision);
   if (reuse) { try { reuse = { ...reuse, assets: await refreshMarketingAssetUrls(db, owner, reuse.assets) }; } catch { reuse = null; } }
@@ -312,7 +315,7 @@ async function placeNews(db: Database, owner: string, project: string, now: Date
 
 const pragueHourOf = (now: Date) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', hour: '2-digit', hourCycle: 'h23' }).format(now));
 
-export async function advanceDneskaiPlan(db: Database, owner: string, project: string, input: { now: Date; signal: AbortSignal; remainingMs: () => number; news?: boolean }): Promise<DneskaiPlanResult> {
+export async function advanceDneskaiPlan(db: Database, owner: string, project: string, input: { now: Date; signal: AbortSignal; remainingMs: () => number; news?: boolean; env?: Record<string, string | undefined> }): Promise<DneskaiPlanResult> {
   z.uuid().parse(owner); z.uuid().parse(project);
   const result: DneskaiPlanResult = { filled: 0, worked: 0, rendered: 0, approved: 0, twins: 0, codes: {} };
   const today = pragueMarketingDate(input.now);
@@ -336,6 +339,26 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
       for (let pass = 0; pass < 4; pass++) {
         if (input.remainingMs() < 8_000) break;
         const head = await resolveHead(db, owner, slot);
+        // Restyle (owner request, 8 November 2026): regenerate the post for this slot, then wait for the new version.
+        if (slot.code === DNESKAI_RESTYLE_REQUESTED && head) {
+          if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) break;
+          const restyled = await restyleDneskaiPost(db, owner, { slot: { date: slot.date, local_time: slot.local_time, scheduledAt: dneskaiPlanSlotAt(slot) }, head, env: input.env ?? process.env, signal: input.signal });
+          result.rendered++;
+          // A published post comes back as a new post; a topic's slot follows the new job through its topic.
+          const fresh = head.status === 'published' && !!slot.topic_id && !!restyled.jobId;
+          if (fresh) {
+            const topic = read(await db.from('marketing_dneskai_topics').select('evidence').eq('user_id', owner).eq('id', slot.topic_id!).maybeSingle(), 'plan-topic-unavailable') as { evidence: Record<string, unknown> | null } | null;
+            const { error } = await db.from('marketing_dneskai_topics').update({ status: 'briefed', updated_at: new Date().toISOString(),
+              evidence: { ...(topic?.evidence ?? {}), jobId: restyled.jobId, revisionId: null, planDate: slot.date, planTime: slot.local_time } }).eq('user_id', owner).eq('id', slot.topic_id!);
+            if (error) throw new Error('plan-topic-write-failed');
+          }
+          const patch: Partial<DneskaiPlanRow> = { head_revision_id: fresh ? null : head.id, written_revision_id: null, threads_revision_id: fresh ? null : slot.threads_revision_id,
+            story_revision_id: fresh ? null : slot.story_revision_id, status: 'generating', code: restyled.code };
+          await record(slot, patch); Object.assign(slot, patch);
+          result.codes[restyled.code] = (result.codes[restyled.code] ?? 0) + 1;
+          break;
+        }
+        if (slot.code === DNESKAI_RESTYLE_QUEUED && head?.status === 'returned') { await record(slot, { status: 'generating' }); break; }
         const twin = slot.threads_revision_id ? await revisionRow(db, owner, slot.threads_revision_id) : null;
         const story = slot.story_revision_id ? await revisionRow(db, owner, slot.story_revision_id) : null;
         const action = !head && slot.topic_id && await topicLacksPhoto(db, owner, slot.topic_id) ? { kind: 'drop' as const, status: 'skipped' as const, code: 'plan-photo-missing' as const } : dneskaiPlanAction(slot, head, twin, !!account, input.now, story);
