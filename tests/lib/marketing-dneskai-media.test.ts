@@ -491,6 +491,32 @@ describe('more pictures when the publisher offers too few (owner decision, 8 Nov
     expect((await assetsOf(id))[0]).toMatchObject({ origin_kind: 'stock', credit: 'Foto: Jana Nováková / Pexels', origin_url: photo });
   });
 
+  it('always adds stock to a page the owner added, even when the page has its own picture', async () => {
+    vi.stubEnv('MARKETING_DNESKAI_STOCK_ENABLED', 'true'); vi.stubEnv('PEXELS_API_KEY', 'offline-test-key');
+    const page = 'https://openai.com/index/offline-owner-link/';
+    const html = `<html><head><title>OFFLINE owner link</title><meta property="og:image" content="https://openai.com/OFFLINE/owner-hero.jpg"><meta property="og:image:width" content="2400"></head><body>${'OFFLINE '.repeat(40)}</body></html>`;
+    const search = 'https://api.pexels.com/v1/search?query=OpenAI+artificial+intelligence+technology&per_page=2&orientation=portrait&size=large';
+    const photo = 'https://images.pexels.com/photos/2/OFFLINE.jpeg?auto=compress&cs=tinysrgb&w=1600';
+    const web = new FixtureWeb().serve(page, { type: 'text/html', body: html }).serve('https://openai.com/OFFLINE/owner-hero.jpg', { body: heroLarge })
+      .serve(search, { type: 'application/json', body: JSON.stringify({ photos: [{ photographer: 'Petr Malý', src: { original: 'https://images.pexels.com/photos/2/OFFLINE.jpeg', large2x: 'https://images.pexels.com/photos/2/OFFLINE-l.jpeg' } }] }) })
+      .serve(photo, { body: B });
+    const id = await insertCandidate('owner-link', 'OFFLINE OpenAI owner link', page, []);
+    expect((await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() })).candidates[0]).toMatchObject({ status: 'complete', assets: 2 });
+    expect((await assetsOf(id)).map((asset) => asset.origin_kind).sort()).toEqual(['og-image', 'stock']);
+  });
+
+  it('draws the illustration with fal when its key is set', async () => {
+    vi.stubEnv('MARKETING_DNESKAI_GENERATED_ENABLED', 'true'); vi.stubEnv('FAL_API_KEY', 'offline-test-key');
+    const page = 'https://openai.com/index/offline-fal/';
+    const fal = 'https://fal.run/fal-ai/bytedance/seedream/v4.5/text-to-image';
+    const web = new FixtureWeb().serve(page, { type: 'text/html', body: quiet })
+      .serve(fal, { type: 'application/json', body: JSON.stringify({ images: [{ url: `data:image/jpeg;base64,${heroLarge.toString('base64')}` }], seed: 1 }) });
+    const id = await insertCandidate('openai-blog', 'OFFLINE-fal', page, []);
+    expect((await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore(), illustrationsToday: async () => 0 })).candidates[0]).toMatchObject({ status: 'complete', assets: 1 });
+    expect((await assetsOf(id))[0]).toMatchObject({ origin_kind: 'generated', credit: 'Ilustrace: AI', origin_url: fal });
+    expect(web.count(fal)).toBe(1);
+  });
+
   it('draws one AI illustration as the last resort, within the daily count', async () => {
     vi.stubEnv('MARKETING_DNESKAI_GENERATED_ENABLED', 'true'); vi.stubEnv('GEMINI_API_KEY', 'offline-test-key');
     const page = 'https://openai.com/index/offline-generated/';
