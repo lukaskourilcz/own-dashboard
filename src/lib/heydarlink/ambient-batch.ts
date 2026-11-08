@@ -1,7 +1,7 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { AMBIENT_ASPECTS, AMBIENT_CAPS, AMBIENT_GATE, AMBIENT_PERSONAS, ambientFalUsd, ambientSeed, ambientShotList, type AmbientAspect, type AmbientPersona, type AmbientSettings } from './ambient-config';
+import { AMBIENT_ASPECTS, AMBIENT_CAPS, AMBIENT_GATE, AMBIENT_PERSONAS, ambientFalUsd, ambientSeed, ambientShotList, heydarlinkAmbientSettings, type AmbientAspect, type AmbientPersona, type AmbientSettings } from './ambient-config';
 import { ambientDuplicateGate, ambientFormatGate, inspectAmbientFrame, readAmbientFormat } from './ambient-gates';
 import { CropRefused, gradeAmbientFrame } from './ambient-grade';
 import { ambientSha256, uploadAmbientFrame } from './ambient-ingest';
@@ -181,4 +181,23 @@ export async function refillAmbientStock(db: Database, settings: AmbientSettings
     if (batch.created) opened.push(persona);
   }
   return { checked: true, opened };
+}
+
+export type AmbientTickResult = { status: 'idle' | 'worked' | 'skipped'; code?: string; frames: number; uploaded: number; costUsd: number; opened: number };
+/**
+ * One HeyDarlink ambient tick (`POST /api/heydarlink/ambient/tick`, its own pg_cron job every five minutes, so the
+ * DNESKAi steps of the marketing tick never starve it): the low-stock check, then frames while the call has time.
+ */
+export async function runHeydarlinkAmbientTick(db: Database, env: Environment, input: { signal: AbortSignal; remainingMs: () => number; now?: () => Date; fetchImpl?: typeof fetch }): Promise<AmbientTickResult> {
+  const settings = heydarlinkAmbientSettings(env);
+  if ('idle' in settings) return { status: 'skipped', code: settings.idle, frames: 0, uploaded: 0, costUsd: 0, opened: 0 };
+  const refill = await refillAmbientStock(db, settings, env, { signal: input.signal, now: input.now, fetchImpl: input.fetchImpl });
+  let frames = 0, uploaded = 0, costUsd = 0, code: string | undefined;
+  for (let index = 0; index < 4; index++) {
+    const result = await workAmbientFrame(db, settings, { signal: input.signal, remainingMs: input.remainingMs, now: input.now, fetchImpl: input.fetchImpl });
+    if (result.status === 'idle' || result.status === 'deferred') { code = result.code; break; }
+    frames++; costUsd += result.costUsd ?? 0;
+    if (result.status === 'uploaded') uploaded++;
+  }
+  return { status: frames || refill.opened.length ? 'worked' : 'idle', ...(code ? { code } : {}), frames, uploaded, costUsd, opened: refill.opened.length };
 }

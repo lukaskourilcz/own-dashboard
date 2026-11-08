@@ -8,7 +8,7 @@ import { pragueDayAfter } from './dneskai-workspace';
 import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
 import { dneskaiEmphasisFor } from './dneskai-palette';
 import { isDneskaiClosingSlide } from './dneskai-closing';
-import { DNESKAI_RESTYLE_FAILED, DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, dneskaiRestyleJobKey, restyleDneskaiPost } from './dneskai-restyle';
+import { DNESKAI_RESTYLE_ATTEMPTS, DNESKAI_RESTYLE_FAILED, DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, dneskaiRestyleJobKey, restyleDneskaiPost } from './dneskai-restyle';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
 import { prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from './dneskai-revision-edit';
@@ -436,8 +436,15 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
         }
         if (slot.code === DNESKAI_RESTYLE_QUEUED && head && (head.status === 'returned' || head.status === 'published')) {
           // The restyle job of this version: a failure is shown on the slot; a published post's new version is a new post the slot takes over.
-          const key = dneskaiRestyleJobKey(owner, head.id, head.content_hash, dneskaiPlanSlotAt(slot));
-          const job = read(await db.from('marketing_jobs').select('status').eq('user_id', owner).eq('idempotency_key', key).maybeSingle(), 'plan-job-unavailable') as { status: string } | null;
+          // The latest attempt that exists is the one this slot waits for.
+          let key = dneskaiRestyleJobKey(owner, head.id, head.content_hash, dneskaiPlanSlotAt(slot));
+          let job: { status: string } | null = null;
+          for (let attempt = 0; attempt < DNESKAI_RESTYLE_ATTEMPTS; attempt++) {
+            const candidate = dneskaiRestyleJobKey(owner, head.id, head.content_hash, dneskaiPlanSlotAt(slot), attempt);
+            const found = read(await db.from('marketing_jobs').select('status').eq('user_id', owner).eq('idempotency_key', candidate).maybeSingle(), 'plan-job-unavailable') as { status: string } | null;
+            if (!found) break;
+            key = candidate; job = found;
+          }
           if (job?.status === 'failed') { const patch = { status: 'failed' as const, code: DNESKAI_RESTYLE_FAILED }; await record(slot, patch); Object.assign(slot, patch); break; }
           if (head.status === 'published' && job?.status === 'review' && await revisionRow(db, owner, key)) {
             const patch: Partial<DneskaiPlanRow> = { head_revision_id: key, written_revision_id: null, threads_revision_id: null, threads_base_revision_id: null, story_revision_id: null, story_base_revision_id: null, status: 'ready', code: null };

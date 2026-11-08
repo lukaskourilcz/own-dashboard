@@ -14,6 +14,9 @@ describe('DNESKAi restyle (owner request, 8 November 2026)', () => {
     expect(dneskaiRestyleJobKey(owner, revision, hash, '2026-11-09T07:00:00.000Z')).toBe(key);
     expect(dneskaiRestyleJobKey(owner, revision, hash, '2026-11-09T09:00:00.000Z')).not.toBe(key);
     expect(dneskaiRestyleJobKey(owner, revision, 'b'.repeat(64), '2026-11-09T07:00:00.000Z')).not.toBe(key);
+    // A retry after a failure gets its own key; attempt 0 keeps the original one.
+    expect(dneskaiRestyleJobKey(owner, revision, hash, '2026-11-09T07:00:00.000Z', 0)).toBe(key);
+    expect(dneskaiRestyleJobKey(owner, revision, hash, '2026-11-09T07:00:00.000Z', 1)).not.toBe(key);
   });
 
   it('asks for stock pictures only while the stock source is on and the brief is short', () => {
