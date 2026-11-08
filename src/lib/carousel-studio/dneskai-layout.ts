@@ -1,6 +1,6 @@
 import { MASTER_CANVAS } from "./canvas";
 import { cropRegion } from "./images";
-import { CarouselTemplateSchema, type CarouselTemplate, type ImageCrop } from "./schema";
+import { CarouselTemplateSchema, leadingOf, type CarouselTemplate, type ImageCrop } from "./schema";
 
 /**
  * Where a DNESKAi slide's words and pictures stand, decided from what they measure.
@@ -256,9 +256,9 @@ function textBlock(input: DneskaiLayoutInput, slot: string): Block | null {
   const layer = textLayer(input.template, slot);
   if (!measured || !layer || measured.lines === 0) return null;
   // The renderer's own arithmetic for the height of a set block, in the same order.
-  const drawn = measured.lines * measured.fontSize * 1.12;
+  const drawn = measured.lines * measured.fontSize * leadingOf(layer);
   const height = Math.min(Math.round(px.height(layer)), Math.ceil(drawn));
-  const lastBaseline = measured.fontSize + (measured.lines - 1) * measured.fontSize * 1.12;
+  const lastBaseline = measured.fontSize + (measured.lines - 1) * measured.fontSize * leadingOf(layer);
   return { height, inkTop: measured.fontSize * (input.metrics.capOffset ?? 1 - (measured.capHeight ?? 0.7)), inkBottom: Math.max(0, height - lastBaseline) };
 }
 
@@ -540,7 +540,7 @@ function singlePhoto(input: DneskaiLayoutInput): CarouselTemplate {
   const focalY = ((picture.crop.focal.y * picture.height - region.top) / region.height) * H;
 
   const panel = layersOf(template).find((layer) => layer.type === "shape" && layer.padText === "headline")!;
-  const block = measured.lines * measured.fontSize * 1.12;
+  const block = measured.lines * measured.fontSize * leadingOf(textLayer(template, "headline"));
   const band = block + input.metrics.panel.padding * 2;
   const footTop = px.y(panel) + px.height(panel) - band;
   // The line, the kicker and the credit are each optional: a panel that carries the headline alone

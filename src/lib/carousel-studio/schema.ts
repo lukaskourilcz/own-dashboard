@@ -120,7 +120,18 @@ const TextLayerSchema = FrameSchema.extend({
    * the word after it instead of ending a line, the digit groups of one number stay together and a
    * number keeps its unit or percent sign (`KeepWithNext` in `text.ts`).
    */
-  keepWithNext: z.enum(["cs"]).optional()
+  keepWithNext: z.enum(["cs"]).optional(),
+  /**
+   * The colour of the payload's emphasised words in this frame (`CarouselPayload.emphasis`). Absent: every word is
+   * drawn in `colorToken`, as before (DNESKAi plakat, 8 November 2026). Where it resolves to the slide's own ground
+   * colour, the emphasis falls back to `secondary` so a word never disappears.
+   */
+  emphasisColorToken: TokenNameSchema.optional(),
+  /**
+   * The distance between baselines in em. Absent means 1.12, the engine's leading since v1. A condensed face set in
+   * capitals with Czech accents needs more, so its carons and acutes clear the line above (DNESKAi plakat).
+   */
+  leading: z.number().min(1).max(1.6).optional()
 }).superRefine((layer, context) => {
   if (layer.minFontSize > layer.maxFontSize) {
     context.addIssue({ code: "custom", message: "minFontSize cannot exceed maxFontSize" });
@@ -492,7 +503,12 @@ export const CarouselPayloadSchema = z.strictObject({
   strings: z.record(SlotNameSchema, z.string().max(2_000)),
   variant: z.string().regex(/^[A-Z][A-Z0-9-]*$/).optional(),
   /** Per image slot, how its photograph is cropped. Absent: drawn as the layer's fit draws it. */
-  images: z.record(ImageSlotSchema, ImageCropSchema).optional()
+  images: z.record(ImageSlotSchema, ImageCropSchema).optional(),
+  /**
+   * Per text slot, which of its words are emphasised, in the order the words stand in `strings` (whitespace splits
+   * them). A layer with `emphasisColorToken` draws those words in that colour; any other layer ignores it.
+   */
+  emphasis: z.record(SlotNameSchema, z.array(z.boolean()).max(400)).optional()
 });
 
 export const TemplateReferenceSchema = z.object({
@@ -520,6 +536,10 @@ export function carouselCanvas(format: CarouselFormat): CarouselCanvas {
   return FORMAT_CANVAS[format];
 }
 export type CarouselLayer = z.infer<typeof CarouselLayerSchema>;
+/** The engine's leading since v1, in em; a text layer may set its own (`leading`). */
+export const DEFAULT_LEADING = 1.12;
+/** The distance between baselines of a text layer, in em. */
+export const leadingOf = (layer: { leading?: number } | null | undefined): number => layer?.leading ?? DEFAULT_LEADING;
 /**
  * A layer as an author writes one, before defaults are filled in.
  *
