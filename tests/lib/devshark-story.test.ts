@@ -38,6 +38,24 @@ describe('devShark native 1080×1920 story (owner rule, 8 November 2026)', () =>
     expect(Math.abs((top + bottom) / 2 - (STORY_SAFE_TOP + (STORY_HEIGHT - STORY_SAFE_BOTTOM)) / 2)).toBeLessThanOrEqual(12);
   });
 
+  it('re-flows a cover that carries slide-specific boxes, centring it in the safe zone', () => {
+    // A cover authored in the Studio with absolute boxes for the 1350 slide (here near its top) must not keep those
+    // positions in the taller story; the story re-flows and centres instead.
+    const authored: DevsharkDeck = { schemaVersion: 'devshark-deck/1', cover: 'light', slides: [
+      { kind: 'cover', kicker: 'Coding task', headline: 'Reverse the words.', body: '"learn code every day" becomes [["day every code learn"]].',
+        layout: { kicker: { x: 80, y: 216, w: 920, size: 36 }, headline: { x: 80, y: 304, w: 920, size: 128 }, body: { x: 80, y: 616, w: 920, size: 68 } } },
+      { kind: 'text', headline: 'next' },
+    ] };
+    const layout = layoutDevsharkStory(authored, assets);
+    expect(layout.warnings).toEqual([]);
+    for (const block of layout.blocks) {
+      expect(block.box.y).toBeGreaterThanOrEqual(STORY_SAFE_TOP);
+      expect(block.box.y + block.height).toBeLessThanOrEqual(STORY_HEIGHT - STORY_SAFE_BOTTOM);
+    }
+    // The kicker did not stay at its slide position (216, above the safe band); it moved down into the safe zone.
+    expect(layout.blocks.find((b) => b.key === 'kicker')!.box.y).toBeGreaterThan(216);
+  });
+
   it('matches the golden story SVG', () => {
     const svg = layoutDevsharkStory(deck, assets).svg;
     expect(svg).toContain(`width="${STORY_WIDTH}" height="${STORY_HEIGHT}"`);

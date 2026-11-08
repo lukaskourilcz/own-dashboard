@@ -249,7 +249,9 @@ export const STORY_SAFE_BOTTOM = 250;
 /** Lays out a deck's cover as a full-frame 1080 × 1920 story: same design, text centred inside the Instagram safe zone. */
 export function layoutDevsharkStory(deck: Pick<DevsharkDeck, 'cover' | 'slides'>, assets: StudioAssets): StudioSlide {
   const index = 0;
-  const slide = deck.slides[index]!;
+  // Re-flow the cover with the house layout: the owner's per-block boxes were placed for the 1350 slide and would
+  // leave a 1920 story top-heavy, so the story ignores them and centres the stack in the safe zone instead.
+  const slide: DevsharkSlide = { ...deck.slides[index]!, layout: undefined };
   const theme = devsharkSlideTheme(deck, index);
   const palette = themes[theme];
   const green = theme === 'green' ? '#132019' : palette.accent;
