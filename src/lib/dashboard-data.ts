@@ -87,6 +87,9 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   ],
   marketing: ["projects", "aiLinks", "projectLinks"],
   workflows: [],
+  // Both read their own data: the plans through /api/publishing-calendar, the backlog through the owner's session.
+  schedule: [],
+  backlog: [],
   // A project workspace renders every related record, including the
   // subscription allocations behind its Finance tab and the competitor
   // research behind its Competition tab. The DNESKAi workspace tabs (#119)

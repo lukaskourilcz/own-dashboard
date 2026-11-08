@@ -7,6 +7,8 @@ import { ClientsPanel } from "@/components/panels/clients-panel";
 import { FinancesPanel } from "@/components/panels/finances-panel";
 import { InboxPanel } from "@/components/panels/inbox-panel";
 import { ImportantDatesPanel } from "@/components/panels/important-dates-panel";
+import { BacklogPanel } from "@/components/panels/backlog-panel";
+import { PublishingCalendarPanel } from "@/components/panels/publishing-calendar-panel";
 import { InvoicesPanel } from "@/components/panels/invoices-panel";
 import { JobsPanel } from "@/components/panels/jobs-panel";
 import { NotesPanel } from "@/components/panels/notes-panel";
@@ -398,6 +400,8 @@ export function DashboardShell(props: Props) {
           {tab === "subscriptions" && <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} allocations={subscriptionAllocations} setAllocations={setSubscriptionAllocations} allocationsReady={subscriptionAllocationsStatus.ready} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />}
           {tab === "tasks" && <TodosPanel todos={operationalTodos} projects={activeProjects} organizations={organizations} />}
           {tab === "calendar" && <div className="grid gap-4 lg:grid-cols-2"><CalendarPanel /><WeekView calendar={weekCalendar} selectedCalendarIds={props.selectedCalendarIds} /></div>}
+          {tab === "backlog" && <BacklogPanel isPreview={props.isPreview} />}
+          {tab === "schedule" && <PublishingCalendarPanel isPreview={props.isPreview} />}
           {tab === "goals" && <PlansPanel plans={plans} setPlans={setPlans} />}
           {tab === "dates" && <ImportantDatesPanel dates={importantDates} setDates={setImportantDates} userId={user.id} projects={activeProjects} organizations={organizations} />}
           {tab === "notes" && <NotesPanel notes={notes} setNotes={setNotes} projects={activeProjects} />}

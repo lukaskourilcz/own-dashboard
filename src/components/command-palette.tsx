@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   BriefcaseBusiness,
+  CalendarClock,
   CalendarDays,
   CreditCard,
   FileText,
@@ -12,6 +13,7 @@ import {
   LayoutDashboard,
   Languages,
   Lightbulb,
+  ListChecks,
   ListTodo,
   Users,
   LogOut,
@@ -85,6 +87,7 @@ export function CommandPalette({
     const list: Action[] = [
       { id: "go-home", label: s.home, group: "go", icon: LayoutDashboard, keywords: "home dashboard přehled g h", run: go("home") },
       { id: "go-marketing", label: s.marketing, group: "go", icon: CalendarDays, keywords: "marketing approve posts content schvalování", run: go("marketing") },
+      { id: "go-schedule", label: s.schedule, group: "go", icon: CalendarClock, keywords: "publishing calendar schedule instagram threads facebook linkedin kalendář sdílení příspěvky", run: go("schedule") },
       { id: "go-workflows", label: s.workflows, group: "go", icon: FolderKanban, keywords: "workflows process map postup přehled návaznosti", run: go("workflows") },
       { id: "go-work", label: s.work, group: "go", icon: BriefcaseBusiness, keywords: "work overview delivery práce", run: go("work") },
       { id: "go-projects", label: s.projects, group: "go", icon: FolderKanban, keywords: "projects github costs repos projekty", run: go("projects") },
@@ -98,6 +101,7 @@ export function CommandPalette({
       { id: "go-subs", label: s.subscriptions, group: "go", icon: CreditCard, keywords: "spend recurring předplatná", run: go("subscriptions") },
       { id: "go-categories", label: s.categories, group: "go", icon: Wallet, keywords: "categories rules kategorie", run: go("categories") },
       { id: "go-tasks", label: s.tasks, group: "go", icon: ListTodo, keywords: "todo tasks úkoly g t", run: go("tasks") },
+      { id: "go-backlog", label: s.backlog, group: "go", icon: ListChecks, keywords: "backlog agents ideas later úkoly agenti", run: go("backlog") },
       { id: "go-calendar", label: s.calendar, group: "go", icon: CalendarDays, keywords: "events kalendář g l", run: go("calendar") },
       { id: "go-goals", label: s.goals, group: "go", icon: Target, keywords: "goals plans cíle", run: go("goals") },
       { id: "go-dates", label: s.dates, group: "go", icon: Gift, keywords: "important deadlines dates termíny", run: go("dates") },
