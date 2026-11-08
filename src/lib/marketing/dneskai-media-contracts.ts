@@ -8,7 +8,9 @@ import { z } from 'zod';
  */
 export const DNESKAI_MEDIA_READ_VERSION = 'dneskai-media/1';
 /** Browser-safe: no server module is imported here, so the review UI can validate the response. */
-export const DNESKAI_MEDIA_ORIGIN_KINDS = ['instagram-display', 'instagram-child', 'og-image', 'article-figure', 'feed-image'] as const;
+export const DNESKAI_MEDIA_ORIGIN_KINDS = ['instagram-display', 'instagram-child', 'og-image', 'article-figure', 'feed-image', 'press-kit', 'stock', 'generated'] as const;
+/** Pictures that do not come from the publisher of the story (8 November 2026): the newsroom, stock and AI. */
+export const DNESKAI_SUPPLEMENT_ORIGIN_KINDS = ['press-kit', 'stock', 'generated'] as const;
 export type DneskaiMediaOriginKind = (typeof DNESKAI_MEDIA_ORIGIN_KINDS)[number];
 export const DNESKAI_MEDIA_COLLECTION_STATUSES = ['pending', 'complete', 'partial', 'failed', 'empty'] as const;
 

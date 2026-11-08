@@ -371,8 +371,36 @@
                       "instagram-child",
                       "og-image",
                       "article-figure",
-                      "feed-image"
+                      "feed-image",
+                      "press-kit",
+                      "stock",
+                      "generated"
                     ]
+                  },
+                  "visionScore": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10
+                  },
+                  "focal": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false
                   },
                   "fullBleedCapable": {
                     "type": "boolean"
@@ -584,8 +612,36 @@
                       "instagram-child",
                       "og-image",
                       "article-figure",
-                      "feed-image"
+                      "feed-image",
+                      "press-kit",
+                      "stock",
+                      "generated"
                     ]
+                  },
+                  "visionScore": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10
+                  },
+                  "focal": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false
                   },
                   "fullBleedCapable": {
                     "type": "boolean"
