@@ -114,3 +114,26 @@ export function dneskaiSeriesAssignment<S extends { date: string; time: string }
   }
   return pairs.sort((a, b) => a.at - b.at).map(({ slot, topic }) => ({ slot, topic }));
 }
+
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** A first caption line that is already a series heading, of any series and number. */
+const HEADING_LINE = new RegExp(`^(?:${Object.values(DNESKAI_SERIES_LABELS).map(escape).join('|')}) #\\d{1,4}$`, 'u');
+
+/**
+ * The caption with the series heading as its first line (owner decision, 8 November 2026). The heading shares the
+ * first paragraph, so the Threads text, which keeps only that paragraph, starts with it too. A heading already there
+ * (an earlier number) is replaced, never stacked.
+ */
+export function dneskaiSeriesCaption(caption: string, heading: string): string {
+  const lines = caption.replace(/^\s+/, '').split('\n');
+  const rest = HEADING_LINE.test(lines[0]?.trim() ?? '') ? lines.slice(1).join('\n').replace(/^\s+/, '') : lines.join('\n');
+  return rest ? `${heading}\n${rest}` : heading;
+}
+
+/** The deck with the series heading on its cover; a deck without a cover photo slide first is left as it is. */
+export function dneskaiSeriesDeck<D extends { slides: ReadonlyArray<{ type: string; series?: string }> }>(deck: D, heading: string): D {
+  const [cover, ...rest] = deck.slides;
+  if (!cover || cover.type !== 'cover-photo') return deck;
+  return { ...deck, slides: [{ ...cover, series: heading }, ...rest] };
+}
+
