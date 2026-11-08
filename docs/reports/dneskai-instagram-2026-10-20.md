@@ -177,7 +177,7 @@ Před generováním textu (ne po něm, aby model nevymýšlel slides k obrázků
 
 - carousel typu „obrazový“ vyžaduje ≥ 1 asset s kratší stranou ≥ 900 px (cover na celou plochu) a celkem ≥ 2 použitelné assety; obrázek v rámu stačí od 600 px (prototyp p5 ukazuje štítek rozlišení u 624 px figur z Hugging Face: použitelné v rámu, ne na cover);
 - `rights_class = wire-stock-flagged` (Getty, Reuters, AP, Shutterstock v URL nebo v creditu) obrázek vyřadí; typický případ je TechCrunch `og:image` z Getty (prototyp p3 proto běží v textové rodině);
-- když podmínky nesplní, téma nespadne: dostane typ „textový carousel“ nebo „oznámení“ (jeden obrázek nebo typografický slide) a v UI stav **„bez použitelného obrázku“**. Nikdy tiše nenahradit generovanou ilustrací.
+- když podmínky nesplní, téma nespadne: dostane typ „textový carousel“ nebo „oznámení“ (jeden obrázek nebo typografický slide) a v UI stav **„bez použitelného obrázku“**. Nikdy tiše nenahradit generovanou ilustrací. *(Zrušeno vlastníkem 8. listopadu 2026: každý post musí mít fotku, poslední možností je ilustrace z Gemini s creditem „Ilustrace: AI“; viz `docs/dneskai-source-media.md`, „Další zdroje fotek“.)*
 - popisek Reelu zůstává popiskem: `origin_kind` a text kandidáta nesou „caption“, ne „transcript“; prompt to dostane jako pole `captionOnly: true`.
 
 ## 6. DNESKAi rozhraní v OwnDashboardu

@@ -189,6 +189,7 @@ The migrations, in the order they run:
 91. `20261107210000_dneskai_plan_stories.sql` — each DNESKAi plan slot's Instagram story (made from the post's cover, ten minutes after it) and the plan's approval of it.
 92. `20261107220000_devshark_publish.sql` — the revisions a devShark plan slot publishes (Instagram carousel, Threads post, Instagram story) and `marketing_devshark_plan_approve`, which approves only those.
 93. `20261107230000_devshark_concept_cost.sql` — what each generated devShark concept cost, for the daily concept ceiling.
+94. `20261108120000_dneskai_media_more_sources.sql` — DNESKAi pictures from newsrooms, stock and AI illustrations, and Claude vision scores on each picture.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.

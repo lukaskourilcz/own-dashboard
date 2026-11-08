@@ -968,3 +968,11 @@ PGlite (`tests/lib/devshark-plan-database.test.ts`).
 `20261107230000_devshark_concept_cost.sql` adds `cost_usd` to `marketing_devshark_drafts` and an index on generated
 concepts by time. The `devshark-concepts` step sums the last 24 hours before each call to stay under
 `DEVSHARK_CONCEPT_DAILY_USD`.
+
+## DNESKAi photo sources and vision, 8 November 2026
+
+`20261108120000_dneskai_media_more_sources.sql` widens the origin kinds of `marketing_media_assets`,
+`marketing_media_asset_links` and the plan check in `marketing_media_set_plan` with `press-kit`, `stock` and
+`generated`. The function is rewritten in place, so the rest of it stays as it was. The migration adds `vision_score`, `vision_flags`,
+`focal_x`, `focal_y` and `ranked_at` to the links, and `ranked_at` and `rank_cost_usd` to `marketing_media_collections`
+for the daily vision ceiling. It is replayed in PGlite (`tests/lib/marketing-dneskai-media.test.ts`).

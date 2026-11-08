@@ -448,3 +448,60 @@ it('collects and reads media on the existing schema while rich evidence is disab
     await pg.exec('alter function unapplied_media_set_evidence(uuid,uuid,text,uuid,text) rename to marketing_media_set_evidence');
   }
 });
+
+describe('more pictures when the publisher offers too few (owner decision, 8 November 2026)', () => {
+  const quiet = '<html><head><title>OFFLINE</title></head><body><p>' + 'OFFLINE text. '.repeat(30) + '</p></body></html>';
+  it('reads a page that refuses the server through Apify, under the publisher-own host rules', async () => {
+    vi.stubEnv('MARKETING_DNESKAI_MEDIA_APIFY_ENABLED', 'true'); vi.stubEnv('APIFY_TOKEN', 'offline-test-token');
+    const page = 'https://openai.com/index/offline-apify/';
+    const apify = 'https://api.apify.com/v2/acts/apify~cheerio-scraper/run-sync-get-dataset-items?build=3.0.24&timeout=60&memory=512&format=json&clean=true';
+    const html = `<html><head><meta property="og:image" content="https://images.ctfassets.net/OFFLINE/apify-hero.jpg"><meta property="og:image:width" content="2400"></head><body>${'OFFLINE '.repeat(40)}</body></html>`;
+    const web = new FixtureWeb().serve(page, { status: 403, type: 'text/html', body: 'forbidden' })
+      .serve(apify, { type: 'application/json', body: JSON.stringify([{ url: page, html }]) })
+      .serve('https://images.ctfassets.net/OFFLINE/apify-hero.jpg', { body: heroLarge });
+    const id = await insertCandidate('openai-blog', 'OFFLINE-apify', page, []);
+    const result = await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() });
+    expect(result.candidates[0]).toMatchObject({ status: 'complete', assets: 1 });
+    expect(web.count(apify)).toBe(1);
+    expect((await pg.query('select page_status,page_error from marketing_media_collections where candidate_id=$1', [id])).rows[0]).toEqual({ page_status: 'ok', page_error: 'media-page-via-apify' });
+    expect((await assetsOf(id))[0]).toMatchObject({ origin_kind: 'og-image', origin_url: 'https://images.ctfassets.net/OFFLINE/apify-hero.jpg' });
+  });
+
+  it('adds the newsroom pictures of the company the story names, credited to the company', async () => {
+    vi.stubEnv('MARKETING_DNESKAI_PRESS_KIT_ENABLED', 'true');
+    const page = 'https://openai.com/index/offline-kit/';
+    const newsroom = `<html><head><meta property="og:image" content="https://cdn.sanity.io/images/OFFLINE/kit.jpg"><meta property="og:image:width" content="1440"></head><body>${'OFFLINE '.repeat(40)}</body></html>`;
+    const web = new FixtureWeb().serve(page, { type: 'text/html', body: quiet }).serve('https://www.anthropic.com/news', { type: 'text/html', body: newsroom })
+      .serve('https://cdn.sanity.io/images/OFFLINE/kit.jpg', { body: A });
+    const id = await insertCandidate('openai-blog', 'OFFLINE-Anthropic-kit', page, []);
+    expect((await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() })).candidates[0]).toMatchObject({ status: 'complete', assets: 1 });
+    expect((await assetsOf(id))[0]).toMatchObject({ origin_kind: 'press-kit', credit: 'Foto: Anthropic', position: 20 });
+  });
+
+  it('falls back to licensed stock only when the publisher and the newsrooms gave nothing, credit in the database', async () => {
+    vi.stubEnv('MARKETING_DNESKAI_STOCK_ENABLED', 'true'); vi.stubEnv('PEXELS_API_KEY', 'offline-test-key');
+    const page = 'https://openai.com/index/offline-stock/';
+    const search = 'https://api.pexels.com/v1/search?query=OFFLINE+TEST+OFFLINE-stock+technology&per_page=2&orientation=portrait&size=large';
+    const photo = 'https://images.pexels.com/photos/1/OFFLINE.jpeg?auto=compress&cs=tinysrgb&w=1600';
+    const web = new FixtureWeb().serve(page, { type: 'text/html', body: quiet })
+      .serve(search, { type: 'application/json', body: JSON.stringify({ photos: [{ photographer: 'Jana Nováková', src: { original: 'https://images.pexels.com/photos/1/OFFLINE.jpeg', large2x: 'https://images.pexels.com/photos/1/OFFLINE-l.jpeg' } }] }) })
+      .serve(photo, { body: B });
+    const id = await insertCandidate('openai-blog', 'OFFLINE-stock', page, []);
+    expect((await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore() })).candidates[0]).toMatchObject({ status: 'complete', assets: 1 });
+    expect((await assetsOf(id))[0]).toMatchObject({ origin_kind: 'stock', credit: 'Foto: Jana Nováková / Pexels', origin_url: photo });
+  });
+
+  it('draws one AI illustration as the last resort, within the daily count', async () => {
+    vi.stubEnv('MARKETING_DNESKAI_GENERATED_ENABLED', 'true'); vi.stubEnv('GEMINI_API_KEY', 'offline-test-key');
+    const page = 'https://openai.com/index/offline-generated/';
+    const gemini = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+    const web = new FixtureWeb().serve(page, { type: 'text/html', body: quiet }).serve(gemini, { type: 'application/json', body: JSON.stringify({ output_image: { data: heroLarge.toString('base64') } }) });
+    const id = await insertCandidate('openai-blog', 'OFFLINE-generated', page, []);
+    const full = await insertCandidate('openai-blog', 'OFFLINE-generated-full', 'https://openai.com/index/offline-generated-full/', []);
+    web.serve('https://openai.com/index/offline-generated-full/', { type: 'text/html', body: quiet });
+    expect((await collectDneskaiMedia(client(), owner, project, [id], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore(), illustrationsToday: async () => 0 })).candidates[0]).toMatchObject({ status: 'complete', assets: 1 });
+    expect((await assetsOf(id))[0]).toMatchObject({ origin_kind: 'generated', credit: 'Ilustrace: AI' });
+    expect((await collectDneskaiMedia(client(), owner, project, [full], { fetchImpl: web.fetch, resolveImpl: publicDns, store: new MemoryStore(), illustrationsToday: async () => 6 })).candidates[0]).toMatchObject({ status: 'empty', assets: 0 });
+    expect(web.count(gemini)).toBe(1);
+  });
+});

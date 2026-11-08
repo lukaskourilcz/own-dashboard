@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DNESKAI_MEDIA_ORIGIN_KINDS } from "./dneskai-media-contracts";
 
 /**
  * The DNESKAi social brief (#115): one selected news event, its best source, supporting evidence and the
@@ -38,7 +39,11 @@ export const DneskaiBriefMediaSchema = z.strictObject({
   credit: z.string().min(1).max(120),
   width: z.number().int().positive().max(20000),
   height: z.number().int().positive().max(20000),
-  originKind: z.enum(["instagram-display", "instagram-child", "og-image", "article-figure", "feed-image"]),
+  originKind: z.enum(DNESKAI_MEDIA_ORIGIN_KINDS),
+  /** Claude vision's score from 0 to 10 (`dneskai-media-vision.ts`); absent while the picture is not ranked. */
+  visionScore: z.number().int().min(0).max(10).optional(),
+  /** Where the picture's subject is, as a share of its width and height: the crop keeps it in view. */
+  focal: z.strictObject({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).optional(),
   /** Shorter side >= 900 px: may fill a cover-photo or single photo slide (the studio still checks the crop). */
   fullBleedCapable: z.boolean(),
   /** Width >= 600 px: may be shown framed (figure, split, sources thumbnails). */
