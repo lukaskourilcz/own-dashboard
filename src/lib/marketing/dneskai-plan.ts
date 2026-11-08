@@ -6,6 +6,7 @@ import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
 import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
+import { dneskaiEmphasisFor } from './dneskai-palette';
 import { DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, restyleDneskaiPost } from './dneskai-restyle';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
@@ -112,6 +113,8 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
     if (!ownerEdit && Date.parse(head.revision.scheduledAt) !== slotAt) return { kind: 'move', status: 'ready' };
     // A series post carries its label and running number, the owner's edit included (8 November 2026).
     if (heading && head.revision.deck && dneskaiSeriesOutOfDate(head.revision, heading)) return { kind: 'series', status: 'ready' };
+    // The key words take the colour of the slot (owner request, 8 November 2026); a post moved here is redrawn in it.
+    if (!ownerEdit && head.revision.deck && head.revision.deck.emphasis !== dneskaiEmphasisFor(dneskaiPlanSlotAt(slot))) return { kind: 'move', status: 'ready' };
     if (!slot.instagram && head.revision.account.platform === 'instagram') {
       return threadsAccount ? { kind: 'to-threads', status: 'ready' } : { kind: 'wait', status: 'ready', code: 'threads-account-missing' };
     }
@@ -267,7 +270,8 @@ async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit
   const deck = head.revision.deck;
   const kit = deck ? dneskaiGenerationKit([head.revision.title, ...deck.slides.map((slide) => slide.headline ?? '')].join('\n')) : null;
   const deckEdit = edit.kit && deck && kit ? { kit, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
-  const revision = await prepareDneskaiRevisionEdit(head.revision, { caption: head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
+  const prepared = await prepareDneskaiRevisionEdit(head.revision, { caption: head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
+  const revision = prepared.deck ? { ...prepared, deck: { ...prepared.deck, emphasis: dneskaiEmphasisFor(edit.scheduledAt) } } : prepared;
   let reuse = reusableDneskaiRender(head.revision, head.render_report, revision);
   if (reuse) { try { reuse = { ...reuse, assets: await refreshMarketingAssetUrls(db, owner, reuse.assets) }; } catch { reuse = null; } }
   const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });

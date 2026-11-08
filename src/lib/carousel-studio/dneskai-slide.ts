@@ -120,6 +120,8 @@ export interface DneskaiSlideInput {
   locale?: "cs" | "en";
   /** The owner's hand placement of the words (`dneskai-boxes.ts`). Absent: the kit's own layout, unchanged. */
   layout?: DneskaiBoxes;
+  /** The post's key-word colour, `#rrggbb` (owner request, 8 November 2026). Absent: the kit's own. */
+  emphasisColor?: string;
 }
 
 export type DneskaiProblemCode =
@@ -483,6 +485,7 @@ export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<Dnes
     images,
     deck: input.position,
     index: 0,
+    ...(input.emphasisColor ? { emphasisColor: input.emphasisColor } : {}),
     ...(input.layout && Object.keys(input.layout).length ? { relaxedChecks: DNESKAI_PLACED_RELAXED_CHECKS } : {})
   });
   if (!rendered) throw new Error(`Template ${template.id} has no slide to render`);
