@@ -169,7 +169,7 @@ Pro každou událost v pořadí:
    striktní brief/1 vidí jen text z feedu. Stejný text dvou zpráv se počítá jednou.
 4. **Platnost**: 48 hodin pro `ai-news` a `tech-news`, 14 dní pro `tool`,
    `ai-project` a `marketing`, počítáno od vytvoření zadání.
-5. **Čas**: `DNESKAI_BRIEF_SLOTS` = 08:00, 12:30, 17:00 a 20:00 Europe/Prague, přes
+5. **Čas**: `DNESKAI_BRIEF_SLOTS` = 08:00, 12:30, 19:00 a 21:00 Europe/Prague, přes
    `pragueScheduledAt`, takže 25. 10. 2026 (konec letního času) dává 07:00, 11:30,
    16:00 a 19:00 UTC. Události dostávají časy v pořadí svého pořadí výběru, i ta, která
    ještě čeká na média. Čas se přeskočí, když je do hodiny od jiného příspěvku nebo
@@ -368,7 +368,7 @@ brief and in the model's input. With the switch off, or when the topics read fai
 ## Daily mix (#156)
 
 With `DNESKAI_DAILY_MIX_ENABLED=true` the owner's mix from Zdroje → Denní mix (default 1 news and 1 education post,
-08:00 and 17:00) steers the topic path: the briefs step turns the best three events per wanted news post into news
+08:00 and 19:00) steers the topic path: the briefs step turns the best three events per wanted news post into news
 topics (none for zero), the bridge commits to a day only as many topics of each kind as the mix asks and moves the
 rest to the next day or keeps them waiting with `topic-daily-mix-full`, and every slot comes from the active times.
 The four times stay one list in code and SQL; the mix only switches some off.
