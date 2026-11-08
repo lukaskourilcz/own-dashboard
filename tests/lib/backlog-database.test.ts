@@ -45,4 +45,19 @@ describe('backlog_items', () => {
     expect(row.user_id).toBe(owner);
     await db.query('reset role');
   });
+
+  it('keeps the owner\'s note with the time of its last edit, and takes the ready_for_agent status', async () => {
+    await as('authenticated', owner);
+    const [row] = (await db.query<{ id: string; note_updated_at: string | null }>("insert into public.backlog_items(project,title) values('DNESKAi','Hand over') returning id,note_updated_at")).rows;
+    expect(row!.note_updated_at).toBeNull();
+    await db.query("select set_config('marketing.test_time','2026-11-08T13:00:00.000Z',false)");
+    const noted = (await db.query<{ status: string; note: string; note_updated_at: Date }>("update public.backlog_items set note=$2,status='ready_for_agent' where id=$1 returning status,note,note_updated_at", [row!.id, 'Use the blue logo.\nNo sources slide.'])).rows[0]!;
+    expect(noted).toMatchObject({ status: 'ready_for_agent', note: 'Use the blue logo.\nNo sources slide.' });
+    expect(new Date(noted.note_updated_at).toISOString()).toBe('2026-11-08T13:00:00.000Z');
+    await db.query("select set_config('marketing.test_time','2026-11-08T14:00:00.000Z',false)");
+    const moved = (await db.query<{ note_updated_at: Date }>("update public.backlog_items set status='in_progress' where id=$1 returning note_updated_at", [row!.id])).rows[0]!;
+    expect(new Date(moved.note_updated_at).toISOString()).toBe('2026-11-08T13:00:00.000Z');
+    await expect(db.query("update public.backlog_items set status='waiting' where id=$1", [row!.id])).rejects.toThrow();
+    await db.query('reset role');
+  });
 });

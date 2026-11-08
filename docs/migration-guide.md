@@ -1017,3 +1017,11 @@ the slot, not to a revision, so it survives an edit in the Design Lab. `marketin
 revisions a switch turns off, and `marketing_claim_due` is redefined with one more condition so the publishers never
 claim them; the rest of the function is unchanged. A switched-off publication stays queued: switched back on in time,
 it goes out at its slot. Replayed in PGlite (`tests/lib/publishing-switches-database.test.ts`).
+
+## Backlog notes and hand-over, 8 November 2026
+
+`20261108240000_backlog_notes.sql` adds `note` (the owner's answer or input, up to 20,000 characters) and
+`note_updated_at` to `backlog_items`, and the status `ready_for_agent` between `open` and `in_progress`. The owner
+trigger sets `note_updated_at` whenever the note changes. A partial index serves the agents' query for items ready
+for them. The contract columns and the agents' insert are unchanged. Replayed in PGlite
+(`tests/lib/backlog-database.test.ts`).
