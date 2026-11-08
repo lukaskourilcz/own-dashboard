@@ -66,6 +66,12 @@ describe("backlog", () => {
     expect(backlogProjectCounts(PREVIEW_BACKLOG, "active")).toEqual({ all: 3, heyDarlink: 0, DNESKAi: 1, devShark: 1, personal: 1 });
   });
 
+  it("keeps a task ready for an agent among the unfinished ones and filters by that status", () => {
+    const handed = PREVIEW_BACKLOG.map((item, index) => index === 0 ? { ...item, status: "ready_for_agent" as const } : item);
+    expect(filterBacklog(handed, { project: "all", status: "active" })).toHaveLength(3);
+    expect(filterBacklog(handed, { project: "all", status: "ready_for_agent" }).map((item) => item.title)).toEqual(["Shorter closing slide on Threads"]);
+  });
+
   it("links a Jira key and an https URL, nothing else", () => {
     expect(backlogRefHref("LDEV-393")).toBe("https://linka.atlassian.net/browse/LDEV-393");
     expect(backlogRefHref("https://github.com/x/y/pull/1")).toBe("https://github.com/x/y/pull/1");

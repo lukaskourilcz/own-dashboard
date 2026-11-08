@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, ListChecks } from "lucide-react";
+import { ExternalLink, ListChecks, MessageSquareText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EntityBadge } from "@/components/ui/status-badge";
@@ -18,7 +20,8 @@ import {
   backlogRefHref,
   fetchBacklogItems,
   filterBacklog,
-  updateBacklogStatus,
+  BACKLOG_NOTE_MAX,
+  updateBacklogItem,
   type BacklogFilter,
   type BacklogItem,
   type BacklogStatus,
@@ -27,14 +30,15 @@ import { cn } from "@/lib/utils";
 
 /** Sample tasks for /dev-preview: the panel never calls Supabase there. */
 export const PREVIEW_BACKLOG: BacklogItem[] = [
-  { id: "00000000-0000-4000-8000-0000000000b1", project: "DNESKAi", title: "Shorter closing slide on Threads", description: "The closing line wraps on narrow phones.", status: "open", source: "claude:dneskai", external_ref: null, created_at: "2026-11-08T09:00:00.000Z", updated_at: "2026-11-08T09:00:00.000Z" },
-  { id: "00000000-0000-4000-8000-0000000000b2", project: "devShark", title: "Five new concepts for next week", description: null, status: "in_progress", source: "claude:devshark", external_ref: null, created_at: "2026-11-08T08:00:00.000Z", updated_at: "2026-11-08T10:00:00.000Z" },
-  { id: "00000000-0000-4000-8000-0000000000b3", project: "personal", title: "Renew the domain", description: "Before the end of the month.", status: "open", source: "owner", external_ref: null, created_at: "2026-11-07T18:00:00.000Z", updated_at: "2026-11-07T18:00:00.000Z" },
-  { id: "00000000-0000-4000-8000-0000000000b4", project: "heyDarlink", title: "Fix the search error message", description: null, status: "done", source: "claude:audit", external_ref: "LDEV-1", created_at: "2026-11-07T12:00:00.000Z", updated_at: "2026-11-08T07:00:00.000Z" },
+  { id: "00000000-0000-4000-8000-0000000000b1", project: "DNESKAi", title: "Shorter closing slide on Threads", description: "The closing line wraps on narrow phones.", status: "open", source: "claude:dneskai", external_ref: null, note: null, note_updated_at: null, created_at: "2026-11-08T09:00:00.000Z", updated_at: "2026-11-08T09:00:00.000Z" },
+  { id: "00000000-0000-4000-8000-0000000000b2", project: "devShark", title: "Five new concepts for next week", description: null, status: "in_progress", source: "claude:devshark", external_ref: null, note: null, note_updated_at: null, created_at: "2026-11-08T08:00:00.000Z", updated_at: "2026-11-08T10:00:00.000Z" },
+  { id: "00000000-0000-4000-8000-0000000000b3", project: "personal", title: "Renew the domain", description: "Before the end of the month.", status: "open", source: "owner", external_ref: null, note: null, note_updated_at: null, created_at: "2026-11-07T18:00:00.000Z", updated_at: "2026-11-07T18:00:00.000Z" },
+  { id: "00000000-0000-4000-8000-0000000000b4", project: "heyDarlink", title: "Fix the search error message", description: null, status: "done", source: "claude:audit", external_ref: "LDEV-1", note: "Moved the message under the search field.", note_updated_at: "2026-11-08T07:00:00.000Z", created_at: "2026-11-07T12:00:00.000Z", updated_at: "2026-11-08T07:00:00.000Z" },
 ];
 
 const STATUS_TONE: Record<BacklogStatus, string> = {
   open: "border-border bg-surface",
+  ready_for_agent: "border-border-strong bg-surface",
   in_progress: "border-warning/40 bg-warning/5",
   done: "border-dashed border-border bg-surface-inset",
   dropped: "border-dashed border-border bg-surface-inset",
@@ -52,22 +56,28 @@ export function BacklogPanel({ isPreview = false }: { isPreview?: boolean }) {
   const shown = useMemo(() => filterBacklog(items, filter), [items, filter]);
   const counts = useMemo(() => backlogProjectCounts(items, filter.status), [items, filter.status]);
 
+  type Change = { id: string; status?: BacklogStatus; note?: string | null };
+  const patch = (item: BacklogItem, change: Change): BacklogItem => ({ ...item, ...(change.status ? { status: change.status } : {}),
+    ...(change.note !== undefined ? { note: change.note, note_updated_at: change.note === item.note ? item.note_updated_at : new Date().toISOString() } : {}) });
+  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const mutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: BacklogStatus }) => updateBacklogStatus(id, status),
-    onMutate: async ({ id, status }) => {
+    mutationFn: ({ id, ...change }: Change) => updateBacklogItem(id, change),
+    onMutate: async (change) => {
       setFailed(null);
       await queryClient.cancelQueries({ queryKey: qk.backlog });
       const before = queryClient.getQueryData<BacklogItem[]>(qk.backlog);
-      queryClient.setQueryData<BacklogItem[]>(qk.backlog, (old) => old?.map((item) => item.id === id ? { ...item, status } : item));
+      queryClient.setQueryData<BacklogItem[]>(qk.backlog, (old) => old?.map((item) => item.id === change.id ? patch(item, change) : item));
       return { before };
     },
     onError: (_error, { id }, context) => { queryClient.setQueryData(qk.backlog, context?.before); setFailed(id); },
-    onSuccess: (row) => queryClient.setQueryData<BacklogItem[]>(qk.backlog, (old) => old?.map((item) => item.id === row.id ? row : item)),
+    onSuccess: (row) => { setEditing((old) => old?.id === row.id ? null : old); queryClient.setQueryData<BacklogItem[]>(qk.backlog, (old) => old?.map((item) => item.id === row.id ? row : item)); },
   });
-  const setStatus = (id: string, status: BacklogStatus) => {
-    if (isPreview) setPreviewItems((old) => old.map((item) => item.id === id ? { ...item, status } : item));
-    else mutation.mutate({ id, status });
+  const save = (change: Change) => {
+    if (isPreview) { setPreviewItems((old) => old.map((item) => item.id === change.id ? patch(item, change) : item)); setEditing(null); }
+    else mutation.mutate(change);
   };
+  const setStatus = (id: string, status: BacklogStatus) => save({ id, status });
+  const edited = (iso: string) => new Intl.DateTimeFormat(lang === "cs" ? "cs-CZ" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Prague" }).format(new Date(iso));
 
   const projectOptions = [{ value: "all", label: `${t.allProjects} (${counts.all})` }, ...BACKLOG_PROJECTS.map((project) => ({ value: project, label: `${t.projects[project]} (${counts[project]})` }))];
   const statusOptions = [{ value: "active", label: t.activeStatuses }, { value: "all", label: t.allStatuses }, ...BACKLOG_STATUSES.map((status) => ({ value: status, label: t.statuses[status] }))];
@@ -104,6 +114,24 @@ export function BacklogPanel({ isPreview = false }: { isPreview?: boolean }) {
                 <p className={cn("text-sm font-medium break-words", (item.status === "done" || item.status === "dropped") && "line-through decoration-foreground-muted")}>{item.title}</p>
                 {item.description && <p className="whitespace-pre-line text-xs break-words text-foreground-muted">{item.description}</p>}
                 {item.source && <p className="text-[11px] text-foreground-muted">{t.addedBy(item.source)}</p>}
+                {editing?.id === item.id ? <div className="space-y-2 pt-1">
+                  <Textarea value={editing.text} onChange={(event) => setEditing({ id: item.id, text: event.target.value })} rows={5} maxLength={BACKLOG_NOTE_MAX}
+                    aria-label={t.noteFor(item.title)} placeholder={t.notePlaceholder} className="min-h-28 w-full" />
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" disabled={mutation.isPending} onClick={() => save({ id: item.id, note: editing.text.trim() || null, status: "ready_for_agent" })}>{mutation.isPending ? t.saving : t.saveAndHand}</Button>
+                    <Button type="button" size="sm" variant="outline" disabled={mutation.isPending} onClick={() => save({ id: item.id, note: editing.text.trim() || null })}>{t.saveNote}</Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(null)}>{t.cancel}</Button>
+                  </div>
+                </div>
+                : <>
+                  {item.note && <div className="rounded-md border border-border bg-surface-inset p-2" data-testid="backlog-note">
+                    <p className="text-[11px] font-medium text-foreground-muted">{t.note}{item.note_updated_at && ` · ${t.noteEdited(edited(item.note_updated_at))}`}</p>
+                    <p className="whitespace-pre-line text-sm break-words">{item.note}</p>
+                  </div>}
+                  <Button type="button" size="sm" variant="ghost" className="-ml-2" onClick={() => setEditing({ id: item.id, text: item.note ?? "" })}>
+                    <MessageSquareText className="h-4 w-4" aria-hidden />{item.note ? t.editNote : t.addNote}
+                  </Button>
+                </>}
                 {failed === item.id && <p role="alert" className="text-xs text-risk">{t.saveFailed}</p>}
               </div>
               <SimpleSelect value={item.status} onValueChange={(value) => setStatus(item.id, value as BacklogStatus)} options={statusChoices} aria-label={t.statusOf(item.title)} className="w-full shrink-0 sm:w-40" />
