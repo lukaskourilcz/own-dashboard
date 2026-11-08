@@ -127,14 +127,17 @@ export const CollectionDigestSchema = z.strictObject({
   summary: z.string().min(1).max(800), tips: z.array(z.string().min(1).max(300)).max(8),
   tags: z.array(z.string().min(1).max(40)).max(8), project: z.enum(COLLECTION_PROJECTS).nullable(),
 });
-export type CollectionDigest = z.infer<typeof CollectionDigestSchema> & { model?: string; apifyUsd?: number | null; claudeUsd?: number; droppedProcedures?: number };
+/** `fromTips`: the summary is the IG TIPS record's own; nothing was scraped. */
+export type CollectionDigest = z.infer<typeof CollectionDigestSchema> & { model?: string; apifyUsd?: number | null; claudeUsd?: number; procedures?: number; droppedProcedures?: number; fromTips?: boolean };
 
 export type CollectionPost = {
   id: string; shortcode: string; url: string; author: string | null; saved_at: string | null; published_at: string | null;
   collections: string[]; status: CollectionStatus; error: string | null; thumbnail: string | null; media_type: string | null;
   digest: CollectionDigest | null; processed_at: string | null;
+  /** The IG TIPS / Links record that already holds this post. */
+  ai_link_id: string | null;
 };
-export type CollectionOverview = { highWater: string | null; count: number; lastRun: string | null; lastImport: string | null; queued: number; hasShareToken: boolean; shareTokenCreatedAt: string | null };
+export type CollectionOverview = { highWater: string | null; count: number; inTips: number; lastRun: string | null; lastImport: string | null; queued: number; hasShareToken: boolean; shareTokenCreatedAt: string | null };
 export type CollectionFilter = { status: CollectionStatus | "all"; project: CollectionProject | "all"; tag: string | "all"; search: string };
 
 const fold = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -158,5 +161,6 @@ export function collectionPostFromRow(row: Record<string, unknown>): CollectionP
     saved_at: typeof row.saved_at === "string" ? row.saved_at : null, published_at: typeof row.published_at === "string" ? row.published_at : null,
     collections: Array.isArray(row.collections) ? row.collections.map(String) : [], status, error: typeof row.collection_error === "string" ? row.collection_error : null,
     thumbnail: typeof media.thumbnailUrl === "string" && media.thumbnailUrl.startsWith("https://") ? media.thumbnailUrl : null,
-    media_type: typeof media.type === "string" ? media.type : null, digest, processed_at: typeof row.processed_at === "string" ? row.processed_at : null };
+    media_type: typeof media.type === "string" ? media.type : null, digest, processed_at: typeof row.processed_at === "string" ? row.processed_at : null,
+    ai_link_id: typeof row.ai_link_id === "string" ? row.ai_link_id : null };
 }

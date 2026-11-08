@@ -54,7 +54,7 @@ describe("IG Kolekce export parsing", () => {
   });
 
   it("filters by status, project, tag and search", () => {
-    const post = (id: string, patch: Partial<CollectionPost>): CollectionPost => ({ id, shortcode: id, url: "", author: null, saved_at: null, published_at: null, collections: [], status: "queued", error: null, thumbnail: null, media_type: null, digest: null, processed_at: null, ...patch });
+    const post = (id: string, patch: Partial<CollectionPost>): CollectionPost => ({ id, shortcode: id, url: "", author: null, saved_at: null, published_at: null, collections: [], status: "queued", error: null, thumbnail: null, media_type: null, digest: null, processed_at: null, ai_link_id: null, ...patch });
     const posts = [post("A", { status: "done", author: "Hookmaster", digest: { summary: "Háčky v první vteřině.", tips: [], tags: ["hooks"], project: "devShark" } }), post("B", { collections: ["Tipy"] })];
     expect(filterCollection(posts, { status: "done", project: "all", tag: "all", search: "" }).map((p) => p.id)).toEqual(["A"]);
     expect(filterCollection(posts, { status: "all", project: "devShark", tag: "all", search: "hacky" }).map((p) => p.id)).toEqual(["A"]);
