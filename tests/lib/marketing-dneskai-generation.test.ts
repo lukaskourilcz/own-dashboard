@@ -288,9 +288,9 @@ describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", 
   it("keeps the exact disclosure wording, naming no source", () => {
     expect(DNESKAI_AI_DISCLOSURE).toBe("Text připravil jazykový model. Výběr a schválení: redakce DNESKAi.");
   });
-  it("is the body, then the disclosure, then the hashtags, for a carousel and a single alike", () => {
+  it("is the body, then the hashtags, with no AI disclosure (owner, 8 November 2026), for a carousel and a single alike", () => {
     for (const copy of [validCopy(pictures), singleCopy()]) {
-      expect(captionOf(copy)).toBe([copy.caption, DNESKAI_AI_DISCLOSURE, TAGS].join("\n\n"));
+      expect(captionOf(copy)).toBe([copy.caption, TAGS].join("\n\n"));
     }
   });
   it("names no source, link or picture credit", () => {
@@ -305,7 +305,7 @@ describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", 
   it("carries at most ten hashtags, #dneskai first, in one last line", () => {
     const copy = { ...validCopy(pictures), hashtags: Array.from({ length: 10 }, (_, index) => `tema${index}`) };
     const lines = captionOf(copy).split("\n\n");
-    expect(lines.at(-2)).toBe(DNESKAI_AI_DISCLOSURE);
+    expect(lines).not.toContain(DNESKAI_AI_DISCLOSURE);
     const tags = lines.at(-1)!.split(" ");
     expect(tags).toHaveLength(DNESKAI_HASHTAG_LIMIT);
     expect(tags[0]).toBe("#dneskai");
@@ -314,14 +314,14 @@ describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", 
   it("tidies the body's line breaks without touching its words", () => {
     expect(captionOf({ ...validCopy(pictures), caption: "První odstavec.  \r\n\r\n\r\nDruhý odstavec." }).split("\n\n").slice(0, 2)).toEqual(["První odstavec.", "Druhý odstavec."]);
   });
-  it("counts the disclosure and hashtags in the 2,200-character gate and refuses rather than cut them", () => {
+  it("counts the hashtags in the 2,200-character gate and refuses rather than cut them", () => {
     const overhead = captionOf({ ...validCopy(pictures), caption: "a" }).length - 1;
     const atLimit = assembleDneskaiCaption({ ...validCopy(pictures), caption: "a".repeat(DNESKAI_CAPTION_LIMIT - overhead) }, offerFor());
     expect("caption" in atLimit && atLimit.caption.length).toBe(DNESKAI_CAPTION_LIMIT);
-    expect("caption" in atLimit && atLimit.caption.endsWith(`${DNESKAI_AI_DISCLOSURE}\n\n${TAGS}`)).toBe(true);
+    expect("caption" in atLimit && atLimit.caption.endsWith(`\n\n${TAGS}`)).toBe(true);
     const refused = assembleDneskaiCaption({ ...validCopy(pictures), caption: "a".repeat(DNESKAI_CAPTION_LIMIT - overhead + 1) }, offerFor());
     expect("issue" in refused && refused.issue).toEqual({ code: "caption-too-long", slide: null, field: "caption",
-      detail: `With the AI disclosure and hashtags the caption passes ${DNESKAI_CAPTION_LIMIT} characters; keep the caption under ${DNESKAI_CAPTION_LIMIT - overhead} characters.` });
+      detail: `With the hashtags the caption passes ${DNESKAI_CAPTION_LIMIT} characters; keep the caption under ${DNESKAI_CAPTION_LIMIT - overhead} characters.` });
     const long = { ...validCopy(pictures), caption: "Dlouhá věta o funkci. ".repeat(100).trim() };
     expect("issue" in assembleDneskaiCaption(long, offerFor())).toBe(true);
   });
@@ -434,7 +434,7 @@ describe("generation from a brief", () => {
     expect(draft.deck!.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split"]);
     expect(draft.deck!.slides.filter((slide) => slide.images.length)).toHaveLength(3);
     expect(draft.deck!.slides.every((slide) => !("credit" in slide))).toBe(true);
-    expect(revision.caption).toBe([validCopy(pictures).caption, DNESKAI_AI_DISCLOSURE, "#dneskai #adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech"].join("\n\n"));
+    expect(revision.caption).toBe([validCopy(pictures).caption, "#dneskai #adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech"].join("\n\n"));
     expect(draft.slides).toEqual([]);
     expect(clean).toHaveBeenCalledWith(draft.deck, expect.any(Function), expect.any(AbortSignal));
   });
