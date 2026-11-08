@@ -154,6 +154,6 @@ describe('DNESKAi topics list (#154)', () => {
     await show();
     expect(row(9)?.textContent).toContain(t.series.explainer);
     expect(row(5)?.textContent).not.toContain(t.series.explainer);
-    expect(dneskaiLab.cs.topics.series.mosseri).toBe('Série: Mosseri tipy');
+    expect(dneskaiLab.cs.topics.series.explainer).toBe('Série: Slovník AI');
   });
 });
