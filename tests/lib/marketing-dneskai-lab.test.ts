@@ -44,15 +44,15 @@ describe('Design Lab read model', () => {
     expect(dneskaiLabOrder([today!, tomorrow!]).length).toBe(today!.posts.length + tomorrow!.posts.length);
   });
 
-  it('offers Spotlight only, after an older post kit; only the current kit has a cover', () => {
+  it('offers the generation kits (Spotlight and Plakát), after an older post kit; only the current kit has a cover', () => {
     const post = read().posts[0]!;
     const kits = dneskaiLabKits(post);
-    expect(kits.map((kit) => kit.id)).toEqual(['editorial', 'spotlight']);
-    expect(kits.map((kit) => kit.key)).toEqual([1, 2]);
+    expect(kits.map((kit) => kit.id)).toEqual(['editorial', 'spotlight', 'plakat']);
+    expect(kits.map((kit) => kit.key)).toEqual([1, 2, 3]);
     expect(kits[0]).toMatchObject({ id: 'editorial', current: true, renderable: true, cover: post.assets[0], fits: true });
     expect(kits[1]).toMatchObject({ id: 'spotlight', current: false, renderable: true, cover: null, fits: null });
     const spotlight = dneskaiLabKits({ ...post, deck: { ...post.deck!, kit: 'spotlight' } });
-    expect(spotlight.map((kit) => [kit.id, kit.key, kit.current])).toEqual([['spotlight', 1, true]]);
+    expect(spotlight.map((kit) => [kit.id, kit.key, kit.current])).toEqual([['spotlight', 1, true], ['plakat', 2, false]]);
   });
 
   it('reads a v1 deck as the editorial kit and a deck that names its kit as that kit', () => {

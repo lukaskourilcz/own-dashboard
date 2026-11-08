@@ -16,7 +16,7 @@ export type DneskaiSlideType = z.infer<typeof DneskaiSlideTypeSchema>;
  * The six DNESKAi kits (quorum `studio/src/dneskai-kits`). A deck names its kit only when it is not `editorial`:
  * a deck without `kit` is drawn in editorial, so every deck saved before kits existed keeps its hash.
  */
-export const DNESKAI_KIT_IDS = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"] as const;
+export const DNESKAI_KIT_IDS = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight", "plakat"] as const;
 export const DneskaiKitIdSchema = z.enum(DNESKAI_KIT_IDS);
 export type DneskaiKitId = z.infer<typeof DneskaiKitIdSchema>;
 export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
@@ -24,14 +24,26 @@ export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
  * The kits the slide engine (src/lib/carousel-studio) registers and so can draw and fit. Browser-safe, so the Lab can
  * offer exactly these; `tests/lib/carousel-studio-vendor.test.ts` holds it to the vendored registry.
  */
-export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight"];
+export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight", "plakat"];
 /**
- * Owner decision, 6 November 2026: every DNESKAi post is made in Spotlight. Generation and regeneration write it, and
- * it is the only kit the Lab offers for a switch. Decks saved in another kit keep it (their hash and any approval stay
- * bound to it) until the owner switches them; the studio still draws every kit so those decks keep rendering.
+ * Owner decision, 8 November 2026 (replacing Spotlight-only of 6 November): every generated DNESKAi post is drawn in
+ * one of these styles, picked at random with equal odds and stored in the deck's `kit`, so a re-render keeps it. The
+ * Lab offers the same kits for a switch. Decks saved in another kit keep it until the owner switches them; the studio
+ * still draws every kit so those decks keep rendering.
  */
+export const DNESKAI_GENERATION_KITS: readonly DneskaiKitId[] = ["spotlight", "plakat"];
+/** The first generation kit, kept for callers that need one default. */
 export const DNESKAI_GENERATION_KIT: DneskaiKitId = "spotlight";
-export const DNESKAI_OFFERED_KIT_IDS: readonly DneskaiKitId[] = [DNESKAI_GENERATION_KIT];
+export const DNESKAI_OFFERED_KIT_IDS: readonly DneskaiKitId[] = DNESKAI_GENERATION_KITS;
+/**
+ * One generation kit for a post, uniformly spread over the kits and stable for the same post: a 32-bit FNV-1a hash of
+ * `seed` (the post's title and headlines) picks it, so regenerating the same copy keeps its style and the tests know it.
+ */
+export function dneskaiGenerationKit(seed: string): DneskaiKitId {
+  let hash = 0x811c9dc5;
+  for (const char of seed) { hash ^= char.codePointAt(0)!; hash = Math.imul(hash, 0x01000193) >>> 0; }
+  return DNESKAI_GENERATION_KITS[hash % DNESKAI_GENERATION_KITS.length]!;
+}
 /** The kit a deck is drawn in. */
 export const dneskaiKitOf = (deck: { kit?: DneskaiKitId } | null | undefined): DneskaiKitId => deck?.kit ?? DNESKAI_EDITORIAL_KIT;
 
