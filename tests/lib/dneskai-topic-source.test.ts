@@ -91,4 +91,31 @@ describe('the bridge with owner links (#210)', () => {
     expect(norun.updates[0]).toMatchObject({ evidence: { bridgeCode: 'topic-run-unavailable' } });
     expect(reader).not.toHaveBeenCalled();
   });
+
+  it('makes every readable further page a member of the brief and leaves an unreadable one out', async () => {
+    const second = 'https://b.example.test/2', third = 'https://c.example.test/3';
+    const runId = '44444444-4444-4444-8444-444444444444';
+    const row = (id: string) => ({ id, run_id: runId, status: 'new', target_date: null, content_hash: 'h', candidate: {} });
+    const reader = vi.fn(async (page: string) => page === second ? null : { title: 'Page', text: 'Text.' });
+    const insertCandidate = vi.fn(async (_o: string, _p: string, _r: string, inserted: { candidate: { id: string } }) => ({ id: inserted.candidate.id }));
+    const insertTopicBrief = vi.fn(async () => ({ id: '55555555-5555-4555-8555-555555555555' }));
+    const selectCandidate = vi.fn(async () => undefined);
+    const updates: Array<Record<string, unknown>> = [];
+    const store = { topics: async () => [topic({ urls: [url, second, third], reportId: `owner-link:${topicId}` })], brief: async () => null, candidate: async (_o: string, _p: string, id: string) => row(id),
+      selectCandidate, insertTopicBrief, updateTopic: async (_o: string, _i: string, patch: Record<string, unknown>) => { updates.push(patch); }, job: async () => null,
+      candidateByUrl: async () => null, latestRun: async () => ({ id: runId }), insertCandidate } as unknown as DneskaiTopicBridgeStore;
+    await advance(store, reader);
+    expect(reader.mock.calls.map(([page]) => page)).toEqual([second, third]);
+    expect(updates[0]).toMatchObject({ evidence: { extraReports: { [third]: `owner-link:${topicId}:3` }, extraAttempts: 1 } });
+    expect(selectCandidate).toHaveBeenCalledTimes(2);
+    expect(insertTopicBrief).toHaveBeenCalledWith(owner, expect.objectContaining({ member_ids: [`owner-link:${topicId}`, `owner-link:${topicId}:3`], lead_candidate_id: `owner-link:${topicId}` }));
+  });
+
+  it('stops reading further pages after the third pass and keeps the ones it has', async () => {
+    const reader = vi.fn(async () => ({ title: 'Page', text: 'Text.' }));
+    const second = 'https://b.example.test/2';
+    const base = stores([topic({ urls: [url, second], reportId: `owner-link:${topicId}`, extraAttempts: 3 })]);
+    await advance(base.store, reader);
+    expect(reader).not.toHaveBeenCalled();
+  });
 });
