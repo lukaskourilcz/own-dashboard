@@ -11,6 +11,7 @@ import { CONTAINER_RETRY_CODE,deckReel,publishMarketingRevision,reconcileMarketi
 import { resolveMetaPublisherConfig } from './meta-credentials';
 import { createDneskaiMediaLoader } from './dneskai-media';
 import { dneskaiReelsEnabled,findDneskaiReelForRevision,lastDneskaiReelAudio,requestDneskaiReelRender } from './dneskai-reel';
+import { prepareDneskaiSlideVideos } from './dneskai-slide-videos';
 import { nextDneskaiAudioTrackId } from './dneskai-audio';
 /**
  * #165: a deck Reel publishes only with its rendered MP4. Before any claim the Reel must be stored; if it is not, the
@@ -143,6 +144,8 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
  for(const publication of due??[]){const state=await publishingState(db,owner,publication.revision_id,false);if(state.revisionRow.revision.brand===brand){await publishingState(db,owner,publication.revision_id,true,signal);
   // #165: a Reel without its stored MP4 is never claimed; the claim would turn the hold into a failure.
   if(!reelHold){const prepared=await prepareDneskaiReel(db,owner,state,{dryRun,origin:options.origin});if(prepared.hold)reelHold={publicationId:publication.id,code:prepared.hold};}
+  // Video-first (8 November 2026): a carousel whose clips are not stored yet is never claimed; at most two are made per run.
+  if(!reelHold){const clips=await prepareDneskaiSlideVideos(db,owner,state.revisionRow,{dryRun,signal});if(clips.hold)reelHold={publicationId:publication.id,code:clips.hold};}
   if(!dryRun&&!credentialHold){const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);if(config.credentialHold)credentialHold={publicationId:publication.id,code:config.credentialHold};}}}
  let pendingQuery=db.from('marketing_publications').select('*,marketing_revisions!inner(brand)').eq('user_id',owner).eq('marketing_revisions.brand',brand).eq('status','claimed').in('error_code',['container-pending',CONTAINER_RETRY_CODE]).gt('lease_until',new Date().toISOString()).limit(1);if(publicationId)pendingQuery=pendingQuery.eq('id',publicationId);const pending=await pendingQuery;
  if(pending.error)throw new Error('publication-state-unavailable');
@@ -159,7 +162,9 @@ export async function publishDueMarketing(db:Database,owner:string,brand:Marketi
   // The stored account token wins over the environment bootstrap; a held credential stops at the gate.
   const config=await resolveMetaPublisherConfig(db,owner,state.account,process.env);
   const reel=deckReel(state.revisionRow.revision)?await findDneskaiReelForRevision(db,owner,publication.revision_id,state.revisionRow.content_hash).catch(()=>null):null;
-  const outcome=await publishMarketingRevision({...state,reel,publication,config,dryRun,preflight:dryRun&&options.preflight===true,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
+  // Only stored clips are used here (no render inside a claim); a carousel without all of them goes out as pictures.
+  const clips=await prepareDneskaiSlideVideos(db,owner,state.revisionRow,{dryRun:true,signal}).catch(()=>({videos:null,hold:null}));
+  const outcome=await publishMarketingRevision({...state,reel,slideVideos:clips.videos,publication,config,dryRun,preflight:dryRun&&options.preflight===true,signal,revalidate:()=>publishingState(db,owner,publication.revision_id,true,signal),checkpoint:async checkpoint=>{
    if(checkpoint.stage==='outcome'){
     const {error:receiptError}=await db.rpc('marketing_finish_publication',{p_owner:owner,p_publication:publication.id,p_expected_container:container,p_expected_error:code,p_status:checkpoint.status,p_container:checkpoint.remoteContainerId,p_media:checkpoint.remoteMediaId,p_url:checkpoint.remoteUrl,p_error:checkpoint.errorCode});
     if(receiptError)throw new Error('publication-receipt-fence-lost');

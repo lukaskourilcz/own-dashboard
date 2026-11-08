@@ -92,6 +92,19 @@ describe('DNESKAi Instagram publisher against a mocked Graph API', () => {
     expect((await publishMarketingRevision(input)).status).toBe('published');
     expect(posts()[3]!.body.get('caption')).toBe(`${caption}\n\n#dneskai #fio`);
   });
+  it('sends a video-first slide as a VIDEO carousel item, waits until it is processed, and keeps the others as pictures', async () => {
+    const checked: string[] = [];
+    const { input, posts } = fixture({ graph: (call) => {
+      if (call.method === 'GET' && /\/20[1-3]$/.test(call.url.pathname)) { const id = call.url.pathname.split('/').pop()!; checked.push(id); return Response.json({ id, status_code: 'FINISHED' }); }
+      return undefined;
+    } });
+    input.slideVideos = { 1: { url: 'https://assets.example.invalid/clip-2.mp4' } };
+    expect((await publishMarketingRevision(input)).status).toBe('published');
+    const children = posts().slice(0, 3).map((call) => Object.fromEntries(call.body));
+    expect(children[1]).toEqual({ media_type: 'VIDEO', video_url: 'https://assets.example.invalid/clip-2.mp4', is_carousel_item: 'true' });
+    expect(children[0]).toMatchObject({ image_url: input.revisionRow.revision.assets[0]!.url });
+    expect(checked).toEqual(['202']);
+  });
   it('sends collaborators on the carousel parent only when the revision carries them', async () => {
     const { input, posts } = fixture({ collaborators: ['partner.lab', 'second_author'] });
     expect((await publishMarketingRevision(input)).status).toBe('published');

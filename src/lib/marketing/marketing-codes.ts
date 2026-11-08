@@ -558,7 +558,11 @@ const CODES = {
   // Reels publishing (#165).
   'revision-format-unsupported': ['edit', 'Only a carousel can switch to a Reel, and only while Reels are switched on.', 'Na Reel lze přepnout jen karusel, a jen když jsou Reely zapnuté.'],
   'reels-disabled': ['config', 'Reels are switched off on this server, so this Reel waits and nothing is published.', 'Reely jsou na tomto serveru vypnuté, proto tento Reel čeká a nic se nepublikuje.'],
-  'reel-render-pending': ['wait', 'The Reel video is being made; the post publishes on a following run inside its window.', 'Video Reelu se vyrábí; příspěvek vyjde při některém dalším běhu v rámci svého okna.'],
+  'slide-videos-pending': ['wait', 'The video slides of this video-first post are being made; it publishes on a following run inside its window.', 'Videa slidů tohoto příspěvku se vyrábějí; vyjde při některém dalším běhu v rámci svého okna.'],
+  'slide-videos-unavailable': ['retry', 'The video slides could not be made or stored; the post stays queued and is tried again.', 'Videa slidů se nepodařilo vyrobit nebo uložit; příspěvek zůstává ve frontě a zkusí se znovu.'],
+  'carousel-video-processing': ['wait', 'Instagram is still processing a video slide; the carousel is created again on a following run.', 'Instagram ještě zpracovává video slide; karusel se vytvoří znovu při dalším běhu.'],
+  'carousel-video-failed': ['retry', 'Instagram could not process a video slide, so nothing was published.', 'Instagram nedokázal zpracovat video slide, proto se nic nepublikovalo.'],
+  'reel-render-pending': ['wait','The Reel video is being made; the post publishes on a following run inside its window.', 'Video Reelu se vyrábí; příspěvek vyjde při některém dalším běhu v rámci svého okna.'],
   'reel-render-unavailable': ['retry', 'The Reel video could not be requested, so the post waits.', 'Video Reelu nešlo vyžádat, proto příspěvek čeká.'],
   'reel-video-missing': ['investigate', 'The Reel had no stored video at publishing time, so nothing was sent.', 'Reel neměl při publikování uložené video, proto se nic neodeslalo.'],
   // Trending audio (#167).
