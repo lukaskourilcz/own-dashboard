@@ -6,7 +6,6 @@ import { pragueMarketingDate } from "@/lib/marketing/weekly-planning";
 import { pragueDayAfter } from "@/lib/marketing/dneskai-workspace";
 import { readDneskaiPlan } from "@/lib/marketing/dneskai-plan-read";
 import { dneskaiPlanEnabled } from "@/lib/marketing/dneskai-evidence-rollout";
-import { DEVSHARK_STORY_DELAY_MS } from "@/lib/marketing/devshark-publish";
 import {
   PUBLISHING_CALENDAR_DAYS,
   PUBLISHING_CALENDAR_VERSION,
@@ -20,8 +19,11 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
 type Database = SupabaseClient<any>;
 
-/** Both brands post a story from the Instagram cover ten minutes after the post. */
-const STORY_DELAY_MS = DEVSHARK_STORY_DELAY_MS;
+/**
+ * Both brands post a story from the Instagram cover ten minutes after the post (`DEVSHARK_STORY_DELAY_MS`, the DNESKAi
+ * plan's story delay). Kept here so this read never imports the renderer and its native image library.
+ */
+const STORY_DELAY_MS = 10 * 60_000;
 const pragueTime = (iso: string) => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Prague", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(iso));
 const later = (iso: string, ms: number) => new Date(Date.parse(iso) + ms).toISOString();
 const https = (value: unknown) => { try { return typeof value === "string" && new URL(value).protocol === "https:" ? value : null; } catch { return null; } };

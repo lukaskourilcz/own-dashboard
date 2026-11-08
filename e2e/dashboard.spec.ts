@@ -227,7 +227,7 @@ test.describe("dashboard sections", () => {
     await expect(page.getByText("Hidden from navigation.", { exact: false })).toBeVisible();
   });
 
-  test("Projects lists own work first and freelance projects behind a divider", async ({ page }, testInfo) => {
+  test("Projects lists only DNESKAi, devShark and heyDarlink", async ({ page }, testInfo) => {
     await gotoPreview(page);
     if (testInfo.project.name === "mobile") {
       await page.getByTestId("mobile-nav").getByRole("button", { name: "Projects", exact: true }).click();
@@ -235,27 +235,11 @@ test.describe("dashboard sections", () => {
       await page.locator("aside nav").getByRole("button", { name: "Projects", exact: true }).click();
     }
     const table = page.getByRole("table");
-    await expect(table.getByRole("row", { name: "Freelance", exact: true })).toHaveCount(1);
+    // Owner request, 8 November 2026: the other projects (own-dashboard, boardlessAI and the freelance work) keep their
+    // data and stay in the sidebar, but leave the Projects section. The fixtures have no heyDarlink row.
     const names = await table.locator("tbody tr td:nth-child(2) a").allTextContents();
-    // The boardlessAI ventures follow their parent as subsections.
-    expect(names).toEqual([
-      "DNESKAi",
-      "own-dashboard",
-      "devShark",
-      "boardlessAI",
-      "Design Lab",
-      "GoVIRAL",
-      "Recipe box app",
-      "Acme customer portal",
-      "Harbor Bakery website",
-    ]);
-    await expect(table.getByRole("row", { name: /Design Lab/ }).getByRole("button", { name: "Drag to reorder" })).toHaveCount(0);
-    // Keyboard order follows the visual order: the divider row sits between
-    // the last own project and the first freelance project.
-    const rows = await table.locator("tbody tr").allTextContents();
-    const divider = rows.findIndex((text) => text.trim() === "Freelance");
-    expect(rows[divider - 1]).toContain("Recipe box app");
-    expect(rows[divider + 1]).toContain("Acme customer portal");
+    expect(names).toEqual(["DNESKAi", "devShark"]);
+    await expect(table.getByRole("row", { name: "Freelance", exact: true })).toHaveCount(0);
     // The wide table scrolls inside its card; the page itself never widens.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     if (testInfo.project.name === "desktop") {
@@ -263,15 +247,6 @@ test.describe("dashboard sections", () => {
       await expect(sidebar.getByText("Freelance", { exact: true })).toBeVisible();
       await expect(sidebar.getByRole("link", { name: "Harbor Bakery website" })).toBeVisible();
     }
-  });
-
-  test("Czech Projects shows the freelance divider", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "mobile", "covered once on desktop");
-    await gotoPreview(page, { lang: "cs" });
-    await page.locator("aside nav").getByRole("button", { name: "Projekty", exact: true }).click();
-    // Czech uses the same plain label; the old "Freelance — najatý" is gone.
-    await expect(page.getByRole("table").getByRole("row", { name: "Freelance", exact: true })).toBeVisible();
-    await expect(page.getByText(/najatý/)).toHaveCount(0);
   });
 
   test("navigation and project-tab visibility survive a refresh", async ({ page }, testInfo) => {
