@@ -12,10 +12,10 @@ import { DNESKAI_PREVIEW_VERSION, DneskaiPreviewResultSchema, type DneskaiPrevie
  */
 export const DNESKAI_PREVIEW_BUDGET_MS = 8_000;
 
-export async function dneskaiPreviewResponse(deck: DneskaiDeck, slide: number, loadMedia: LoadDneskaiMediaBytes, signal: AbortSignal): Promise<Response> {
+export async function dneskaiPreviewResponse(deck: DneskaiDeck, slide: number, loadMedia: LoadDneskaiMediaBytes, signal: AbortSignal, story = false): Promise<Response> {
   if (slide >= deck.slides.length) return Response.json({ error: 'preview-slide-invalid' }, { status: 400 });
   try {
-    const preview = await previewDneskaiSlide(deck, slide, loadMedia, { signal });
+    const preview = await previewDneskaiSlide(deck, slide, loadMedia, { signal, story });
     const result: DneskaiPreviewResult = DneskaiPreviewResultSchema.parse({
       schemaVersion: DNESKAI_PREVIEW_VERSION, draft: true, slide, status: preview.status,
       image: preview.image ? `data:image/webp;base64,${preview.image.toString('base64')}` : null,
