@@ -16,7 +16,7 @@ import {
 import type { LoadDneskaiMediaBytes } from './dneskai-ports';
 import { DNESKAI_MEDIA_READ_VERSION, DneskaiMediaReadSchema, type DneskaiMediaCandidateView, type DneskaiMediaRead } from './dneskai-media-contracts';
 import {
-  DNESKAI_ILLUSTRATION_CREDIT, DNESKAI_ILLUSTRATION_URL, DNESKAI_MEDIA_PLAN_LIMIT, DNESKAI_PRESS_KITS, DNESKAI_SUPPLEMENT_TARGET, dneskaiIllustrationPrompt, dneskaiIllustrationsPerDay,
+  DNESKAI_ILLUSTRATION_CREDIT, DNESKAI_MEDIA_PLAN_LIMIT, DNESKAI_PRESS_KITS, DNESKAI_SUPPLEMENT_TARGET, dneskaiIllustrationPrompt, dneskaiIllustrationsPerDay, dneskaiIllustrationUrl,
   dneskaiMediaSourceSwitches, dneskaiPressKitsFor, dneskaiStockQuery, fetchDneskaiPageViaApify, generateDneskaiIllustration, pressKitEntries, pressKitImagePolicy,
   searchDneskaiStock, stockImagePolicy, type DneskaiSupplementEntry,
 } from './dneskai-media-sources';
@@ -437,7 +437,7 @@ export async function supplementDneskaiPlan(db: DneskaiMediaDatabase, owner: str
   }
   if (switches.stock && plan.length === 0) add(await searchDneskaiStock(dneskaiStockQuery(candidate), 2, env, { fetchImpl: deps.fetchImpl, signal }), 2);
   if (switches.generated && plan.length === 0) {
-    if (await (deps.illustrationsToday ?? (() => dneskaiIllustrationsToday(db, owner)))() < dneskaiIllustrationsPerDay(env)) add([{ position: 0, url: DNESKAI_ILLUSTRATION_URL, kind: 'generated', credit: DNESKAI_ILLUSTRATION_CREDIT }], 1);
+    if (await (deps.illustrationsToday ?? (() => dneskaiIllustrationsToday(db, owner)))() < dneskaiIllustrationsPerDay(env)) add([{ position: 0, url: dneskaiIllustrationUrl(env), kind: 'generated', credit: DNESKAI_ILLUSTRATION_CREDIT }], 1);
   }
   return plan;
 }
