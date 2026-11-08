@@ -43,7 +43,7 @@ describe('devShark native 1080×1920 story (owner rule, 8 November 2026)', () =>
     // positions in the taller story; the story re-flows and centres instead.
     const authored: DevsharkDeck = { schemaVersion: 'devshark-deck/1', cover: 'light', slides: [
       { kind: 'cover', kicker: 'Coding task', headline: 'Reverse the words.', body: '"learn code every day" becomes [["day every code learn"]].',
-        layout: { kicker: { x: 80, y: 216, w: 920, size: 36 }, headline: { x: 80, y: 304, w: 920, size: 128 }, body: { x: 80, y: 616, w: 920, size: 68 } } },
+        layout: { kicker: { x: 80, y: 216, w: 920, size: 36, align: 'left' }, headline: { x: 80, y: 304, w: 920, size: 128, align: 'left' }, body: { x: 80, y: 616, w: 920, size: 68, align: 'left' } } },
       { kind: 'text', headline: 'next' },
     ] };
     const layout = layoutDevsharkStory(authored, assets);
