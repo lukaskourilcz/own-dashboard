@@ -79,7 +79,7 @@ describe('devShark native 1080×1920 story (owner rule, 8 November 2026)', () =>
       expect(near(pixel(x, y), LIGHT_BG)).toBe(true);
     }
     // The top edge row is a single flat colour across its whole width (a blurred band would vary across x).
-    let min = [255, 255, 255], max = [0, 0, 0];
+    const min = [255, 255, 255], max = [0, 0, 0];
     for (let x = 0; x < info.width; x += 4) { const p = pixel(x, 2); for (let c = 0; c < 3; c += 1) { min[c] = Math.min(min[c]!, p[c]!); max[c] = Math.max(max[c]!, p[c]!); } }
     for (let c = 0; c < 3; c += 1) expect(max[c]! - min[c]!).toBeLessThanOrEqual(8);
 
