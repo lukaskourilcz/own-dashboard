@@ -19,8 +19,8 @@ import type { DneskaiFitResult } from './dneskai-lab';
  * (`applyDneskaiDeckEdit` in dneskai-deck-edit.ts).
  */
 export const DNESKAI_CAPTION_MAX = 2200;
-/** The owner's cap on hashtags per DNESKAi post (22 October 2026); generation keeps to it and every edit is checked. */
-export const DNESKAI_CAPTION_HASHTAG_MAX = 10;
+/** The owner's cap on hashtags per DNESKAi post (7 since 8 November 2026); generation keeps to it and every edit is checked. */
+export const DNESKAI_CAPTION_HASHTAG_MAX = 7;
 /** The hashtags a caption carries, as Instagram reads them. */
 export const dneskaiCaptionHashtags = (caption: string) => caption.match(/#[\p{L}\p{N}_]+/gu)?.length ?? 0;
 export const DNESKAI_ZOOM = { min: 1, max: 2, step: 0.05 } as const;

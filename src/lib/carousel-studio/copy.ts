@@ -79,7 +79,7 @@ export function renderCaptionFile(pack: SocialCopyPack): string {
 }
 
 const HASHTAG_BASE: Readonly<Record<CarouselSummaryVenture, readonly string[]>> = {
-  "caught-up": ["ai", "umelainteligence", "technologie", "aitech", "dneskai"],
+  "caught-up": ["dneskai", "ai", "zpravy", "umelainteligence", "technologie"],
   "mma-files": ["mma", "ufc", "oktagon", "bojovesporty", "mmafiles"],
   kvorum: ["kvorum", "politika", "cesko", "overeno", "verejnyzajem"],
   booksofhistory: ["booksofhistory", "bookhistory", "literaryhistory", "books", "publishinghistory"],
@@ -87,7 +87,7 @@ const HASHTAG_BASE: Readonly<Record<CarouselSummaryVenture, readonly string[]>> 
   // Latin-only by the rule below, which is why the Ukrainian side contributes none of its own:
   // a transliterated Cyrillic tag is a tag nobody follows.
   "tehdejsi-svet": ["tehdejsisvet", "retro", "nostalgie", "historie", "ceskoslovensko"],
-  devshark: ["devshark", "webdev", "javascript", "programming", "codingquiz"]
+  devshark: ["typescript", "javascript", "webdevelopment", "frontend", "devshark"]
 };
 
 /** Latin letters and digits only: Instagram matches a diacritic tag as a different tag. */

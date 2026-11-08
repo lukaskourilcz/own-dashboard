@@ -1,3 +1,4 @@
+import { dneskaiRetagCaption } from './dneskai-generation';
 import 'server-only';
 import { z } from 'zod';
 import type { createAdminClient } from '@/lib/supabase/admin';
@@ -62,7 +63,7 @@ export type DneskaiPlanTwin = { id: string; status: string; ready: boolean; cont
 
 export type DneskaiPlanAction =
   | { kind: 'wait'; status: DneskaiPlanStatus; code: string | null }
-  | { kind: 'spotlight' | 'rerender' | 'move' | 'redraw' | 'series' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus }
+  | { kind: 'spotlight' | 'rerender' | 'move' | 'redraw' | 'retag' | 'series' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus }
   /** The post has no photo on its first slide: retired and the slot freed for another post (8 November 2026). */
   | { kind: 'drop'; status: 'skipped'; code: 'plan-photo-missing' | 'plan-photos-short' }
   /** A carousel with too few photo slides is written again with more pictures, once (8 November 2026). */
@@ -125,6 +126,9 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
     return restyled ? { kind: 'drop', status: 'skipped', code: 'plan-photos-short' } : { kind: 'restyle', status: 'planned' };
   }
   const ownerEdit = !!slot.written_revision_id && head.id !== slot.written_revision_id;
+  // The hashtags of an Instagram post follow the current rule (owner, 8 November 2026) while its slot is ahead.
+  if ((head.status === 'review' || head.status === 'approved') && head.ready && head.revision.account.platform === 'instagram'
+    && dneskaiRetagCaption(head.revision.caption) !== head.revision.caption && slotAt > now.getTime() + APPROVAL_LEAD_MS) return { kind: 'retag', status: 'ready' };
   if (head.status === 'review') {
     if (!head.ready || renderReportBlocks(head.render_report)) {
       // The plan's own render that was cut off or failed is drawn again; a render that refused the text waits for the owner.
@@ -293,11 +297,11 @@ async function keepNewsCurrent(db: Database, owner: string, slot: DneskaiPlanRow
 }
 
 /** Saves the plan's own edit of the head (Spotlight and/or the slot's time) and renders it, reusing the JPEGs when the deck is unchanged. */
-async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit: { kit: boolean; scheduledAt: string; fresh?: boolean }, wiring: Wiring, signal: AbortSignal) {
+async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit: { kit: boolean; scheduledAt: string; fresh?: boolean; caption?: string }, wiring: Wiring, signal: AbortSignal) {
   const deck = head.revision.deck;
   const kit = deck ? dneskaiGenerationKit([head.revision.title, ...deck.slides.map((slide) => slide.headline ?? '')].join('\n')) : null;
   const deckEdit = edit.kit && deck && kit ? { kit, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
-  const prepared = await prepareDneskaiRevisionEdit(head.revision, { caption: head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
+  const prepared = await prepareDneskaiRevisionEdit(head.revision, { caption: edit.caption ?? head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
   const revision = prepared.deck ? { ...prepared, deck: { ...prepared.deck, emphasis: dneskaiEmphasisFor(edit.scheduledAt) } } : prepared;
   // A redraw never reuses the old pixels: that is the point of it.
   let reuse = edit.fresh ? null : reusableDneskaiRender(head.revision, head.render_report, revision);
@@ -492,6 +496,15 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           const patch = { ...base, head_revision_id: saved.id, written_revision_id: saved.id, status: saved.ready ? 'ready' as const : 'failed' as const, code: saved.ready ? null : 'render-blocked' };
           await record(slot, patch); Object.assign(slot, patch);
           break;
+        }
+        if (action.kind === 'retag') {
+          // Only the caption changes: the slides are reused, and the next pass approves the post again.
+          const saved = await saveEdit(db, owner, current, { kit: false, scheduledAt: dneskaiPlanSlotAt(slot), caption: dneskaiRetagCaption(current.revision.caption) }, wired(), input.signal);
+          if (saved.rendered) result.rendered++;
+          const patch = { ...base, head_revision_id: saved.id, written_revision_id: saved.id, status: saved.ready ? 'ready' as const : 'failed' as const, code: saved.ready ? null : 'render-blocked' };
+          await record(slot, patch); Object.assign(slot, patch);
+          if (saved.rendered) break;
+          continue;
         }
         if (action.kind === 'spotlight' || action.kind === 'move' || action.kind === 'redraw') {
           if (action.kind !== 'move' && (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS)) { await record(slot, { ...base, code: 'plan-render-waiting' }); break; }

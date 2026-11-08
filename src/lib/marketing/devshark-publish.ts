@@ -27,6 +27,27 @@ const APPROVAL_LEAD_MS = 2 * 60_000;
 const THREADS_MAX = 500;
 const TAG = '#devshark';
 
+/** The devShark Instagram base set (Apify research, 8 November 2026), always carried, #devshark last. */
+export const DEVSHARK_HASHTAG_BASE = ['typescript', 'javascript', 'webdevelopment', 'frontend', 'devshark'] as const;
+/** Tags a devShark caption never carries: crowded by other niches or too broad (Apify research, 8 November 2026). */
+export const DEVSHARK_HASHTAG_BLOCKED: ReadonlySet<string> = new Set(['python', 'git', 'css', 'programmerhumor', 'reactjs']);
+/** At most seven hashtags on an Instagram post (owner, 8 November 2026); the base set leaves room for two topic tags. */
+export const DEVSHARK_HASHTAG_LIMIT = 7;
+const HASHTAG = /(^|\s)#([\p{L}\p{N}_]+)/gu;
+
+/**
+ * The Instagram caption of a devShark concept: its text without hashtags, then one hashtag line of up to two of its
+ * own topic tags (blocked ones dropped) and the base set, seven at most. Threads keeps its own rule.
+ */
+export function devsharkInstagramCaption(caption: string): string {
+  const own = [...caption.matchAll(HASHTAG)].map((match) => match[2]!.toLowerCase());
+  const base: readonly string[] = DEVSHARK_HASHTAG_BASE;
+  const topic = [...new Set(own)].filter((tag) => !DEVSHARK_HASHTAG_BLOCKED.has(tag) && !base.includes(tag)).slice(0, DEVSHARK_HASHTAG_LIMIT - base.length);
+  const body = caption.split(/\n{2,}/).map((paragraph) => paragraph.split('\n').map((line) => line.replace(HASHTAG, '$1').replace(/[ \t]{2,}/g, ' ').trim()).filter(Boolean).join('\n')).filter(Boolean).join('\n\n');
+  const tags = [...topic, ...base].map((tag) => `#${tag}`).join(' ');
+  return `${body}\n${tags}`;
+}
+
 /** The Threads text of a devShark caption: no hashtags, shortened to fit, then the one topic tag. */
 export function devsharkThreadsText(caption: string): string {
   const body = caption.split(/\n{2,}/).map((paragraph) => paragraph.replace(/(^|\s)#[\p{L}\p{N}_]+/gu, '$1').replace(/[ \t]{2,}/g, ' ').trim()).filter(Boolean).join('\n\n');
@@ -101,7 +122,7 @@ export async function prepareDevsharkPosts(db: Database, owner: string, project:
           knowledgeIds: [], timeZone: 'Europe/Prague', templateVersion: 'devshark-social/1', promptVersion: draft.origin === 'generated' ? 'devshark-generated/1' : 'devshark-concept/1', model: 'owner-approved-concept', traceId: null } as const;
         const scheduledAt = new Date(at).toISOString();
         if (want.instagram) {
-          const saved = await saveRevision(db, owner, parseContentRevision({ ...common, caption: draft.caption, format: 'carousel', assets, account: { id: instagram!.remote_account_id, platform: 'instagram', handle: instagram!.handle }, scheduledAt }), {});
+          const saved = await saveRevision(db, owner, parseContentRevision({ ...common, caption: devsharkInstagramCaption(draft.caption), format: 'carousel', assets, account: { id: instagram!.remote_account_id, platform: 'instagram', handle: instagram!.handle }, scheduledAt }), {});
           await update(slot, { instagram_revision_id: saved.id });
         }
         if (want.threads) {

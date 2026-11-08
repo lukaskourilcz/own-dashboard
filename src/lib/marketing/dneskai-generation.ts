@@ -28,9 +28,18 @@ export const DNESKAI_MAX_CONTENT_SLIDES = 7;
 /** Meta's caption limit. */
 export const DNESKAI_CAPTION_LIMIT = 2200;
 /** The DNESKAi hashtag base set from the studio's `copy.ts` (`HASHTAG_BASE["caught-up"]`). */
-export const DNESKAI_HASHTAG_BASE = ["ai", "umelainteligence", "technologie", "aitech", "dneskai"] as const;
-/** The owner's cap on hashtags per DNESKAi post (22 October 2026), enforced on generation and on every caption edit. */
-export const DNESKAI_HASHTAG_LIMIT = 10;
+export const DNESKAI_HASHTAG_BASE = ["ai", "zpravy"] as const;
+/** Topic tags that fill up to the minimum of two when the model proposes fewer usable ones. */
+export const DNESKAI_TOPIC_FALLBACK = ["umelainteligence", "technologie"] as const;
+/**
+ * Tags a DNESKAi caption never carries (Apify research, 8 November 2026): too broad to rank in
+ * (#artificialintelligence, #openai), about something else (#gemini is astrology) or followed by nobody.
+ */
+export const DNESKAI_HASHTAG_BLOCKED: ReadonlySet<string> = new Set(["artificialintelligence", "gemini", "dneska", "ainovinky", "aicesky", "openai", "aitech"]);
+/** The owner's cap on hashtags per DNESKAi Instagram post (7 since 8 November 2026, was 10), enforced on generation and on every caption edit. */
+export const DNESKAI_HASHTAG_LIMIT = 7;
+/** Topic tags a post carries after #dneskai #ai #zpravy: two to four, chosen per post (owner, 8 November 2026). */
+export const DNESKAI_TOPIC_HASHTAGS = { min: 2, max: 4 } as const;
 /** The brand tag every DNESKAi caption carries first. */
 export const DNESKAI_BRAND_HASHTAG = "dneskai";
 
@@ -162,7 +171,7 @@ const SYSTEM_RULES = [
   "Carousel order: the slides at the positions in rules.picturedSlides (counting from 0) carry a picture: the first two always, the fourth when there is one. The third slide may be a statement without a picture. With fewer than three usable pictures, write at most three slides. With exactly one usable picture, the second slide shows that same picture again as a figure; code crops it closer. Code adds the closing slide after yours; never write one.",
   "In every headline, mark the one to three key words a reader must see first with double square brackets, like [[OpenAI]] or [[100 funkcí]]; never mark a whole headline. Marks never go in a body, kicker, alt text, caption or title.",
   "alt: one or two Czech sentences for a reader who cannot see the slide: what kind of slide it is, its message, and whose picture it carries, named from its credit, without describing the picture. Never repeat the headline as the alt text.",
-  `caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what comes next. Its first sentence, at most 125 characters, states the cover's fact in fuller form under the same rules as the cover hook. Code appends the hashtags; the caption names no source and no picture credit and carries no line saying a language model or AI wrote it. hashtags: up to ${DNESKAI_HASHTAG_LIMIT - 1} topic tags, the most specific first (product, company, field), Latin letters and digits only, lowercase, without #; code adds #${DNESKAI_BRAND_HASHTAG} and keeps the post at ${DNESKAI_HASHTAG_LIMIT} hashtags.`,
+  `caption: Czech, 300 to 700 characters in two to four short paragraphs: what happened, why it matters, what comes next. Its first sentence, at most 125 characters, states the cover's fact in fuller form under the same rules as the cover hook. Code appends the hashtags; the caption names no source and no picture credit and carries no line saying a language model or AI wrote it. hashtags: 2 to 4 topic tags chosen for this post, the most specific first (product, company, field), Latin letters and digits only, lowercase, without #; for example umelainteligence, technologie, the company or the product, ceskarepublika when the news concerns Czechia and ekonomika when it is about business, markets or money; never ${[DNESKAI_BRAND_HASHTAG, ...DNESKAI_HASHTAG_BASE, ...DNESKAI_HASHTAG_BLOCKED].join(", ")}. Code writes #${DNESKAI_BRAND_HASHTAG} ${DNESKAI_HASHTAG_BASE.map((tag) => `#${tag}`).join(" ")} first, ${DNESKAI_HASHTAG_LIMIT} hashtags in all.`,
   "title: a short internal working title for the editor.",
   "topic: the post's main subject as one proper name written the way people write it, capitalised, without spaces, dots or ampersands, at most 50 characters: the company, product or field the post is about (FioBanka, Alexa, OpenAI, GitHub, ClaudeCode).",
   `Local response limits remain mandatory: title 1-160 characters; caption 1-1500; headline 1-200; body 1-700; kicker 1-80; alt 1-200; at most ${DNESKAI_HASHTAG_LIMIT} hashtags; 1-${DNESKAI_MAX_CONTENT_SLIDES} slides; at most 2 images per slide.`,
@@ -526,12 +535,28 @@ export function normalizeDneskaiHashtag(value: string): string {
   return value.normalize("NFD").replace(/[̀-ͯ]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, "");
 }
 /**
- * The caption's hashtags, at most `DNESKAI_HASHTAG_LIMIT` (10, the owner's cap): #dneskai first, then the model's
- * topic tags in its order (most specific first), then the base set only while room is left.
+ * The caption's hashtags (owner decision, 8 November 2026): #dneskai #ai #zpravy, then two to four of the model's
+ * topic tags in its order (most specific first), so the pair changes with every post; #umelainteligence and
+ * #technologie fill up to two when the model offers fewer. A blocked tag never appears; at most seven in all.
  */
 export function dneskaiHashtags(proposed: readonly string[]): string[] {
-  const cleaned = proposed.map(normalizeDneskaiHashtag).filter((tag) => tag.length >= 2 && tag.length <= 30);
-  return distinct([DNESKAI_BRAND_HASHTAG, ...cleaned, ...DNESKAI_HASHTAG_BASE]).slice(0, DNESKAI_HASHTAG_LIMIT);
+  const fixed: readonly string[] = [DNESKAI_BRAND_HASHTAG, ...DNESKAI_HASHTAG_BASE];
+  const cleaned = distinct(proposed.map(normalizeDneskaiHashtag).filter((tag) => tag.length >= 2 && tag.length <= 30 && !DNESKAI_HASHTAG_BLOCKED.has(tag) && !fixed.includes(tag)));
+  const topic = cleaned.slice(0, DNESKAI_TOPIC_HASHTAGS.max);
+  for (const tag of DNESKAI_TOPIC_FALLBACK) if (topic.length < DNESKAI_TOPIC_HASHTAGS.min && !topic.includes(tag)) topic.push(tag);
+  return [...fixed, ...topic].slice(0, DNESKAI_HASHTAG_LIMIT);
+}
+
+/**
+ * A written caption with its closing hashtag paragraph rebuilt by `dneskaiHashtags` from the tags it carries, so a
+ * planned post follows the current tag rules. A caption without a closing hashtag paragraph comes back unchanged.
+ */
+export function dneskaiRetagCaption(caption: string): string {
+  const parts = caption.split("\n\n");
+  const last = parts.at(-1)!.trim();
+  if (parts.length < 2 || !/^#[a-z0-9]+(?:\s+#[a-z0-9]+)*$/u.test(last)) return caption;
+  const tags = dneskaiHashtags(last.split(/\s+/u).map((tag) => tag.slice(1))).map((tag) => `#${tag}`).join(" ");
+  return [...parts.slice(0, -1), tags].join("\n\n");
 }
 
 /**

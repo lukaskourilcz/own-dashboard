@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  DNESKAI_AI_DISCLOSURE, DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_CAPTION_LIMIT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_LIMIT, DNESKAI_TEXT_LIMITS, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
+  DNESKAI_AI_DISCLOSURE, DNESKAI_BRIEF_SYSTEM_PROMPT, DNESKAI_CAPTION_LIMIT, DNESKAI_DECK_TEMPLATE_VERSION, DNESKAI_HASHTAG_LIMIT, DNESKAI_TEXT_LIMITS, dneskaiRetagCaption, DneskaiCopySchema, MARKETING_BRIEF_PROMPT_FINGERPRINT, MARKETING_BRIEF_PROMPT_ID,
   MARKETING_BRIEF_PROMPT_VERSION, DNESKAI_STYLE_RULES, assembleDneskaiCaption, buildDneskaiDeck, dneskaiBriefOffer, fitDneskaiCredit, dneskaiBriefPrompt, dneskaiCopyWireSchema, dneskaiFallbackPublishers, dneskaiHashtags, dneskaiRenderIssues,
   dneskaiTalksAboutSources, dneskaiUnsupportedNumbers, dneskaiRetryFeedback, normalizeDneskaiCopy, normalizeDneskaiHashtag, validateDneskaiCopy, type DneskaiCopy,
 } from "@/lib/marketing/dneskai-generation";
@@ -41,7 +41,7 @@ describe("marketing-copy/8 prompt (#116, #158, owner rules of 22 October 2026)",
   it("pins the prompt fingerprint and carries it in the prompt version", () => {
     // Any change to the rules, the Humanizer adaptation, the wire schema or the text limits changes this value on purpose.
     expect(MARKETING_BRIEF_PROMPT_VERSION).toBe("marketing-copy/8");
-    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("28c0f71a42b64f0a2ab72f2c76ea23fa9053a116e480903e255392234bc894c9");
+    expect(MARKETING_BRIEF_PROMPT_FINGERPRINT).toBe("a10207df9b51c8301e6e1f543e051bf2110602a60b2271927fefdf0d4df9db71");
     expect(MARKETING_BRIEF_PROMPT_ID).toBe(`marketing-copy/8+${MARKETING_BRIEF_PROMPT_FINGERPRINT.slice(0, 12)}`);
   });
   it("asks for a factual cover hook and a matching first caption sentence, inside the truth rules (owner decision 1, option B)", () => {
@@ -162,27 +162,36 @@ describe("marketing-copy/8 schema", () => {
     // The cover and both single templates draw the headline alone.
     for (const id of ["dneskai-cover-photo", "dneskai-single-photo", "dneskai-single-type"] as const) expect(Object.keys(DNESKAI_TEXT_LIMITS[id])).toEqual(["headline"]);
   });
-  it("normalizes hashtags as the studio does and keeps at most ten, #dneskai first, topic tags before the base set", async () => {
+  it("writes #dneskai #ai #zpravy and two to four topic tags, seven at most (owner, 8 November 2026)", async () => {
     const studio = await import("@/lib/carousel-studio");
     expect(normalizeDneskaiHashtag("Úpravy fotek")).toBe(studio.normalizeHashtag("Úpravy fotek"));
-    expect(DNESKAI_HASHTAG_LIMIT).toBe(10);
-    expect(dneskaiHashtags([])).toEqual(["dneskai", "ai", "umelainteligence", "technologie", "aitech"]);
-    expect(dneskaiHashtags(["Umělá inteligence", "#OpenAI", "č"])).toEqual(["dneskai", "umelainteligence", "openai", "ai", "technologie", "aitech"]);
-    expect(dneskaiHashtags(Array.from({ length: 12 }, (_, index) => `tag${index}`))).toEqual(["dneskai", ...Array.from({ length: 9 }, (_, index) => `tag${index}`)]);
-    expect(dneskaiHashtags(["AI", "ai", "Dneskai"])).toEqual(["dneskai", "ai", "umelainteligence", "technologie", "aitech"]);
-    expect(dneskaiHashtags(["Adobe", "Lightroom"])).toEqual(["dneskai", "adobe", "lightroom", "ai", "umelainteligence", "technologie", "aitech"]);
-    // The base set fills only the room the topic tags leave.
-    expect(dneskaiHashtags(["a1", "a2", "a3", "a4", "a5", "a6", "a7"])).toEqual(["dneskai", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "ai", "umelainteligence"]);
+    expect(DNESKAI_HASHTAG_LIMIT).toBe(7);
+    // Fewer than two usable topic tags: #umelainteligence and #technologie fill up.
+    expect(dneskaiHashtags([])).toEqual(["dneskai", "ai", "zpravy", "umelainteligence", "technologie"]);
+    expect(dneskaiHashtags(["Adobe"])).toEqual(["dneskai", "ai", "zpravy", "adobe", "umelainteligence"]);
+    // The topic pair follows the post, so it changes from post to post.
+    expect(dneskaiHashtags(["Adobe", "Lightroom"])).toEqual(["dneskai", "ai", "zpravy", "adobe", "lightroom"]);
+    expect(dneskaiHashtags(["Nvidia", "Česká republika", "ekonomika", "čipy", "burza"])).toEqual(["dneskai", "ai", "zpravy", "nvidia", "ceskarepublika", "ekonomika", "cipy"]);
+    // The fixed three are never repeated as topic tags, and blocked tags never appear.
+    expect(dneskaiHashtags(["AI", "Zprávy", "Dneskai", "#OpenAI", "gemini", "artificialintelligence", "ainovinky", "aicesky", "dneska", "apple"])).toEqual(["dneskai", "ai", "zpravy", "apple", "umelainteligence"]);
+    for (const proposed of [[], ["a1"], ["a1", "a2", "a3", "a4", "a5", "a6"]]) {
+      const tags = dneskaiHashtags(proposed);
+      expect(tags.length).toBeGreaterThanOrEqual(5);
+      expect(tags.length).toBeLessThanOrEqual(7);
+    }
   });
-  it("accepts at most ten proposed hashtags and says so in the prompt", () => {
+  it("rebuilds the closing hashtag paragraph of a planned caption and leaves a caption without one alone", () => {
+    expect(dneskaiRetagCaption("Text.\n\nDruhý odstavec.\n\n#dneskai #nvidia #openai #ai #aitech #gemini #cipy")).toBe("Text.\n\nDruhý odstavec.\n\n#dneskai #ai #zpravy #nvidia #cipy");
+    expect(dneskaiRetagCaption("Text bez tagů.")).toBe("Text bez tagů.");
+  });
+  it("accepts at most seven proposed hashtags and says so in the prompt", () => {
     const copy = validCopy(pictures);
     const tags = (count: number) => Array.from({ length: count }, (_, index) => `a${index + 1}`);
-    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: tags(10) }).success).toBe(true);
-    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: tags(11) }).success).toBe(false);
-    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("hashtags: up to 9 topic tags, the most specific first");
-    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("code adds #dneskai and keeps the post at 10 hashtags.");
-    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("at most 10 hashtags;");
-    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).not.toContain("at most 5 hashtags");
+    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: tags(7) }).success).toBe(true);
+    expect(DneskaiCopySchema.safeParse({ ...copy, hashtags: tags(8) }).success).toBe(false);
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("hashtags: 2 to 4 topic tags chosen for this post, the most specific first");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("Code writes #dneskai #ai #zpravy first, 7 hashtags in all.");
+    expect(DNESKAI_BRIEF_SYSTEM_PROMPT).toContain("at most 7 hashtags;");
   });
 });
 
@@ -303,7 +312,7 @@ describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", 
     { type: "single", variant: "photo", headline: "Lightroom na mobilu otevře zavřené oči", images: [{ slot: "image-1", assetSha256: pictures.hero.sha256 }], alt: "Slide o nové funkci Lightroomu s obrázkem z článku The Verge." },
   ] });
   const captionOf = (copy: DneskaiCopy) => { const result = assembleDneskaiCaption(copy, offerFor()); if (!("caption" in result)) throw new Error("caption expected"); return result.caption; };
-  const TAGS = "#dneskai #adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech";
+  const TAGS = "#dneskai #ai #zpravy #adobe #lightroom #upravyfotek";
   it("keeps the exact disclosure wording, naming no source", () => {
     expect(DNESKAI_AI_DISCLOSURE).toBe("Text připravil jazykový model. Výběr a schválení: redakce DNESKAi.");
   });
@@ -321,7 +330,7 @@ describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", 
       for (const name of ["The Verge", "@technology", "theverge.com", "instagram.com"]) expect(caption).not.toContain(name);
     }
   });
-  it("carries at most ten hashtags, #dneskai first, in one last line", () => {
+  it("carries at most seven hashtags, #dneskai first, in one last line", () => {
     const copy = { ...validCopy(pictures), hashtags: Array.from({ length: 10 }, (_, index) => `tema${index}`) };
     const lines = captionOf(copy).split("\n\n");
     expect(lines).not.toContain(DNESKAI_AI_DISCLOSURE);
@@ -464,7 +473,7 @@ describe("generation from a brief", () => {
     expect(draft.deck!.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split", "figure"]);
     expect(draft.deck!.slides.filter((slide) => slide.images.length)).toHaveLength(4);
     expect(draft.deck!.slides.every((slide) => !("credit" in slide))).toBe(true);
-    expect(revision.caption).toBe([validCopy(pictures).caption, "#dneskai #adobe #lightroom #upravyfotek #ai #umelainteligence #technologie #aitech"].join("\n\n"));
+    expect(revision.caption).toBe([validCopy(pictures).caption, "#dneskai #ai #zpravy #adobe #lightroom #upravyfotek"].join("\n\n"));
     expect(draft.slides).toEqual([]);
     expect(clean).toHaveBeenCalledWith(draft.deck, expect.any(Function), expect.any(AbortSignal));
   });

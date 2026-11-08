@@ -120,12 +120,12 @@ describe("POST /api/marketing/revisions deck edits (#118)", () => {
     expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "deck-asset-outside-brief" });
     response = await POST(request({ action: "edit", id: current, caption: "x", scheduledAt: scheduledAt(), deck: { slides: [{ from: 0 }] } }));
     expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "deck-edit-slide-count" });
-    // A DNESKAi caption carries at most 10 hashtags (owner rule, 22 October 2026).
+    // A DNESKAi caption carries at most 7 hashtags (owner rule, 8 November 2026; 10 before).
     const tags = (count: number) => ["#dneskai", ...Array.from({ length: count - 1 }, (_, n) => `#tema${n + 1}`)].join(" ");
-    response = await POST(request({ action: "edit", id: current, caption: `Upravený caption.\n\n${tags(11)}`, scheduledAt: scheduledAt() }));
+    response = await POST(request({ action: "edit", id: current, caption: `Upravený caption.\n\n${tags(8)}`, scheduledAt: scheduledAt() }));
     expect(response.status).toBe(409); expect(await response.json()).toEqual({ error: "caption-hashtags-over-limit" });
     expect(admin.calls).toEqual([]);
-    response = await POST(request({ action: "edit", id: current, caption: `Upravený caption.\n\n${tags(10)}`, scheduledAt: scheduledAt() }));
+    response = await POST(request({ action: "edit", id: current, caption: `Upravený caption.\n\n${tags(7)}`, scheduledAt: scheduledAt() }));
     expect(response.status).not.toBe(409);
   });
 
@@ -184,15 +184,15 @@ describe("POST /api/marketing/revisions deck edits (#118)", () => {
         expect((save.args.p_revision as ContentRevision).engagement).toEqual(expected);
       }
     });
-    it("writes the caption's keyword line for the saved keyword and keeps ten hashtags under the cap (#158)", async () => {
+    it("writes the caption's keyword line for the saved keyword and keeps seven hashtags under the cap (#158)", async () => {
       vi.stubEnv("DNESKAI_ENGAGEMENT_EDITOR_ENABLED", "true");
       const tags = (count: number) => ["#dneskai", ...Array.from({ length: count - 1 }, (_, n) => `#tema${n + 1}`)].join(" ");
       const admin = adminDb(); mocks.admin.mockReturnValue(admin.db); mocks.user.mockReturnValue(userDb(deckRevision(), {}, null, cleanReport));
-      const caption = `Upravený caption.\n\n${DNESKAI_AI_DISCLOSURE}\n\n${tags(10)}`;
+      const caption = `Upravený caption.\n\n${DNESKAI_AI_DISCLOSURE}\n\n${tags(7)}`;
       expect((await POST(request({ action: "edit", id: current, caption, scheduledAt: scheduledAt(), engagement }))).status).toBe(200);
       const saved = (admin.calls.find((call) => call.name === "marketing_save_revision")!.args.p_revision as ContentRevision).caption;
-      expect(saved).toBe(`Upravený caption.\n\n${dneskaiKeywordLine("SKILL")}\n\n${DNESKAI_AI_DISCLOSURE}\n\n${tags(10)}`);
-      const eleven = await POST(request({ action: "edit", id: current, caption: `${saved.replace(tags(10), tags(11))}`, scheduledAt: scheduledAt(), engagement }));
+      expect(saved).toBe(`Upravený caption.\n\n${dneskaiKeywordLine("SKILL")}\n\n${DNESKAI_AI_DISCLOSURE}\n\n${tags(7)}`);
+      const eleven = await POST(request({ action: "edit", id: current, caption: `${saved.replace(tags(7), tags(8))}`, scheduledAt: scheduledAt(), engagement }));
       expect(eleven.status).toBe(409); expect(await eleven.json()).toEqual({ error: "caption-hashtags-over-limit" });
     });
     it("refuses engagement while the editor flag is off, on a legacy revision, and an invalid keyword, before writing", async () => {
