@@ -54,10 +54,12 @@ describe('dneskaiPlanAction', () => {
     expect(rest.title).toBe('Titulek');
   });
 
-  it('keeps a Plakát or Video-first post in its kit instead of redrawing it in Spotlight', () => {
-    for (const kit of ['plakat', 'videofirst'] as const) {
-      expect(dneskaiPlanAction(slot(), head({}, { deck: { ...deck(), kit } }), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
-    }
+  it('keeps a Plakát post in its kit instead of redrawing it in Spotlight', () => {
+    expect(dneskaiPlanAction(slot(), head({}, { deck: { ...deck(), kit: 'plakat' } }), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
+  });
+
+  it('redraws a Video-first post in a rotating style (owner, 8 November 2026: two styles only)', () => {
+    expect(dneskaiPlanAction(slot(), head({}, { deck: { ...deck(), kit: 'videofirst' } }), null, true, now).kind).toBe('spotlight');
   });
 
   it('keeps the kit and time of a revision the owner saved in the Design Lab', () => {

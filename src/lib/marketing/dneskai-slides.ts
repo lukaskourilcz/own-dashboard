@@ -26,12 +26,12 @@ export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
  */
 export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight", "plakat", "videofirst"];
 /**
- * Owner decision, 8 November 2026 (replacing Spotlight-only of 6 November): every generated DNESKAi post is drawn in
- * one of these styles, picked at random with equal odds and stored in the deck's `kit`, so a re-render keeps it. The
+ * Owner decision, 8 November 2026 (replacing Spotlight-only of 6 November; Video-first dropped the same evening, so
+ * only two styles remain): every generated DNESKAi post is drawn in one of these styles, picked at random with equal odds and stored in the deck's `kit`, so a re-render keeps it. The
  * Lab offers the same kits for a switch. Decks saved in another kit keep it until the owner switches them; the studio
  * still draws every kit so those decks keep rendering.
  */
-export const DNESKAI_GENERATION_KITS: readonly DneskaiKitId[] = ["spotlight", "plakat", "videofirst"];
+export const DNESKAI_GENERATION_KITS: readonly DneskaiKitId[] = ["spotlight", "plakat"];
 /** The first generation kit, kept for callers that need one default. */
 export const DNESKAI_GENERATION_KIT: DneskaiKitId = "spotlight";
 export const DNESKAI_OFFERED_KIT_IDS: readonly DneskaiKitId[] = DNESKAI_GENERATION_KITS;

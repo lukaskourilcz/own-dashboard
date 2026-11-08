@@ -107,7 +107,7 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
       if (slot.written_revision_id === head.id && report?.status !== 'refused' && head.revision.deck && !head.revision.assets.length) return { kind: 'rerender', status: 'ready' };
       return { kind: 'wait', status: 'failed', code: 'render-blocked' };
     }
-    // A deck in a retired kit is redrawn in one of the rotating styles; Spotlight, Plakát and Video-first stay as drawn.
+    // A deck in a retired kit (Video-first included) is redrawn in one of the rotating styles; Spotlight and Plakát stay as drawn.
     if (!ownerEdit && head.revision.deck && !DNESKAI_GENERATION_KITS.includes(dneskaiKitOf(head.revision.deck))) return { kind: 'spotlight', status: 'ready' };
     if (!ownerEdit && Date.parse(head.revision.scheduledAt) !== slotAt) return { kind: 'move', status: 'ready' };
     // A series post carries its label and running number, the owner's edit included (8 November 2026).

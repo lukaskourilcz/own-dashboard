@@ -30,7 +30,7 @@ enforce them; a change that lets any of them through is a bug.
 - **Slide order** (owner, 8 November 2026): slides 1 and 2 carry a picture, slide 3 may be text alone, slide 4
   carries a picture, then the closing slide. Fewer than three usable pictures: at most three written slides. One
   usable picture: slide 2 shows it again, cropped closer.
-- **Style**: each post is drawn at random in Spotlight, Plakát or Video-first (stored in the deck's `kit`). Key words of a
+- **Style**: each post is drawn at random in Spotlight or Plakát (stored in the deck's `kit`; Video-first was dropped on 8 November 2026 and a queued Video-first post is redrawn). Key words of a
   headline are marked `[[like this]]`; Plakát and Video-first colour them, other kits drop the marks. Never a box behind the text.
 - **No text about sources or verification.** No slide says where information comes from, which article,
   text or announcement states it, or whether it is confirmed or independently verified. Never "Zdrojem je
