@@ -90,7 +90,7 @@ New topics are paused (owner decision, 6 November 2026) unless `DNESKAI_NEW_TOPI
 | 2 media | Downloads the pictures of selected stories (og:image, article figures), stores them by sha256 with credit, pHash and size. A short plan is topped up from Apify (blocked pages), the company's newsroom, Pexels/Unsplash and, last, one Gemini illustration; Claude vision then scores the pictures (8 November 2026) | `dneskai-media*.ts` |
 | 3 briefs | Groups stories into events, picks up to four, writes one brief per slot (`marketing_dneskai_briefs`); with `DNESKAI_TITLING_ENABLED` the events become news topics instead | `dneskai-events.ts`, `dneskai-briefs.ts` |
 | 3a enrichment | Only with `DNESKAI_TOPIC_BRIEFS_ENABLED`: approved topics become briefs (news: the event's brief; education: a brief of the report; link-library and manual topics: their URL read through Jina Reader and stored as an `owner-link` report first) and queued jobs; topic status approved → enriching → briefed → generated | `dneskai-topic-bridge.ts`, `dneskai-topic-source.ts` |
-| 4 generation | Runs one queued job: Claude writes the deck and caption, the studio checks and renders the slides in Spotlight (`DNESKAI_GENERATION_KIT`) | `generation.ts`, `dneskai-generation.ts`, `worker-runtime.ts` |
+| 4 generation | Runs one queued job: Claude writes the deck and caption, the studio checks and renders the slides in a style picked at random among `DNESKAI_GENERATION_KITS` (Spotlight, Plakát; 8 November 2026) and appends the closing slide | `generation.ts`, `dneskai-generation.ts`, `worker-runtime.ts` |
 | 5 publishing | Publishes an approved post inside its 15-minute window | `publisher.ts`, `orchestrator.ts` |
 | 6 reconciliation | Confirms an uncertain publication from the account's media list, never posts twice | `publisher.ts` |
 | 7 token | Refreshes the 60-day Instagram token ten days before it expires | `meta-account.ts` |
@@ -153,6 +153,12 @@ kits:
 | Magazine | Flat stacked cards, display serif |
 | Ticker | Dark news screen, compact type, blue floor rule |
 | Spotlight | The owner's photo-led reference: full-bleed photos fading into ink, centred headlines, before/after quote slides, optional round inset picture on the cover |
+| Plakát | The owner's poster mockup of 8 November 2026: full-bleed photos under a dark fade, tall Anton headlines in capitals at the foot, key words (`[[…]]`) only in light blue, blue text slide |
+
+Since 8 November 2026 generation draws every post at random (a hash of its copy, so a re-render keeps it) in one of
+`DNESKAI_GENERATION_KITS` (Spotlight, Plakát), and every carousel ends with code's closing slide
+(`dneskai-closing.ts`: the owner's Higgsfield picture and „Sleduj DNESKAi…“). The engine supports two optional text
+layer fields for it: `emphasisColorToken` (marked words in another colour) and `leading` (baseline distance).
 
 A deck names its kit (`kit` field, absent for Editorial). Each kit lives in `src/lib/carousel-studio/dneskai-kits/`
 (design record: Quorum `docs/design-lab/dneskai-kits/ADR.md`) and is pinned by golden PNG hashes in
@@ -164,7 +170,7 @@ The owner approved every education topic and the last week's news into a rolling
 (`marketing_dneskai_plan`, behind `DNESKAI_PLAN_ENABLED`): Instagram at 08:00, 12:30 and 17:00, Threads at the same
 times plus 20:00, so three Instagram posts and four Threads posts a day. The tick's `plan` step (`dneskai-plan.ts`)
 fills empty slots with approved education topics and prepares the slots of today and the next two days: it renders
-the post in Spotlight, moves it to its slot, approves the exact version for the owner and derives a Threads twin
+the post in its style (Spotlight or Plakát), moves it to its slot, approves the exact version for the owner and derives a Threads twin
 (`dneskai-threads.ts`: the same slides, only the caption's first paragraph without hashtags or keyword line,
 shortened to 500 characters, then the article's topic as one hashtag, which the publisher sends as the Threads
 `topic_tag`, so the post shows "dneskai › <topic>"; the topic is the deck's `topic`, the name as people write it,
