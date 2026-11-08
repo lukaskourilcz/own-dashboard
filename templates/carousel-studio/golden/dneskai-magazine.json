@@ -64,7 +64,7 @@
       "name": "figure",
       "templateId": "dneskai-magazine-figure",
       "version": "1.1.0",
-      "pngHash": "1298b998fb13239d72d3465e77d5a58fcfb0958e91e519086d80ed170e8b1818"
+      "pngHash": "3752b8fe469dbb7ff45d44ee17559a451e5871ff59e0e5e5c1e0e7cf734e2a1d"
     },
     {
       "name": "split",
@@ -76,13 +76,13 @@
       "name": "split-pair",
       "templateId": "dneskai-magazine-split-pair",
       "version": "1.1.0",
-      "pngHash": "9cdd40a684e273d49efef21c65b8dd4462b97cb3573e2f23661fd43c863908bc"
+      "pngHash": "9ce443077f0b6d4c8551cd8fdc353e3f5bf88e029ed1b7fe56a634f29d6f888f"
     },
     {
       "name": "statement",
       "templateId": "dneskai-magazine-statement",
       "version": "1.1.0",
-      "pngHash": "51e18335e4139daee34e592018c7908ebc1a97374b4aaaeb0d70c0cc53123b45"
+      "pngHash": "48050707276bbb5258ba297fdb45fc0b790ccae533853aa133e49e4027d81d52"
     },
     {
       "name": "statement-ink",
@@ -100,19 +100,19 @@
       "name": "single-photo",
       "templateId": "dneskai-magazine-single-photo",
       "version": "1.1.0",
-      "pngHash": "b27b284113fe2bad8129f6836b4f66f568c94920d7237b2b2022c7a7a44e39f6"
+      "pngHash": "5450c5beea1ba919cb738ac57fd32089d84c24bfe80e3d0fc28926362581ccd6"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-magazine-single-photo",
       "version": "1.1.0",
-      "pngHash": "c47ed86b4091a3d28b200e8d641fdb860899ee1a3f6890c77c1b929c500d2b21"
+      "pngHash": "38844041d263cc566f08a46ea847a7d4945f88ab4dbe65af4be36c64f632f7df"
     },
     {
       "name": "single-type",
       "templateId": "dneskai-magazine-single-type",
       "version": "1.1.0",
-      "pngHash": "63f95f495a24ffd59631681e9d7a3bc912ab97cb4ae7bc2c0b6162996094b8a3"
+      "pngHash": "b6b6d6c35a47c3c7dc43df69d7e3319f191d6f4bd1c127202cfbe864a038b902"
     }
   ]
 }

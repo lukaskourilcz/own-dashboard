@@ -10,7 +10,7 @@
       "name": "cover-photo",
       "templateId": "dneskai-cover-photo",
       "version": "1.0.0",
-      "pngHash": "9c5adba33c1a7954a30f73084b77f112f992d7b75f5aaba6e2ed52779bb0dc30"
+      "pngHash": "f4dc641dfde3449e11a5e3bc97103b8ef50b443ef3c5fe12a60c24117e5ce657"
     },
     {
       "name": "cover-photo-crop",
@@ -28,13 +28,13 @@
       "name": "split",
       "templateId": "dneskai-split",
       "version": "1.1.0",
-      "pngHash": "9c135233561a9e45937b0acab1846a3815272b9e523bd531240f71654d4543b3"
+      "pngHash": "5ac1eb8e477fbb168c1b6bdb9b8d290e39f40463c019c3e46dba80b28cd29e65"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-split-pair",
       "version": "1.1.0",
-      "pngHash": "e15b9daad9d0f4f5c94dc66e74e253c0d98d2b3a3904d7d233bfb9e1b96a7ce0"
+      "pngHash": "1d750d8071814389f03ac035703d4de949ec40789e7c980378dda689823a03b8"
     },
     {
       "name": "statement",
@@ -52,7 +52,7 @@
       "name": "sources",
       "templateId": "dneskai-sources-4",
       "version": "1.1.0",
-      "pngHash": "f11c77810a3bc2e89d87b41a8847520825542b89e912a7cfd2bebe2928e1aab9"
+      "pngHash": "560d8340fb370a25a6a60eac899777aaa0168c6924668b4d06755849bfe980c9"
     },
     {
       "name": "single-photo",
@@ -70,7 +70,7 @@
       "name": "single-type",
       "templateId": "dneskai-single-type",
       "version": "1.1.0",
-      "pngHash": "4a023d6f6e278ec1665e70460307c55b83bc0ed5c7a68c1c4d55bc430c9cfbaf"
+      "pngHash": "136f71eedc65ea2d07fec2cf65d75de1a8d4fa3b484673cbba45d8b63b216227"
     }
   ]
 }
