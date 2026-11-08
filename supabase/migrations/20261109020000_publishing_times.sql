@@ -8,6 +8,7 @@ alter table public.marketing_dneskai_plan drop constraint marketing_dneskai_plan
 alter table public.marketing_dneskai_plan add constraint marketing_dneskai_plan_check1
   check ((local_time in ('20:00','21:00')) = (not instagram));
 
+alter table public.marketing_dneskai_daily_mix alter column slots set default array['08:00','19:00'];
 alter table public.marketing_dneskai_daily_mix drop constraint marketing_dneskai_daily_mix_slots_check;
 alter table public.marketing_dneskai_daily_mix add constraint marketing_dneskai_daily_mix_slots_check
   check (cardinality(slots) between 1 and 4 and slots <@ array['08:00','12:30','19:00','21:00']::text[]);

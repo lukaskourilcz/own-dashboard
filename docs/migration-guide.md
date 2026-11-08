@@ -1057,3 +1057,6 @@ once. The cron `/api/cron/dneskai-series-refill` uses them (`docs/dneskai-series
 offers 08:00, 12:30, 19:00 and 21:00; devShark's Instagram slot is 16:00 Prague. Unpublished DNESKAi slots still ahead
 move to the new times and the plan step moves their versions (`move`, approved posts included). A devShark slot already
 prepared at 12:00 cancels its queued publications, supersedes its versions and is prepared again at 16:00.
+
+`20261109021000_dneskai_reslot_times.sql` redefines `marketing_dneskai_reslot_brief` with the daily times 08:00, 12:30,
+19:00 and 21:00; nothing else in it changes.

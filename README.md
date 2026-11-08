@@ -203,6 +203,7 @@ The migrations, in the order they run:
 105. `20261108250000_drop_comment_reply_signature.sql` — comment replies carry no signature; the per-reply signature column is removed.
 106. `20261109010000_dneskai_series_waves.sql` — the DNESKAi series refill waves: one wave per twelve days, its cap reserved up front.
 107. `20261109020000_publishing_times.sql` — DNESKAi 17:00 → 19:00 and 20:00 → 21:00, devShark 12:00 → 16:00; unpublished slots ahead move.
+108. `20261109021000_dneskai_reslot_times.sql` — an owner's reslot of a lapsed DNESKAi brief takes the new times 19:00 and 21:00.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.

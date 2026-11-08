@@ -40,7 +40,7 @@ describe('topic bridge decisions (#155)', () => {
     expect(await dneskaiTopicTargetDate(s.briefStore, owner, project, new Date('2026-10-23T05:00:00Z'))).toBe('2026-10-23');
     // 21:00 in Prague: today is over.
     expect(await dneskaiTopicTargetDate(s.briefStore, owner, project, new Date('2026-10-23T19:00:00Z'))).toBe('2026-10-24');
-    const all = (date: string, offset: string) => ['08:00', '12:30', '17:00', '20:00'].map((time) => new Date(`${date}T${time}:00${offset}`).toISOString());
+    const all = (date: string, offset: string) => ['08:00', '12:30', '19:00', '21:00'].map((time) => new Date(`${date}T${time}:00${offset}`).toISOString());
     const full = stores([], null, [...all('2026-10-23', '+02:00'), ...all('2026-10-24', '+02:00')]);
     expect(await dneskaiTopicTargetDate(full.briefStore, owner, project, new Date('2026-10-23T05:00:00Z'))).toBeNull();
   });
