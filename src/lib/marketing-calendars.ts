@@ -5,16 +5,15 @@ import { parseDateOnly } from "@/lib/date-keys";
  * The marketing calendars OwnDashboard reads but never writes.
  *
  * Each project's 30-day marketing plan is a `marketing-calendar/1` JSON
- * document committed in that project's own repository and rendered as a
- * calendar there (BoardlessAI admin for devShark and DNESKAi). OwnDashboard
- * closes the loop in two read-only places: IG TIPS counts the calendar
- * entries that apply each tip (`entries[].tipRefs` cite tips by exact title),
- * and the Work overview lists the next seven days across every calendar.
+ * document, snapshotted into this repository under `content/marketing-calendars`
+ * (migrated out of Quorum on 9 November 2026 so OwnDashboard needs no Quorum).
+ * OwnDashboard closes the loop in two read-only places: IG TIPS counts the
+ * calendar entries that apply each tip (`entries[].tipRefs` cite tips by exact
+ * title), and the Work overview lists the next seven days across every calendar.
  *
- * Nothing here is stored. The server reads the documents through the owner's
- * GitHub connection on request (`src/lib/marketing-calendars-server.ts`) and
- * the browser keeps the answer for the page session under
- * `qk.marketingCalendars`.
+ * Nothing here is stored at runtime. The server reads the committed documents
+ * from disk on request (`src/lib/marketing-calendars-server.ts`) and the browser
+ * keeps the answer for the page session under `qk.marketingCalendars`.
  */
 
 export const MARKETING_CALENDAR_SCHEMA = "marketing-calendar/1";
@@ -26,10 +25,8 @@ export type MarketingCalendarSource = {
   project: string;
   /** How the project is named in the interface. */
   label: string;
-  /** `owner/name` on GitHub. */
-  repo: string;
-  /** The document's path on the repository's default branch. */
-  path: string;
+  /** The committed document's path in this repository. */
+  file: string;
   /** The page that renders this calendar; it takes `q`, `week` and `entry`. */
   calendarUrl: string;
 };
@@ -43,16 +40,14 @@ export const MARKETING_CALENDAR_SOURCES = [
     id: "marketingshark",
     project: "devshark",
     label: "devShark",
-    repo: "lukaskourilcz/quorum",
-    path: "state/marketing-calendar/marketingshark.json",
+    file: "content/marketing-calendars/marketingshark.json",
     calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark",
   },
   {
     id: "caught-up",
     project: "dneskai",
     label: "DNESKAi",
-    repo: "lukaskourilcz/quorum",
-    path: "state/marketing-calendar/caught-up.json",
+    file: "content/marketing-calendars/caught-up.json",
     calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=caught-up",
   },
 ] as const satisfies readonly MarketingCalendarSource[];
@@ -95,16 +90,9 @@ export type MarketingCalendar = {
   skipped: number;
 };
 
-/**
- * Why a calendar could not be used. `not-found` means the repository is
- * visible but the file is not on its default branch yet; `unreadable` means
- * GitHub does not show the repository to the connected account.
- */
+/** Why a calendar could not be used. A committed document is missing or unreadable only through `error`. */
 export type CalendarReadStatus =
   | "ok"
-  | "not-found"
-  | "unreadable"
-  | "disconnected"
   | "invalid-json"
   | "wrong-schema"
   | "wrong-project"
@@ -114,11 +102,10 @@ export type CalendarReadStatus =
 export type MarketingSourceResult = {
   id: string;
   label: string;
-  repo: string;
-  path: string;
+  file: string;
   calendarUrl: string;
   status: CalendarReadStatus;
-  /** The HTTP status behind `error`, or the project a `wrong-project` document names. */
+  /** The reason behind `error`, or the project a `wrong-project` document names. */
   detail: string | null;
   calendar: MarketingCalendar | null;
 };

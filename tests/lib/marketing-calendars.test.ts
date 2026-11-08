@@ -18,7 +18,6 @@ import {
   type MarketingSourceResult,
 } from "@/lib/marketing-calendars";
 import { readMarketingCalendars } from "@/lib/marketing-calendars-server";
-import type { GitHubFetch } from "@/lib/stack-detection-server";
 
 /** A November-shaped devShark calendar: the first 12 October seed entries moved by 35 days. */
 const DEVSHARK = readFileSync(path.join(__dirname, "../fixtures/marketing-calendar-devshark.json"), "utf8");
@@ -34,8 +33,7 @@ function source(id: string, label: string, value: MarketingCalendar | null, stat
   return {
     id,
     label,
-    repo: "me/repo",
-    path: `state/${id}.json`,
+    file: `content/marketing-calendars/${id}.json`,
     calendarUrl: `https://example.com/admin/calendar?venture=${id}`,
     status,
     detail: null,
@@ -55,10 +53,10 @@ const entry = (id: string, date: string, tipRefs: string[] = [], time: string | 
 });
 
 describe("marketing calendar sources", () => {
-  it("reads the devShark and DNESKAi calendars from quorum and nothing else", () => {
-    expect(MARKETING_CALENDAR_SOURCES.map((item) => [item.label, item.repo, item.path])).toEqual([
-      ["devShark", "lukaskourilcz/quorum", "state/marketing-calendar/marketingshark.json"],
-      ["DNESKAi", "lukaskourilcz/quorum", "state/marketing-calendar/caught-up.json"],
+  it("reads the devShark and DNESKAi calendars from committed files and nothing else", () => {
+    expect(MARKETING_CALENDAR_SOURCES.map((item) => [item.label, item.file])).toEqual([
+      ["devShark", "content/marketing-calendars/marketingshark.json"],
+      ["DNESKAi", "content/marketing-calendars/caught-up.json"],
     ]);
     for (const item of MARKETING_CALENDAR_SOURCES) {
       expect(item.calendarUrl).toBe(`https://boardless-ai.vercel.app/admin/calendar?venture=${item.id}`);
@@ -151,7 +149,7 @@ describe("aggregateTipUsage", () => {
   });
 
   it("leaves calendars that could not be read out of the counts", () => {
-    const index = aggregateTipUsage([source("marketingshark", "devShark", devshark), source("caught-up", "DNESKAi", null, "not-found")]);
+    const index = aggregateTipUsage([source("marketingshark", "devShark", devshark), source("caught-up", "DNESKAi", null, "error")]);
     expect(index.readSources).toEqual(["marketingshark"]);
     expect(usageForTip(index, PACE)).toHaveLength(1);
     expect(aggregateTipUsage([source("caught-up", "DNESKAi", null, "error")]).readSources).toEqual([]);
@@ -239,75 +237,37 @@ describe("IG TIPS deep link", () => {
   });
 });
 
-/** A GitHub stand-in: `files` maps "owner/repo/path" to a body or a status. */
-function github(files: Record<string, string | number>, visible: Record<string, number> = {}): GitHubFetch {
-  return async (request, init) => {
-    expect(init?.signal).toBeInstanceOf(AbortSignal);
-    const contents = /^\/repos\/([^/]+\/[^/]+)\/contents\/(.+)$/.exec(request);
-    if (contents) {
-      const value = files[`${contents[1]}/${contents[2]}`];
-      if (typeof value === "string") return new Response(value, { status: 200 });
-      return new Response(null, { status: value ?? 404 });
-    }
-    const repo = /^\/repos\/([^/]+\/[^/]+)$/.exec(request);
-    return new Response(null, { status: repo ? visible[repo[1]!] ?? 200 : 500 });
-  };
-}
-
 describe("readMarketingCalendars", () => {
-  const src = (id: string, repo: string, project = "devshark") => ({
+  const src = (id: string, file: string, project = "devshark") => ({
     id,
     project,
     label: id,
-    repo,
-    path: `state/marketing-calendar/${id}.json`,
+    file,
     calendarUrl: `https://example.com/admin/calendar?venture=${id}`,
   });
 
-  it("reads each calendar and says why one could not be read", async () => {
+  it("reads each committed calendar and says why one could not be read", async () => {
     const result = await readMarketingCalendars(
-      github(
-        {
-          "me/quorum/state/marketing-calendar/ok.json": DEVSHARK,
-          "me/quorum/state/marketing-calendar/flaky.json": 502,
-          "me/quorum/state/marketing-calendar/broken.json": "{",
-          "me/quorum/state/marketing-calendar/other.json": DEVSHARK,
-          "me/private/state/marketing-calendar/hidden.json": 404,
-        },
-        { "me/private": 404 },
-      ),
       [
-        src("ok", "me/quorum"),
-        src("missing", "me/quorum"),
-        src("hidden", "me/private"),
-        src("flaky", "me/quorum"),
-        src("broken", "me/quorum"),
-        src("other", "me/quorum", "dneskai"),
-        { ...src("bad", "not a repo"), path: "../etc.json" },
+        src("ok", "content/marketing-calendars/marketingshark.json"),
+        src("dneskai-cal", "content/marketing-calendars/caught-up.json", "dneskai"),
+        src("missing", "content/marketing-calendars/does-not-exist.json"),
+        // caught-up.json is DNESKAi, but this source asks for devShark.
+        src("other", "content/marketing-calendars/caught-up.json"),
+        // Not inside the committed calendar directory.
+        src("bad", "../etc.json"),
       ],
       "2026-09-28T10:00:00.000Z",
     );
     expect(result.checkedAt).toBe("2026-09-28T10:00:00.000Z");
-    expect(result.sources.map((item) => [item.id, item.status, item.detail])).toEqual([
-      ["ok", "ok", null],
-      ["missing", "not-found", null],
-      ["hidden", "unreadable", null],
-      ["flaky", "error", "502"],
-      ["broken", "invalid-json", null],
-      ["other", "wrong-project", "devshark"],
-      ["bad", "unreadable", null],
+    expect(result.sources.map((item) => [item.id, item.status])).toEqual([
+      ["ok", "ok"],
+      ["dneskai-cal", "ok"],
+      ["missing", "error"],
+      ["other", "wrong-project"],
+      ["bad", "error"],
     ]);
-    expect(result.sources[0]!.calendar?.entries).toHaveLength(12);
-    expect(result.sources.slice(1).every((item) => item.calendar === null)).toBe(true);
-  });
-
-  it("reports a missing GitHub connection and refuses a file over the size limit", async () => {
-    const disconnected = await readMarketingCalendars(async () => new Response(null, { status: 401 }), [src("ok", "me/quorum")]);
-    expect(disconnected.sources[0]!.status).toBe("disconnected");
-    const huge = await readMarketingCalendars(
-      github({ "me/quorum/state/marketing-calendar/ok.json": " ".repeat(1024 * 1024 + 1) }),
-      [src("ok", "me/quorum")],
-    );
-    expect(huge.sources[0]!.status).toBe("too-large");
+    expect(result.sources[0]!.calendar?.entries.length ?? 0).toBeGreaterThan(0);
+    expect(result.sources.find((item) => item.id === "missing")!.calendar).toBeNull();
   });
 });

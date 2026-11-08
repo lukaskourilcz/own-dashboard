@@ -6,9 +6,6 @@ type MarketingStrings = {
   calendarEntries: (label: string, count: number) => string;
   couldNotRead: (location: string, reason: string) => string;
   reason: {
-    "not-found": string;
-    unreadable: string;
-    disconnected: string;
     "invalid-json": string;
     "wrong-schema": string;
     "wrong-project": (project: string | null) => string;
@@ -63,14 +60,11 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
     calendarEntries: (label, count) => `${label} (${count} ${count === 1 ? "entry" : "entries"})`,
     couldNotRead: (location, reason) => `Could not read ${location}: ${reason}.`,
     reason: {
-      "not-found": "the file is not on the default branch yet",
-      unreadable: "the connected GitHub account cannot see the repository",
-      disconnected: "GitHub is not connected",
       "invalid-json": "the file is not valid JSON",
       "wrong-schema": "the file is not a marketing-calendar/1 document",
       "wrong-project": (project) => (project ? `the document is for ${project}` : "the document names no project"),
       "too-large": "the file is larger than 1 MB",
-      error: (status) => (status ? `GitHub answered ${status}` : "GitHub did not answer"),
+      error: (detail) => (detail ? `the file could not be read (${detail})` : "the file could not be read"),
     },
     skipped: (label, count) => `${label}: ${count} ${count === 1 ? "item" : "items"} without an id, a date or a title left out.`,
     unmatchedRefs: (count) => `${count} tip ${count === 1 ? "title" : "titles"} cited in the plans ${count === 1 ? "matches" : "match"} no tip here.`,
@@ -127,14 +121,11 @@ export const marketing: { en: MarketingStrings; cs: MarketingStrings } = {
       `${label} (${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"})`,
     couldNotRead: (location, reason) => `${location} se nepodařilo přečíst: ${reason}.`,
     reason: {
-      "not-found": "soubor na výchozí větvi zatím není",
-      unreadable: "připojený účet GitHub repozitář nevidí",
-      disconnected: "GitHub není připojený",
       "invalid-json": "soubor není platný JSON",
       "wrong-schema": "soubor není dokument marketing-calendar/1",
       "wrong-project": (project) => (project ? `dokument patří k projektu ${project}` : "dokument neuvádí projekt"),
       "too-large": "soubor je větší než 1 MB",
-      error: (status) => (status ? `GitHub odpověděl ${status}` : "GitHub neodpověděl"),
+      error: (detail) => (detail ? `soubor nelze přečíst (${detail})` : "soubor nelze přečíst"),
     },
     skipped: (label, count) =>
       `${label}: vynecháno ${count} ${count === 1 ? "položka" : count >= 2 && count <= 4 ? "položky" : "položek"} bez id, data nebo názvu.`,

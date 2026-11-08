@@ -30,7 +30,7 @@ export function CalendarSourceNotes({ sources, className }: { sources: readonly 
     <ul className={cn("space-y-1 text-xs", className)}>
       {problems.map((source) => (
         <li key={source.id} data-calendar-problem={source.id} className="text-warning [overflow-wrap:anywhere]">
-          {m.couldNotRead(`${source.repo}/${source.path}`, reason(source))}
+          {m.couldNotRead(source.file, reason(source))}
         </li>
       ))}
       {skipped.map((source) => (
