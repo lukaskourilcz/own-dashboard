@@ -977,6 +977,13 @@ concepts by time. The `devshark-concepts` step sums the last 24 hours before eac
 `focal_x`, `focal_y` and `ranked_at` to the links, and `ranked_at` and `rank_cost_usd` to `marketing_media_collections`
 for the daily vision ceiling. It is replayed in PGlite (`tests/lib/marketing-dneskai-media.test.ts`).
 
+`20261108130000_marketing_comment_inbox.sql` adds the comment inbox (owner request, 8 November 2026):
+`marketing_comments` keeps a captured comment's author and text so the owner can answer it,
+`marketing_comment_reply_drafts` the one owner-drafted reply per comment (never auto-sent),
+`marketing_comment_style_samples` a small per-brand sample of the owner's own writing, and a
+`comment_inbox_enabled` switch on `marketing_accounts`. Every table is own-read with service-role writes and
+before-write ownership triggers. It is replayed in PGlite (`tests/lib/marketing-comment-inbox-database.test.ts`).
+
 ## DNESKAi extra plan times, job cap and restyle, 8 November 2026
 
 `20261108150000_dneskai_plan_extra_times.sql` replaces the `local_time` check of `marketing_dneskai_plan` so slots may
