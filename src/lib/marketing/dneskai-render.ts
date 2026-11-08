@@ -65,6 +65,8 @@ export const DNESKAI_RENDER_POLICY = "dneskai-render/4";
 export const DNESKAI_RENDERER_VERSION = `carousel-studio/${DNESKAI_STUDIO.version}+${DNESKAI_STUDIO.commit.slice(0, 7)}`;
 /** Instagram portrait: exactly 1080 × 1350, baseline JPEG at quality 92 without chroma subsampling, sRGB, at most 8 MiB. */
 export const DNESKAI_SLIDE_JPEG = { width: 1080, height: 1350, quality: 92, chromaSubsampling: "4:4:4", maxBytes: 8 * 1024 * 1024 } as const;
+/** Instagram story: exactly 1080 × 1920, same baseline sRGB JPEG as a slide (owner rule, 8 November 2026). */
+export const DNESKAI_STORY_JPEG = { width: 1080, height: 1920, quality: 92, chromaSubsampling: "4:4:4", maxBytes: 8 * 1024 * 1024 } as const;
 
 export const DNESKAI_RENDER_FAILURE_CODES = ["render-input-invalid", "render-rasterizer-unavailable", "render-rasterization-failed", "render-jpeg-encoding-failed", "asset-too-large", "asset-dimensions-invalid", "asset-storage-failed", "stored-asset-hash-mismatch", "stored-asset-metadata-mismatch", "worker-timeout"] as const;
 export type DneskaiRenderFailureCode = typeof DNESKAI_RENDER_FAILURE_CODES[number];
@@ -363,21 +365,49 @@ export async function preflightDneskaiJpegEncoder(): Promise<void> {
 }
 
 /** Baseline sRGB JPEG for Instagram, checked after encoding: format, exact size, 4:4:4, colour space and byte cap. */
-export async function encodeDneskaiSlideJpeg(png: Buffer): Promise<Buffer> {
+type DneskaiJpegSpec = { width: number; height: number; quality: number; chromaSubsampling: string; maxBytes: number };
+
+async function encodeDneskaiJpeg(png: Buffer, spec: DneskaiJpegSpec): Promise<Buffer> {
   const sharp = await sharpModule();
   let jpeg: Buffer;
   try {
     jpeg = await sharp(png).flatten({ background: "#ffffff" }).toColourspace("srgb")
-      .jpeg({ quality: DNESKAI_SLIDE_JPEG.quality, chromaSubsampling: DNESKAI_SLIDE_JPEG.chromaSubsampling, progressive: false })
+      .jpeg({ quality: spec.quality, chromaSubsampling: spec.chromaSubsampling, progressive: false })
       .withIccProfile("srgb").toBuffer();
   } catch { throw new DneskaiRenderError("render-jpeg-encoding-failed"); }
-  if (jpeg.length > DNESKAI_SLIDE_JPEG.maxBytes) throw new DneskaiRenderError("asset-too-large");
+  if (jpeg.length > spec.maxBytes) throw new DneskaiRenderError("asset-too-large");
   let info;
   try { info = await sharp(jpeg).metadata(); }
   catch { throw new DneskaiRenderError("asset-dimensions-invalid"); }
-  if (info.format !== "jpeg" || info.width !== DNESKAI_SLIDE_JPEG.width || info.height !== DNESKAI_SLIDE_JPEG.height
-    || info.chromaSubsampling !== DNESKAI_SLIDE_JPEG.chromaSubsampling || info.space !== "srgb" || info.isProgressive) throw new DneskaiRenderError("asset-dimensions-invalid");
+  if (info.format !== "jpeg" || info.width !== spec.width || info.height !== spec.height
+    || info.chromaSubsampling !== spec.chromaSubsampling || info.space !== "srgb" || info.isProgressive) throw new DneskaiRenderError("asset-dimensions-invalid");
   return jpeg;
+}
+
+export async function encodeDneskaiSlideJpeg(png: Buffer): Promise<Buffer> {
+  return encodeDneskaiJpeg(png, DNESKAI_SLIDE_JPEG);
+}
+
+/**
+ * Renders the post's cover as a native 1080 × 1920 Instagram story JPEG: the photograph to every edge, the headline on
+ * the floor, the logo at the head, all inside the story safe area, with no bars (owner rule, 8 November 2026). The
+ * cover's own words and photograph, re-laid out for 9:16 by the owned slide engine (`renderDneskaiSlide(..., story)`),
+ * so the story matches the post. Throws a render error with the cover's own problem when the slide is refused.
+ */
+export async function renderDneskaiStoryJpeg(
+  cover: DneskaiSlide, loadMedia: LoadDneskaiMediaBytes, kit: DneskaiKitId, emphasis: string | undefined, signal?: AbortSignal
+): Promise<{ jpeg: Buffer; sha256: string; width: 1080; height: 1920 }> {
+  const load = mediaLoader(loadMedia);
+  const loaded = await slideImages(cover, 0, load, signal);
+  if (loaded.problems.length) throw new DneskaiRenderError("render-input-invalid");
+  const engine = await studio();
+  const input = dneskaiStudioInput(cover, { index: 0, count: 1 }, loaded.images, kit, emphasis);
+  let result;
+  try { result = await engine.renderDneskaiSlide(input, "instagram-story"); }
+  catch { throw new DneskaiRenderError("render-rasterization-failed"); }
+  if (result.status !== "rendered" || !result.png) throw new DneskaiRenderError("render-rasterization-failed");
+  const jpeg = await encodeDneskaiJpeg(result.png, DNESKAI_STORY_JPEG);
+  return { jpeg, sha256: createHash("sha256").update(jpeg).digest("hex"), width: 1080, height: 1920 };
 }
 
 const StoredProblemsSchema = z.array(z.strictObject({ code: z.string().min(1).max(80), field: z.string().max(80).nullable(), message: z.string().max(600) })).max(20);
