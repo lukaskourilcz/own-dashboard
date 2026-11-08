@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
-import { dneskaiNewsPlacement, dneskaiPlanAction, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
+import { dneskaiDeckLacksPhoto, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
 import { deck } from './marketing-dneskai-revision-fixture';
 
 /** The plan step's decisions (owner decision, 7 November 2026), one slot at a time. Synthetic values only. */
@@ -16,6 +16,14 @@ const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => pars
 const head = (patch: Partial<DneskaiPlanHead> = {}, content: Partial<ContentRevision> = {}): DneskaiPlanHead => ({ id: '33333333-3333-4333-8333-333333333333', status: 'review', ready: true, content_hash: 'h', revision: revision(content), render_report: null, ...patch });
 
 describe('dneskaiPlanAction', () => {
+  it('drops a post whose first slide shows no photo, approved or not, but never one already going out (8 November 2026)', () => {
+    const text = { ...deck(), kit: 'spotlight' as const, slides: deck().slides.map((item, index) => index === 0 ? { ...item, type: 'statement' as const, images: [] } : item) };
+    expect(dneskaiDeckLacksPhoto({ deck: text } as never)).toBe(true);
+    expect(dneskaiDeckLacksPhoto(revision())).toBe(false);
+    expect(dneskaiPlanAction(slot(), head({}, { deck: text } as never), null, true, now)).toEqual({ kind: 'drop', status: 'skipped', code: 'plan-photo-missing' });
+    expect(dneskaiPlanAction(slot(), head({ status: 'approved' }, { deck: text } as never), null, true, now)).toMatchObject({ kind: 'drop' });
+    expect(dneskaiPlanAction(slot(), head({ status: 'publishing' }, { deck: text } as never), null, true, now)).toMatchObject({ kind: 'wait', status: 'approved' });
+  });
   it('waits for a topic still generating and fails a news slot without its post', () => {
     expect(dneskaiPlanAction(slot({ kind: 'education', revision_id: null, topic_id: 't' }), null, null, true, now)).toEqual({ kind: 'wait', status: 'generating', code: null });
     expect(dneskaiPlanAction(slot(), null, null, true, now)).toMatchObject({ kind: 'wait', status: 'failed', code: 'plan-post-missing' });
