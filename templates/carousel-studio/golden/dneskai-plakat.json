@@ -10,13 +10,13 @@
       "name": "cover-photo",
       "templateId": "dneskai-plakat-cover-photo",
       "version": "1.1.0",
-      "pngHash": "c2ef99aebd6cff2355102ee926ab4dc59bdd95221f82521357b9be5495b75669"
+      "pngHash": "7485d35406bd756f2e1da3d291ac71319391fb02944dd6431a75e5516b044009"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-plakat-cover-photo",
       "version": "1.1.0",
-      "pngHash": "1e2a75eb077da45effd14981d3d060c544eeb145ce627668c9a141a105dff557"
+      "pngHash": "098ec7ffadcbfd4c5a9c5dd6dcc653df3a38ecb385c399b5c3f13d5f3be4d451"
     },
     {
       "name": "figure",
@@ -58,13 +58,13 @@
       "name": "single-photo",
       "templateId": "dneskai-plakat-single-photo",
       "version": "1.1.0",
-      "pngHash": "dda3ab1a4ff21cac84a0ef0fc69136c8be169a65adf9cdf93b717c6595b7c7ec"
+      "pngHash": "22245977141d4626487a21fd34d2dc524fc795d39a268699c063f7ba2f98494b"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-plakat-single-photo",
       "version": "1.1.0",
-      "pngHash": "d896269d74a372b67e768c2a5f81131a3d1d806b37a419c3bdf31b6b71e992b4"
+      "pngHash": "3b69a3add8723253557d35fbf9750e9a1d014c8a2bffba2e7065c47b4c2aa5a6"
     },
     {
       "name": "single-type",
