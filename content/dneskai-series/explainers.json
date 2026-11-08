@@ -1,12 +1,12 @@
 {
  "series": "explainer",
- "note": "Owner decision 8 Nov 2026: Mon/Wed/Fri 12:30 from 16 Nov. The first URL explains the term; all URLs offer pictures. Credits and URLs stay in the database only.",
+ "note": "Owner decision 8 Nov 2026: Mon/Wed/Fri 12:30 from 16 Nov. The first URL explains the term; all URLs offer pictures. Credits and URLs stay in the database only. Titles follow docs/dneskai-style-guide.md (a hook, a full stop and a plain statement, never a question); the label \"Slovník AI #N\" says the post explains a term.",
  "topics": [
   {
    "order": 1,
    "slug": "harness",
    "term": "harness",
-   "title": "Harness — co to vlastně znamená?",
+   "title": "Stejný model, jiný výsledek. Rozdíl dělá harness, software kolem AI.",
    "summary": "Harness je software kolem AI modelu: dává mu nástroje, paměť, přístup k souborům a smyčku, ve které pracuje. Model je motor, harness je zbytek auta. Claude Code nebo Cursor jsou harness kolem jazykového modelu. Stejný model v lepším harnessu zvládne mnohem víc.",
    "keyword": "Harness",
    "urls": [
@@ -19,7 +19,7 @@
    "order": 2,
    "slug": "ai-agent",
    "term": "AI agent",
-   "title": "AI agent — co to vlastně znamená?",
+   "title": "Chatbot odpoví, agent jedná. AI agent pracuje ve smyčce, dokud není hotovo.",
    "summary": "AI agent je model, který úkol nedělá na jednu odpověď, ale ve smyčce: naplánuje kroky, použije nástroje (web, soubory, kalendář), zkontroluje výsledek a pokračuje, dokud není hotovo. Chatbot odpoví, agent jedná. Proto potřebuje jasné hranice, co smí.",
    "keyword": "Agent",
    "urls": [
@@ -32,7 +32,7 @@
    "order": 3,
    "slug": "mcp",
    "term": "MCP (Model Context Protocol)",
-   "title": "MCP — co to vlastně znamená?",
+   "title": "USB-C pro umělou inteligenci. MCP propojí AI s kalendářem, databází i Slackem.",
    "summary": "MCP (Model Context Protocol) je otevřený standard, přes který se AI aplikace připojí k dalším nástrojům a datům: kalendáři, databázi, Slacku nebo GitHubu. Funguje jako USB-C pro AI: jeden konektor místo vlastního propojení pro každou službu. Představil ho Anthropic v roce 2024.",
    "keyword": "MCP",
    "urls": [
@@ -45,7 +45,7 @@
    "order": 4,
    "slug": "rag",
    "term": "RAG (retrieval-augmented generation)",
-   "title": "RAG — co to vlastně znamená?",
+   "title": "Test s otevřenou knihou. RAG nechá AI nejdřív hledat v dokumentech, pak odpovídat.",
    "summary": "RAG (retrieval-augmented generation) znamená, že si model před odpovědí nejdřív vyhledá podklady, třeba ve firemních dokumentech, a odpoví z nich. Je to jako test s otevřenou knihou: model nemusí všechno umět nazpaměť a méně si vymýšlí.",
    "keyword": "RAG",
    "urls": [
@@ -58,7 +58,7 @@
    "order": 5,
    "slug": "fine-tuning",
    "term": "fine-tuning",
-   "title": "Fine-tuning — co to vlastně znamená?",
+   "title": "Zkušený kuchař, nová restaurace. Fine-tuning doškolí hotový model na vaše příklady.",
    "summary": "Fine-tuning je doladění hotového modelu na vlastních příkladech, aby lépe zvládal konkrétní úkol nebo styl. Model se neučí od nuly, jen se doškolí, podobně jako zkušený kuchař, který se učí recepty nové restaurace.",
    "keyword": "Tuning",
    "urls": [
@@ -71,7 +71,7 @@
    "order": 6,
    "slug": "token",
    "term": "token",
-   "title": "Token — co to vlastně znamená?",
+   "title": "AI nečte slova, ale tokeny. Podle nich se i platí a měří délka textu.",
    "summary": "Token je kousek textu, se kterým jazykový model pracuje: slovo, část slova nebo znak. Modely čtou i píší po tokenech a podle tokenů se platí i měří, kolik textu se jim vejde. Čeština se do tokenů obvykle láme víc než angličtina.",
    "keyword": "Token",
    "urls": [
@@ -82,9 +82,9 @@
   },
   {
    "order": 7,
-   "slug": "kontextov-okno",
+   "slug": "kontextove-okno",
    "term": "kontextové okno",
-   "title": "Kontextové okno — co to vlastně znamená?",
+   "title": "Co se nevejde, model nevidí. Kontextové okno určuje, kolik textu AI pobere najednou.",
    "summary": "Kontextové okno je množství textu, které model vidí najednou: vaše zadání, přiložené dokumenty i dosavadní konverzaci. Co se do okna nevejde, model nevidí. Větší okno znamená, že zvládne delší dokumenty, ale ne nutně, že si z nich všechno správně vybere.",
    "keyword": "Kontext",
    "urls": [
@@ -97,7 +97,7 @@
    "order": 8,
    "slug": "halucinace",
    "term": "halucinace",
-   "title": "Halucinace — co to vlastně znamená?",
+   "title": "Sebevědomě a špatně. Halucinace je vymyšlený fakt, který AI podá jako pravdu.",
    "summary": "Halucinace je, když AI sebevědomě tvrdí něco, co není pravda: vymyšlený citát, neexistující zdroj nebo špatné číslo. Model totiž předpovídá pravděpodobný text, ne ověřená fakta. Proti halucinacím pomáhá dávat mu podklady a výstupy kontrolovat.",
    "keyword": "Halucinace",
    "urls": [
@@ -110,7 +110,7 @@
    "order": 9,
    "slug": "prompt",
    "term": "prompt",
-   "title": "Prompt — co to vlastně znamená?",
+   "title": "Dobré zadání, lepší odpověď. Prompt funguje jako brief pro nového kolegu.",
    "summary": "Prompt je zadání, které modelu napíšete. Čím jasněji popíšete cíl, kontext, formát a příklad, tím lepší odpověď dostanete. Dobrý prompt je jako dobré zadání kolegovi: neříká jen co, ale i proč a pro koho.",
    "keyword": "Prompt",
    "urls": [
@@ -123,7 +123,7 @@
    "order": 10,
    "slug": "embedding",
    "term": "embedding",
-   "title": "Embedding — co to vlastně znamená?",
+   "title": "Levný let do Říma najde i letenky do Itálie. Za vyhledáváním stojí embeddingy.",
    "summary": "Embedding převede text, obrázek nebo zvuk na řadu čísel tak, aby si podobné věci byly blízko. Díky tomu umí vyhledávání najít „levný let do Říma“ i u textu, kde stojí „letenky do Itálie za pár korun“. Na embeddingech stojí RAG i doporučování.",
    "keyword": "Embedding",
    "urls": [
@@ -136,7 +136,7 @@
    "order": 11,
    "slug": "llm",
    "term": "LLM",
-   "title": "LLM — co to vlastně znamená?",
+   "title": "Předpověď dalšího slova, miliardkrát za sebou. Tak funguje velký jazykový model.",
    "summary": "LLM (large language model, velký jazykový model) je AI natrénovaná na obrovském množství textu, která předpovídá, jaké slovo má následovat. Z toho jednoduchého principu vznikají odpovědi, překlady i kód. ChatGPT, Claude nebo Gemini stojí na LLM.",
    "keyword": "LLM",
    "urls": [
@@ -147,9 +147,9 @@
   },
   {
    "order": 12,
-   "slug": "multimod-ln-model",
+   "slug": "multimodalni-model",
    "term": "multimodální model",
-   "title": "Multimodální model — co to vlastně znamená?",
+   "title": "Vyfoťte lednici a zeptejte se na večeři. To umí multimodální model.",
    "summary": "Multimodální model rozumí víc druhům vstupu než jen textu: obrázkům, zvuku, videu nebo dokumentům. Můžete mu vyfotit lednici a zeptat se, co uvařit, nebo mu nahrát schůzku a nechat si ji shrnout.",
    "keyword": "Multimodal",
    "urls": [
@@ -162,7 +162,7 @@
    "order": 13,
    "slug": "inference",
    "term": "inference",
-   "title": "Inference — co to vlastně znamená?",
+   "title": "Trénink je škola, inference je práce. Právě ta stojí AI firmy nejvíc peněz.",
    "summary": "Inference je chvíle, kdy hotový model pracuje: dostane dotaz a spočítá odpověď. Trénink je škola, inference je práce. Právě inference běží při každé vaší otázce a stojí většinu provozních peněz AI firem.",
    "keyword": "Inference",
    "urls": [
@@ -175,7 +175,7 @@
    "order": 14,
    "slug": "open-weight-model",
    "term": "open-weight model",
-   "title": "Open-weight model — co to vlastně znamená?",
+   "title": "Model, který si stáhnete domů. Open-weight ale neznamená, že je otevřené všechno.",
    "summary": "Open-weight model je model, jehož váhy, tedy naučené parametry, si může kdokoli stáhnout a spustit u sebe. Nemusí to znamenat, že je zveřejněno i všechno ostatní, třeba trénovací data. Příklady jsou modely Llama, Mistral nebo Qwen.",
    "keyword": "Open",
    "urls": [
@@ -188,7 +188,7 @@
    "order": 15,
    "slug": "reasoning-model",
    "term": "reasoning model",
-   "title": "Reasoning model — co to vlastně znamená?",
+   "title": "Pomalejší, dražší, přesnější. Reasoning model si postup nejdřív promyslí.",
    "summary": "Reasoning model si před odpovědí nejdřív „rozmyslí“ postup: rozloží úlohu na kroky a průběžně je kontroluje. Odpovídá pomaleji a dráž, ale u matematiky, programování nebo plánování je výrazně přesnější.",
    "keyword": "Reasoning",
    "urls": [
@@ -201,7 +201,7 @@
    "order": 16,
    "slug": "transformer",
    "term": "transformer",
-   "title": "Transformer — co to vlastně znamená?",
+   "title": "Jeden článek Googlu z roku 2017. Na transformeru dnes stojí ChatGPT i Claude.",
    "summary": "Transformer je architektura neuronové sítě, na které stojí dnešní jazykové modely. Jeho trik se jmenuje pozornost (attention): při čtení každého slova si model váží, která ostatní slova v textu jsou pro něj důležitá. Představil ho Google v roce 2017.",
    "keyword": "Transformer",
    "urls": [
@@ -214,7 +214,7 @@
    "order": 17,
    "slug": "parametr-modelu",
    "term": "parametr modelu",
-   "title": "Parametry modelu — co to vlastně znamená?",
+   "title": "Miliardy čísel naučených při tréninku. Parametry jsou paměť modelu.",
    "summary": "Parametry jsou čísla, která si model nastavil během tréninku a ve kterých má uložené, co se naučil. Velké modely jich mají miliardy. Víc parametrů obvykle znamená víc schopností, ale i vyšší náklady na provoz.",
    "keyword": "Parametry",
    "urls": [
@@ -225,9 +225,9 @@
   },
   {
    "order": 18,
-   "slug": "tr-novac-data",
+   "slug": "trenovaci-data",
    "term": "trénovací data",
-   "title": "Trénovací data — co to vlastně znamená?",
+   "title": "Model je tím, co četl. Trénovací data určují, co umí a kde chybuje.",
    "summary": "Trénovací data jsou texty, obrázky nebo kód, ze kterých se model učí. Na jejich kvalitě a rozmanitosti záleží, co model umí, jaké má mezery i předsudky. Kolem toho, odkud data pochází, se dnes vedou i soudní spory o autorská práva.",
    "keyword": "Data",
    "urls": [
@@ -240,7 +240,7 @@
    "order": 19,
    "slug": "gpu",
    "term": "GPU",
-   "title": "GPU — co to vlastně znamená?",
+   "title": "Z herních karet nejžádanější hardware světa. GPU počítá tisíce věcí najednou.",
    "summary": "GPU je grafický čip, který umí provádět tisíce jednoduchých výpočtů najednou. Právě to potřebuje trénink i provoz AI modelů, proto se z grafických karet stal nejžádanější hardware světa a z Nvidie jedna z nejcennějších firem.",
    "keyword": "GPU",
    "urls": [
@@ -253,7 +253,7 @@
    "order": 20,
    "slug": "benchmark",
    "term": "benchmark",
-   "title": "Benchmark — co to vlastně znamená?",
+   "title": "Vysoké skóre není záruka. Benchmark porovná modely, ale ne na vašem úkolu.",
    "summary": "Benchmark je standardizovaný test, na kterém se porovnávají AI modely: sada úloh z matematiky, programování nebo porozumění textu. Pomáhá srovnání, ale vysoké skóre neznamená, že model zvládne právě váš úkol.",
    "keyword": "Benchmark",
    "urls": [
@@ -266,7 +266,7 @@
    "order": 21,
    "slug": "agi",
    "term": "AGI",
-   "title": "AGI — co to vlastně znamená?",
+   "title": "Termín, na kterém se nikdo neshodne. AGI má zvládnout většinu práce jako člověk.",
    "summary": "AGI (artificial general intelligence) je představa AI, která zvládne většinu intelektuální práce stejně dobře jako člověk, a ne jen jednu úzkou úlohu. Neexistuje jedna shodná definice, a proto se odhady, kdy AGI přijde, tolik liší.",
    "keyword": "AGI",
    "urls": [
@@ -279,7 +279,7 @@
    "order": 22,
    "slug": "vibe-coding",
    "term": "vibe coding",
-   "title": "Vibe coding — co to vlastně znamená?",
+   "title": "Kód, který skoro nikdo nečte. Vibe coding stačí na prototyp, na produkci ne.",
    "summary": "Vibe coding je programování, kdy člověk AI popisuje, co chce, a hotový kód skoro nečte, jen zkouší, jestli funguje. Pojem zpopularizoval Andrej Karpathy v roce 2025. Na prototyp skvělé, na produkci s daty zákazníků riskantní.",
    "keyword": "Vibe",
    "urls": [
@@ -292,7 +292,7 @@
    "order": 23,
    "slug": "system-prompt",
    "term": "system prompt",
-   "title": "System prompt — co to vlastně znamená?",
+   "title": "Stejný model, jiná povaha. Chování AI v aplikaci určuje skrytý system prompt.",
    "summary": "System prompt je skryté výchozí zadání, které modelu dává aplikace ještě před vaší první zprávou: kým má být, jak odpovídat a co nesmí. Proto se stejný model chová v různých aplikacích jinak.",
    "keyword": "System",
    "urls": [
@@ -305,7 +305,7 @@
    "order": 24,
    "slug": "chain-of-thought",
    "term": "chain of thought",
-   "title": "Chain of thought — co to vlastně znamená?",
+   "title": "Uveďte postup, jako ve škole. Chain of thought zvyšuje přesnost AI.",
    "summary": "Chain of thought (řetězec úvah) je postup, kdy model píše mezikroky, místo aby rovnou vyhrkl výsledek. Jako ve škole: „uveď postup“. U složitějších úloh to výrazně zvyšuje přesnost a je to základ reasoning modelů.",
    "keyword": "Chain",
    "urls": [
@@ -318,7 +318,7 @@
    "order": 25,
    "slug": "distilace",
    "term": "distilace",
-   "title": "Distilace modelu — co to vlastně znamená?",
+   "title": "Žák napodobuje učitele. Distilace udělá z velkého modelu menší a levnější.",
    "summary": "Distilace je způsob, jak z velkého modelu udělat menší a levnější: malý „žák“ se učí napodobovat odpovědi velkého „učitele“. Výsledek je rychlejší a levnější a často si zachová většinu schopností.",
    "keyword": "Distilace",
    "urls": [
@@ -331,7 +331,7 @@
    "order": 26,
    "slug": "deepfake",
    "term": "deepfake",
-   "title": "Deepfake — co to vlastně znamená?",
+   "title": "Řekl to, ale nikdy to neřekl. Deepfake je záznam vyrobený umělou inteligencí.",
    "summary": "Deepfake je fotka, video nebo hlas vytvořený či upravený AI tak, aby vypadal jako skutečný člověk, který to nikdy neřekl ani neudělal. Používá se pro zábavu i podvody, proto se vyplatí ověřovat, odkud záznam pochází.",
    "keyword": "Deepfake",
    "urls": [
@@ -344,7 +344,7 @@
    "order": 27,
    "slug": "vodoznak-ai-obsahu",
    "term": "vodoznak AI obsahu",
-   "title": "Vodoznak AI obsahu — co to vlastně znamená?",
+   "title": "Neviditelná značka v obrázku. Vodoznak prozradí, že obsah vytvořila AI.",
    "summary": "Vodoznak AI obsahu je neviditelná značka nebo podepsaná informace o původu, která říká, že obrázek či video vytvořila AI, nebo naopak že jde o skutečný záběr. Příkladem jsou Google SynthID a standard C2PA.",
    "keyword": "Vodoznak",
    "urls": [
@@ -357,7 +357,7 @@
    "order": 28,
    "slug": "kvantizace",
    "term": "kvantizace",
-   "title": "Kvantizace — co to vlastně znamená?",
+   "title": "Model na notebooku místo v datacentru. Pomůže kvantizace, tedy menší přesnost čísel.",
    "summary": "Kvantizace zmenší model tím, že jeho čísla uloží s menší přesností, třeba místo 16 bitů jen 4. Model pak zabere méně paměti a běží i na notebooku nebo telefonu, za cenu malé ztráty kvality.",
    "keyword": "Kvantizace",
    "urls": [
@@ -370,7 +370,7 @@
    "order": 29,
    "slug": "api",
    "term": "API",
-   "title": "API — co to vlastně znamená?",
+   "title": "Objednávka přes okénko. Přes API aplikace mluví s AI, aniž by řešila kuchyni.",
    "summary": "API je rozhraní, přes které spolu mluví programy. Když aplikace používá ChatGPT nebo Clauda „pod kapotou“, posílá dotazy přes API a platí podle spotřebovaných tokenů. Je to jako objednávka přes okénko: neřešíte kuchyni, jen dostanete jídlo.",
    "keyword": "API",
    "urls": [
@@ -383,7 +383,7 @@
    "order": 30,
    "slug": "diffusion-model",
    "term": "diffusion model",
-   "title": "Difuzní model — co to vlastně znamená?",
+   "title": "Z náhodného šumu obraz. Tak kreslí difuzní modely jako Midjourney.",
    "summary": "Difuzní model generuje obrázky nebo video tak, že začne z náhodného šumu a krok za krokem ho čistí, dokud z něj nevznikne obraz podle zadání. Na tomhle principu fungují Midjourney, Stable Diffusion i řada video generátorů.",
    "keyword": "Difuze",
    "urls": [
