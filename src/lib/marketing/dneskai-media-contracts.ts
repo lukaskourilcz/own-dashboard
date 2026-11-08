@@ -43,6 +43,10 @@ export const DneskaiMediaAssetViewSchema = z.strictObject({
   duplicateOfSha256: sha256.nullable(),
   /** The bytes were removed by retention; the row, origin and credit stay. */
   purged: z.boolean(),
+  /** Claude vision (`dneskai-media-vision.ts`, 8 November 2026): 0-10, flags, focal point; absent until ranked. */
+  visionScore: z.number().int().min(0).max(10).nullable().optional(),
+  visionFlags: z.array(code).max(4).optional(),
+  focal: z.strictObject({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).nullable().optional(),
   previewUrl: z.url().nullable(),
 });
 export type DneskaiMediaAssetView = z.infer<typeof DneskaiMediaAssetViewSchema>;
@@ -119,7 +123,8 @@ function reframedCard(card: DneskaiMediaAssetView, live: readonly DneskaiMediaAs
  * never shows the hero twice.
  */
 export function dneskaiOfferableMediaAssets(candidate: Pick<DneskaiMediaCandidateView, 'assets'>): DneskaiMediaAssetView[] {
-  const live = candidate.assets.filter((asset) => !asset.purged);
+  // A picture Claude vision flagged (logo only, interface chrome, text only, unrelated) is never offered.
+  const live = candidate.assets.filter((asset) => !asset.purged && !asset.visionFlags?.length);
   const byId = new Map(live.map((asset) => [asset.assetId, asset]));
   return live.filter((asset) => {
     const canonical = asset.duplicateOfAssetId ? byId.get(asset.duplicateOfAssetId) : undefined;

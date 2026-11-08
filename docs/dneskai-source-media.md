@@ -91,7 +91,21 @@ Pořadí, každý krok jen dokud má plán méně než dva obrázky:
 | 4 | Jedna ilustrace z Gemini 3.1 Flash Image (2K, 1:1), redakční, ne fotorealistická: žádní skuteční lidé, loga ani text. Jen když nic jiného nebylo, nejvýše `DNESKAI_GENERATED_PER_DAY` (výchozí 6) za 24 h | `generated` | „Ilustrace: AI“ | `MARKETING_DNESKAI_GENERATED_ENABLED`, `GEMINI_API_KEY` | $0.101 za obrázek; nese SynthID |
 
 Credit se podle pravidel pro obsah postu nikdy neukáže na slidu ani v popisku. Obrázky
-z kroků 2–4 mají v plánu pozice od 20, takže se nepletou s pořadím článku. Pořadí a seznam obrázků se po prvním úspěšném načtení zafixují
+z kroků 2–4 mají v plánu pozice od 20, takže se nepletou s pořadím článku.
+
+### Hodnocení obrázků Claude vision
+
+Jakmile jsou obrázky kandidáta stažené (`complete` nebo `partial`), plánovač je jednou
+pošle Claude Sonnet 5.5 (`dneskai-media-vision.ts`): každý jako JPEG 768 px a k tomu
+titulek zprávy, nic jiného. Claude vrátí ke každému skóre 0–10, příznaky (`logo-only`,
+`chrome-screenshot`, `text-only`, `unrelated`) a ohnisko (`focal_x`, `focal_y`). Zapíšou
+se do `marketing_media_asset_links`, cena do `marketing_media_collections.rank_cost_usd`.
+Obrázek s příznakem se do briefu nedostane a skóre nad 3 mít nemůže. Brief řadí obrázky od
+nejlepšího, model dává nejlépe hodnocený na první slide a generování nastaví ořez podle
+ohniska. Kandidát se hodnotí jednou, i když volání selže. Přepínač
+`MARKETING_DNESKAI_VISION_ENABLED` spolu s `MARKETING_AI_CONSENT` a `ANTHROPIC_API_KEY`;
+strop za 24 hodin `DNESKAI_VISION_DAILY_USD` (výchozí $1, nejvýš $5). Jedno volání s deseti
+obrázky stojí asi $0.02. Pořadí a seznam obrázků se po prvním úspěšném načtení zafixují
 (`plan`), takže další běhy pracují se stejnými pozicemi.
 
 Všechny požadavky jdou přes `safeFetch` z `free-feeds/security`: jen HTTPS na portu

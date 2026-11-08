@@ -5,6 +5,7 @@ import { tickDneskaiCollection } from "./dneskai-collection";
 import { createDneskaiCollectionStore, requireDneskaiProject } from "./dneskai-store";
 import { isDneskaiProject } from "./dneskai-registry";
 import { collectDneskaiMedia, createDneskaiMediaLoader, pendingDneskaiMediaCandidates, purgeUnusedDneskaiMedia } from "./dneskai-media";
+import { dneskaiVisionConfiguration, rankDneskaiMedia } from "./dneskai-media-vision";
 import { getCreateDneskaiBriefs } from "./dneskai-wiring";
 import { executeMarketingJob } from "./worker-runtime";
 import { refreshSource } from "./source-refresh";
@@ -90,7 +91,20 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
     tickCollection: (project, runId, signal) =>
       tickDneskaiCollection(owner, { projectId: project, ...(runId ? { runId } : {}) }, { store: createDneskaiCollectionStore(db), signal, env }),
     pendingMedia: (project) => pendingDneskaiMediaCandidates(db, owner, project),
-    collectMedia: (project, candidateIds, options) => collectDneskaiMedia(db, owner, project, candidateIds, options),
+    async collectMedia(project, candidateIds, options) {
+      const result = await collectDneskaiMedia(db, owner, project, candidateIds, { ...options, env });
+      // Claude vision ranks each candidate's pictures once, as soon as they are all in (8 November 2026).
+      const finished = (result?.candidates ?? []).filter((outcome) => (outcome.status === "complete" || outcome.status === "partial") && outcome.assets > 0).map((outcome) => outcome.candidateId);
+      if (finished.length && dneskaiVisionConfiguration(env)) {
+        const { data } = await db.from("marketing_dneskai_candidates").select("id,candidate").eq("user_id", owner).eq("project_id", project).in("id", finished);
+        const load = createDneskaiMediaLoader(db, owner);
+        for (const row of (data ?? []) as Array<{ id: string; candidate: { title?: unknown } }>) {
+          if (options.signal.aborted) break;
+          await rankDneskaiMedia(db, owner, project, { id: row.id, title: typeof row.candidate?.title === "string" ? row.candidate.title : "" }, { load, env, signal: options.signal });
+        }
+      }
+      return result;
+    },
     async mediaCollectionActive() {
       return any(db.from("marketing_media_collections").select("candidate_id").eq("user_id", owner).gt("lease_until", new Date().toISOString()).limit(1), "media-state-unavailable");
     },

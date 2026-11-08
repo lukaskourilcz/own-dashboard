@@ -154,11 +154,13 @@ export function buildDneskaiBrief(input: { eventId: string; memberHash: string; 
     publishedAt: candidate.publishedAt, dateEstimated: candidate.dateEstimated === true, captionOnly: dneskaiCaptionOnly(candidate),
   }));
   const seen = new Set<string>();
-  const media: DneskaiBriefMedia[] = ranked.flatMap((candidate) => [...(pictures.get(candidate.id) ?? [])].sort((a, b) => a.position - b.position).flatMap((asset) => {
+  // Claude vision's best picture first (unranked ones score 5), then the report's own order.
+  const media: DneskaiBriefMedia[] = ranked.flatMap((candidate) => [...(pictures.get(candidate.id) ?? [])].sort((a, b) => (b.visionScore ?? 5) - (a.visionScore ?? 5) || a.position - b.position).flatMap((asset) => {
     if (seen.has(asset.sha256)) return [];
     seen.add(asset.sha256);
     return [{ assetSha256: asset.sha256, candidateId: candidate.id, position: asset.position, credit: asset.credit, width: asset.width, height: asset.height,
       ...(input.richEvidence !== false && asset.sourceAltText?{sourceAltText:asset.sourceAltText}:{}),
+      ...(typeof asset.visionScore === 'number' ? { visionScore: asset.visionScore } : {}), ...(asset.focal ? { focal: asset.focal } : {}),
       originKind: asset.originKind, fullBleedCapable: asset.fullBleedCapable, insetCapable: asset.insetCapable }];
   })).slice(0, DNESKAI_BRIEF_MEDIA_LIMIT);
   const observedAt = input.observedAt.toISOString();
