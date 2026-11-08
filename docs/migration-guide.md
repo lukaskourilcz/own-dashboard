@@ -1069,3 +1069,13 @@ or WebP, at most 20 MB) and `public.heydarlink_ambient_imports`, service role on
 
 `20261109040000_heydarlink_ambient_import_gate.sql` adds `gate` (`claude` by default, or `owner-reviewed`) to
 `heydarlink_ambient_imports`. Additive.
+
+`20261109120000_ig_collection.sql` (IG Kolekce, `docs/ig-kolekce.md`) adds `author`, `collections`, `media`, `digest`,
+`collection_status` (`queued` by default; existing `inaccessible` sources become `restricted`), `collection_error` and
+`processed_at` to `marketing_knowledge_sources`, and creates `marketing_collection_settings` (one row per owner: the
+SHA-256 of the share token, the import high-water mark, the last import and last run). The owner may select their own
+settings row except the token hash; every write goes through service-role functions:
+`marketing_collection_import` (dedup by shortcode, high-water mark from Instagram exports only),
+`marketing_collection_requeue`, `marketing_collection_claim` (queued → scraping once) and `marketing_collection_finish`
+(digest plus procedures through `marketing_import_knowledge` in one transaction). Nothing runs on its own: the owner
+starts every scrape and summary. Additive.
