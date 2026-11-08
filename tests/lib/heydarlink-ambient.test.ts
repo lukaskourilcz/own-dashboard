@@ -29,9 +29,9 @@ describe('HeyDarlink ambient shot list (moved from Quorum, 8 November 2026)', ()
     expect(next.used).toEqual([]);
   });
 
-  it('prices fal per megapixel rounded up', () => {
-    expect(ambientFalUsd('4:5')).toBeCloseTo(0.05);
-    expect(ambientFalUsd('9:16')).toBeCloseTo(0.075);
+  it('prices fal per megapixel rounded up: one megapixel per attempt at either aspect', () => {
+    expect(ambientFalUsd('4:5')).toBeCloseTo(0.025);
+    expect(ambientFalUsd('9:16')).toBeCloseTo(0.025);
   });
 
   it('stays idle until it is switched on, has consent, its keys and the ingest token', () => {
