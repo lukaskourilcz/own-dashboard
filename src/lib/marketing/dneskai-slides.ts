@@ -98,6 +98,8 @@ export const DneskaiDeckSchema = z.strictObject({
   format: z.enum(["carousel", "single-image"]),
   /** Absent means editorial; editorial is never written, so one deck has one hash. */
   kit: DneskaiKitIdSchema.exclude(["editorial"]).optional(),
+  /** The post's Threads topic as people write the name (owner, 8 November 2026): `FioBanka`, `OpenAI`. */
+  topic: z.string().regex(/^[\p{L}\p{N}_]{1,50}$/u).optional(),
   slides: z.array(DneskaiSlideSchema).min(1).max(10),
 }).superRefine((deck, context) => {
   if (deck.format === "single-image" && (deck.slides.length !== 1 || deck.slides[0]?.type !== "single")) {

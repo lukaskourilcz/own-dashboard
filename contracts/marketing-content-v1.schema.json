@@ -220,6 +220,10 @@
             "spotlight"
           ]
         },
+        "topic": {
+          "type": "string",
+          "pattern": "^[\\p{L}\\p{N}_]{1,50}$"
+        },
         "slides": {
           "minItems": 1,
           "maxItems": 10,
