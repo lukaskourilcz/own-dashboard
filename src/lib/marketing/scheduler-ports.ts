@@ -30,8 +30,6 @@ import { pragueDayAfter } from "./dneskai-workspace";
 import { devsharkPlanEnabled, fillDevsharkPlan } from "./devshark-plan";
 import { prepareDevsharkPosts } from "./devshark-publish";
 import { devsharkConceptModelConfiguration, generateDevsharkConcept } from "./devshark-concepts";
-import { heydarlinkAmbientSettings } from "../heydarlink/ambient-config";
-import { refillAmbientStock, workAmbientFrame } from "../heydarlink/ambient-batch";
 import { createJinaTopicReader } from "./dneskai-topic-source";
 import { readDneskaiDailyMix } from "./dneskai-daily-mix-read";
 import { dneskaiNewsTopicLimit } from "./dneskai-daily-mix";
@@ -169,20 +167,6 @@ export function createMarketingSchedulerPorts(db: Database, owner: string, env: 
       const { data, error } = await db.from("projects").select("id").eq("user_id", owner).eq("slug", "devshark").maybeSingle();
       if (error || !data) throw new Error("devshark-project-unavailable");
       return generateDevsharkConcept(db, owner, data.id as string, { now, env, signal, model: () => createClaudeTopicModel(devsharkConceptModelConfiguration(env)) });
-    },
-    async heydarlinkAmbient(now, options) {
-      const settings = heydarlinkAmbientSettings(env);
-      if ('idle' in settings) return { status: "skipped", code: settings.idle, frames: 0, uploaded: 0, costUsd: 0, opened: 0 };
-      const refill = await refillAmbientStock(db, settings, env, { signal: options.signal, now: () => now });
-      let frames = 0, uploaded = 0, costUsd = 0, code: string | undefined;
-      // As many frames as the tick has time for; each needs about 35 seconds.
-      for (let index = 0; index < 4; index++) {
-        const result = await workAmbientFrame(db, settings, { signal: options.signal, remainingMs: options.remainingMs, now: () => now });
-        if (result.status === "idle" || result.status === "deferred") { code = result.code; break; }
-        frames++; costUsd += result.costUsd ?? 0;
-        if (result.status === "uploaded") uploaded++;
-      }
-      return { status: frames || refill.opened.length ? "worked" : "idle", ...(code ? { code } : {}), frames, uploaded, costUsd, opened: refill.opened.length };
     },
     async devsharkPlan(now, options) {
       const { data, error } = await db.from("projects").select("id").eq("user_id", owner).eq("slug", "devshark").maybeSingle();
