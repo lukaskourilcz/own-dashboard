@@ -26,6 +26,22 @@ describe("key-word marks (Plakát, 8 November 2026)", () => {
     expect(spotlight.payload?.emphasis).toBeUndefined();
     expect(spotlight.pngHash).toBe(plain.pngHash);
   }, 60000);
+
+  it("draws the key words in the post's own colour (owner request, 8 November 2026)", async () => {
+    const studio = await import("@/lib/carousel-studio");
+    const input = (await studio.dneskaiGoldenCases()).find((entry) => entry.name === "cover-photo")!.input;
+    const marked = { ...input, headline: "Alexa umí [[100+]] nových nákupních funkcí", kit: "plakat" as const };
+    const own = await studio.renderDneskaiSlide(marked);
+    const pink = await studio.renderDneskaiSlide({ ...marked, emphasisColor: "#f472b6" });
+    const lime = await studio.renderDneskaiSlide({ ...marked, emphasisColor: "#a3e635" });
+    expect([own.status, pink.status, lime.status]).toEqual(["rendered", "rendered", "rendered"]);
+    expect(new Set([own.pngHash, pink.pngHash, lime.pngHash]).size).toBe(3);
+    // The look's own light blue as an explicit colour draws the same picture.
+    expect((await studio.renderDneskaiSlide({ ...marked, emphasisColor: "#7c95ff" })).pngHash).toBe(own.pngHash);
+    // Words without a mark do not change colour.
+    const plain = { ...marked, headline: "Alexa umí 100+ nových nákupních funkcí" };
+    expect((await studio.renderDneskaiSlide({ ...plain, emphasisColor: "#f472b6" })).pngHash).toBe((await studio.renderDneskaiSlide(plain)).pngHash);
+  }, 120000);
 });
 
 describe("the closing slide (8 November 2026)", () => {
