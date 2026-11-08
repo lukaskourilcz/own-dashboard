@@ -1019,13 +1019,40 @@ Both tables are service role only. The pipeline itself is described in `docs/hey
 `heydarlink-ambient-tick` (`2-59/5 * * * *`). The marketing tick no longer runs HeyDarlink frames: its DNESKAi steps
 used the whole budget.
 
+## Sharing switches, 8 November 2026
+
+`20261108230000_publishing_switches.sql` creates `marketing_publishing_switches`: one row per switched-off version of a
+plan slot (`brand`, `slot_id`, `channel` story, instagram, threads, linkedin, facebook, or `all` for the whole post).
+A trigger keeps a switch on the owner's own DNESKAi or devShark slot; RLS keeps rows own-only. The switch belongs to
+the slot, not to a revision, so it survives an edit in the Design Lab. `marketing_publication_switched_off` names the
+revisions a switch turns off, and `marketing_claim_due` is redefined with one more condition so the publishers never
+claim them; the rest of the function is unchanged. A switched-off publication stays queued: switched back on in time,
+it goes out at its slot. Replayed in PGlite (`tests/lib/publishing-switches-database.test.ts`).
+
+## Backlog notes and hand-over, 8 November 2026
+
+`20261108240000_backlog_notes.sql` adds `note` (the owner's answer or input, up to 20,000 characters) and
+`note_updated_at` to `backlog_items`, and the status `ready_for_agent` between `open` and `in_progress`. The owner
+trigger sets `note_updated_at` whenever the note changes. A partial index serves the agents' query for items ready
+for them. The contract columns and the agents' insert are unchanged. Replayed in PGlite
+(`tests/lib/backlog-database.test.ts`).
+
 ## Comment replies carry no signature, 8 November 2026
 
-`20261108230000_drop_comment_reply_signature.sql` drops `signature` from `marketing_comment_reply_drafts`. The owner
+`20261108250000_drop_comment_reply_signature.sql` drops `signature` from `marketing_comment_reply_drafts`. The owner
 decided comment replies get no signature or sign-off (no "— Lukáš"): neither a drafted reply nor what is sent appends
 one. The column was never written by shipped code, so the drop is safe.
 
-`20261108250000_publishing_times.sql` applies the owner's new times of 8 November 2026. The DNESKAi plan accepts 19:00
+## DNESKAi series refill waves, 9 November 2026
+
+`20261109010000_dneskai_series_waves.sql` adds `marketing_private.dneskai_series_waves` and two service-only functions.
+`marketing_reserve_dneskai_series_wave` admits one wave per owner per `p_gap_days` and records its cap (at most $5).
+`marketing_settle_dneskai_series_wave` records the wave's Apify and Claude cost, the tips it inserted and its code,
+once. The cron `/api/cron/dneskai-series-refill` uses them (`docs/dneskai-series.md`). It is additive and has no backfill.
+
+## New publishing times, 8 November 2026
+
+`20261109020000_publishing_times.sql` applies the owner's new times of 8 November 2026. The DNESKAi plan accepts 19:00
 (Instagram and Threads) and 21:00 (Threads only) next to the old 17:00 and 20:00, which past rows keep; the daily mix
 offers 08:00, 12:30, 19:00 and 21:00; devShark's Instagram slot is 16:00 Prague. Unpublished DNESKAi slots still ahead
 move to the new times and the plan step moves their versions (`move`, approved posts included). A devShark slot already

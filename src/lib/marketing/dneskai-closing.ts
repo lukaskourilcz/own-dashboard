@@ -18,7 +18,7 @@ export const DNESKAI_CLOSING_FILE = ["templates", "carousel-studio", "brand-kits
  * and "DNESKAi" in tall capitals, the follow line and the handle in a white outlined pill. The render draws this file instead of laying the
  * slide out in the deck's kit; its source is `closing-card-source/card.html` next to it.
  */
-export const DNESKAI_CLOSING_CARD_SHA256 = "109468ded4f3c10525b46e734f93865ae905b310c633772ccb43548aa15c5369";
+export const DNESKAI_CLOSING_CARD_SHA256 = "5bca322771542592965a3c5ff0c0ceb1193a07774f6f56274027873984a77ac9";
 export const DNESKAI_CLOSING_CARD_FILE = ["templates", "carousel-studio", "brand-kits", "caught-up", "dneskai-closing-card.png"] as const;
 export const DNESKAI_CLOSING_CARD_TEMPLATE = { id: "dneskai-closing-card", version: "1.0.0" } as const;
 export const DNESKAI_CLOSING_HEADLINE = "Sleduj [[DNESKAi]]";

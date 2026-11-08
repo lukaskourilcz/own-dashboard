@@ -46,9 +46,53 @@ Instagram and Threads. 08:00 and the Threads post at 21:00 stay with the news ev
    skipped or failed before publication gets no number, so there is no gap. An approved post whose number changed is
    renumbered while its slot is at least 30 minutes away.
 
-## Refilling a backlog
+## Refilling the stock automatically
 
-At two posts a week a 30-tip backlog lasts about 15 weeks. The default refill involves no paid automation: once a week
-a Claude Code session researches the person's latest public posts, verifies every claim on a real page, paraphrases
-the tip, appends it to the series' JSON file and inserts it as a proposed topic. A fully automatic refill in the tick
-would need new paid calls (Apify and Claude) and a new cost cap, so it waits for the owner's decision (backlog item).
+Owner decision of 8 November 2026: the series refill themselves in waves, with no manual approval. A Vercel cron
+calls `GET /api/cron/dneskai-series-refill` every day at 04:15 UTC (`vercel.json`, `CRON_SECRET`). The job runs
+`runDneskaiSeriesRefill` (`src/lib/marketing/dneskai-series-refill-run.ts`), with the pure rules in
+`dneskai-series-refill.ts`.
+
+1. **Stock check, free.** The stock is every approved series topic that is not seated yet or is seated for today or
+   later. Each series is counted in days at its posts a week: three for Slovník AI, two for the others. While every
+   series has at least 14 days, the job stops with `series-stock-covered` and pays for nothing.
+2. **One wave per two weeks.** The wave ledger (`marketing_private.dneskai_series_waves`, migration
+   `20261109010000`) admits a wave only when no wave started in the last 12 days, a failed one included. A broken
+   wave therefore cannot retry every day. The wave reserves its whole cap first: `MARKETING_DNESKAI_SERIES_WAVE_USD`,
+   default $1.50, at most $5, for Apify and Claude together. It fills every series up to 28 days, at most 8 new tips
+   per series, so two weeks later the next wave still finds two weeks in stock.
+3. **Apify, prepaid credit only.** Before any run the job reads the account's usage and limits
+   (`/v2/users/me/limits`, `/v2/users/me`). Apify gets at most 40 % of the wave cap, and never more than the prepaid
+   credit the plan includes minus this cycle's usage. With no headroom (`series-apify-no-prepaid-headroom`) or no
+   `APIFY_TOKEN`, no run starts and the wave goes on with the free pages. There are two runs, each with
+   `maxTotalChargeUsd`:
+   - `apidojo~tweet-scraper` for the X posts of Karpathy, Cherny, Mollick and Pocock in the last 60 days;
+   - `futurizerush~meta-threads-scraper` for Mosseri's Threads posts.
+
+   A run that is still going at the deadline is aborted. A cost Apify does not report counts at the run's full cap.
+4. **Free pages.** The speakers' own pages go through Jina Reader: Karpathy's blog, Mollick's One Useful Thing and
+   Pocock's AI Hero. For Slovník AI, one small Claude call names new terms with their English Wikipedia article,
+   which Jina then reads. `DNESKAI_SERIES_SOURCES` lists the handles and pages.
+5. **Drafts.** For each series, one Claude Sonnet 5.5 call writes tips from that text, following the house style and
+   the post rules. A call starts only when its predicted cost still fits the wave cap.
+6. **Gates, then approval.** Code checks every draft (`dneskaiSeriesDraftIssues`). A draft that passes is inserted as
+   an approved series topic with the next `seriesOrder`, `approvedBy: dneskai-series-refill` and the wave id. A draft
+   passes when:
+   - its quote of at least 40 characters stands word for word in the named source of the same series, and the
+     source's page was not used before;
+   - the title is a statement without a question mark;
+   - title and summary carry no source, link, handle or hashtag;
+   - a creator tip names its speaker;
+   - it repeats no title, keyword or slug of the series.
+
+   Every dropped draft is counted by its code in the answer. The plan then seats approved topics as before.
+7. **Settle.** The wave records its Apify and Claude cost, the number inserted and its code.
+
+Switches: `MARKETING_DNESKAI_SERIES_REFILL_ENABLED=false` stops the job. It is on by default because the owner
+decided it should run unattended. The job also needs `MARKETING_OWNER_ID`, `MARKETING_AI_CONSENT=true` and
+`ANTHROPIC_API_KEY`. Without them it stops before reserving a wave (`series-model-unconfigured`). The answer and
+the log carry counts, codes and costs only.
+
+The JSON files in `content/dneskai-series/` hold the hand-made first tips. Tips added by a wave live only in the
+database. A Claude Code session may still add tips by hand the old way: research, verify, paraphrase, append to the
+JSON and insert the topic.

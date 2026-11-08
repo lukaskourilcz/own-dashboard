@@ -198,8 +198,11 @@ The migrations, in the order they run:
 100. `20261108200100_project_heydarlink_name.sql` — the phone-app project is called heyDarlink.
 101. `20261108210000_heydarlink_ambient.sql` — HeyDarlink ambient batches and frames (moved from Quorum), with a claim for one frame per tick.
 102. `20261108220000_heydarlink_ambient_tick.sql` — the HeyDarlink ambient batches get their own signed tick every five minutes.
-103. `20261108230000_drop_comment_reply_signature.sql` — comment replies carry no signature; the per-reply signature column is removed.
-104. `20261108250000_publishing_times.sql` — DNESKAi 17:00 → 19:00 and 20:00 → 21:00, devShark 12:00 → 16:00; unpublished slots ahead move.
+103. `20261108230000_publishing_switches.sql` — per-channel sharing switches for planned posts; the publishers' claim skips a switched-off version.
+104. `20261108240000_backlog_notes.sql` — the owner's note on a backlog item and the `ready_for_agent` status for handing it to an agent.
+105. `20261108250000_drop_comment_reply_signature.sql` — comment replies carry no signature; the per-reply signature column is removed.
+106. `20261109010000_dneskai_series_waves.sql` — the DNESKAi series refill waves: one wave per twelve days, its cap reserved up front.
+107. `20261109020000_publishing_times.sql` — DNESKAi 17:00 → 19:00 and 20:00 → 21:00, devShark 12:00 → 16:00; unpublished slots ahead move.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.
@@ -254,3 +257,16 @@ The repository cannot safely configure external account secrets, OAuth consent s
 Career source research, operating limits and optional Apify setup: [Career workspace](docs/career-workspace.md).
 
 Career tracking and integration decisions: [Career pipeline](docs/career-pipeline.md).
+
+## Backlog for agents
+
+The Backlog section (`backlog_items` in the OwnDashboard Supabase project) is shared by every agent session on the
+owner's laptop. Statuses: `open`, `ready_for_agent`, `in_progress`, `done`, `dropped`.
+
+- **Add a task:** `insert into public.backlog_items(project, title, description, source, external_ref) values (...)`,
+  with `project` one of `heyDarlink`, `DNESKAi`, `devShark`, `personal` and `source` like `claude:<session>`.
+- **Pick up handed-over work:** the owner writes `note` and moves the item to `ready_for_agent` ("Save and hand to an
+  agent"). A session reads them with `select id, project, title, description, note, external_ref from
+  public.backlog_items where status = 'ready_for_agent' order by created_at`, sets `status = 'in_progress'` before it
+  starts, and `status = 'done'` when finished (`dropped` if it will not be done). Put the outcome in `note` when the
+  owner should read it.
