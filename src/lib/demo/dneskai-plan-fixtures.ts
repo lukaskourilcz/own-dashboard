@@ -41,9 +41,9 @@ function nearDays(): Plan[][] {
     { time: '12:30', kind: 'education', status: 'ready', title: 'Malý model bez připojení', deck: 'e', lab: 11,
       instagram: { caption: caption(['Malý model běží i na notebooku bez internetu. Na shrnutí poznámek nebo opravu textu stačí.', 'Na složité úvahy a dlouhé dokumenty ale pořád sáhněte po větším modelu.']) },
       threads: { caption: 'Malý model běží i na notebooku bez internetu. Na shrnutí poznámek stačí, na složité úvahy ne.' } },
-    { time: '17:00', kind: 'education', status: 'generating', title: 'Jak číst kartu modelu',
+    { time: '19:00', kind: 'education', status: 'generating', title: 'Jak číst kartu modelu',
       instagram: { caption: '' }, threads: { caption: '' } },
-    { time: '20:00', kind: 'education', status: 'planned', title: 'Kdy pomůže vyhledávání v dokumentech',
+    { time: '21:00', kind: 'education', status: 'planned', title: 'Kdy pomůže vyhledávání v dokumentech',
       threads: { caption: 'Když model neví, co je ve vašich dokumentech, nepomůže delší prompt. Pomůže mu je dát k ruce: vyhledávání najde správné odstavce a model odpoví podle nich.\n\nFunguje to dobře na interní návody, smlouvy a zápisy z porad. Na obecné otázky to nepotřebujete.' } },
   ], [
     { time: '08:00', kind: 'news', status: 'ready', title: 'Benchmark není žebříček', deck: 'a', lab: 1,
@@ -52,9 +52,9 @@ function nearDays(): Plan[][] {
     { time: '12:30', kind: 'education', status: 'ready', title: 'Tip dne: kontext místo proseb', deck: 'b', lab: 2,
       instagram: { caption: caption(['Model neodpoví lépe, když ho poprosíte. Odpoví lépe, když mu řeknete cíl, publikum a formát.']) },
       threads: { caption: 'Model neodpoví lépe, když ho poprosíte. Odpoví lépe, když mu řeknete cíl, publikum a formát.' } },
-    { time: '17:00', kind: 'education', status: 'failed', title: 'Proč verzovat prompty', lab: 3, code: 'render-validation-failed',
+    { time: '19:00', kind: 'education', status: 'failed', title: 'Proč verzovat prompty', lab: 3, code: 'render-validation-failed',
       instagram: { caption: caption(['Prompt je kód. Když ho změníte, zapište kdo, kdy a proč.']) }, threads: { caption: 'Prompt je kód. Když ho změníte, zapište kdo, kdy a proč.' } },
-    { time: '20:00', kind: 'education', status: 'generating', title: 'Jak odhadnout cenu jednoho dotazu', threads: { caption: '' } },
+    { time: '21:00', kind: 'education', status: 'generating', title: 'Jak odhadnout cenu jednoho dotazu', threads: { caption: '' } },
   ]];
 }
 

@@ -8,7 +8,7 @@ type Database = Pick<SupabaseClient<any>, 'from'>;
 
 /**
  * The owner's daily mix (20261023100300). Off, missing or unreadable, it is the default (1 news, 1 education, 08:00
- * and 17:00); a malformed stored row never stops the pipeline.
+ * and 19:00); a malformed stored row never stops the pipeline.
  */
 export async function readDneskaiDailyMix(db: Database, owner: string, project: string, options: { enabled: boolean }): Promise<DneskaiDailyMixRead> {
   if (!options.enabled) return { mix: DEFAULT_DNESKAI_DAILY_MIX, stored: false };

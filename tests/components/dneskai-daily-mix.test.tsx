@@ -24,7 +24,7 @@ describe('Zdroje → Denní mix (#156)', () => {
   });
 
   it('shows the default, refuses more posts than active times, and saves a valid mix', async () => {
-    const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === 'PUT' ? respond(200, { mix: JSON.parse(String(init.body)), stored: true }) : respond(200, { mix: { newsPerDay: 1, educationPerDay: 1, slots: ['08:00', '17:00'] }, stored: false }));
+    const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === 'PUT' ? respond(200, { mix: JSON.parse(String(init.body)), stored: true }) : respond(200, { mix: { newsPerDay: 1, educationPerDay: 1, slots: ['08:00', '19:00'] }, stored: false }));
     vi.stubGlobal('fetch', fetcher);
     await show();
     expect(container.textContent).toContain(t.defaultNote);
@@ -39,7 +39,7 @@ describe('Zdroje → Denní mix (#156)', () => {
     act(() => container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
     await wait();
     const put = fetcher.mock.calls.find(([, init]) => init?.method === 'PUT')!;
-    expect(JSON.parse(String(put[1]!.body))).toEqual({ newsPerDay: 0, educationPerDay: 2, slots: ['08:00', '12:30', '17:00'] });
+    expect(JSON.parse(String(put[1]!.body))).toEqual({ newsPerDay: 0, educationPerDay: 2, slots: ['08:00', '12:30', '19:00'] });
     expect(container.textContent).toContain(t.saved);
   });
 

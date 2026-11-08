@@ -156,6 +156,8 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
   }
   // An approved post drawn in the retired look is drawn again and approved again while its slot is ahead.
   if (head.status === 'approved' && head.revision.deck && dneskaiRenderStale(head.render_report) && slotAt > now.getTime() + APPROVAL_LEAD_MS) return { kind: 'redraw', status: 'ready' };
+  // An approved post whose slot moved (19:00 and 21:00 since 8 November 2026) follows it while the slot is ahead.
+  if (head.status === 'approved' && head.revision.deck && Date.parse(head.revision.scheduledAt) !== slotAt && slotAt > now.getTime() + APPROVAL_LEAD_MS) return { kind: 'move', status: 'ready' };
   if (head.status === 'approved' && slot.instagram && head.revision.account.platform === 'instagram') {
     const gone = ['skipped', 'superseded', 'returned', 'failed'];
     const posted = Date.parse(head.revision.scheduledAt);
@@ -176,7 +178,7 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
   return { kind: 'wait', status: 'approved', code: null };
 }
 
-/** The empty slots from `from` through `until`: Instagram and Threads at the three day times, Threads alone at 20:00. */
+/** The empty slots from `from` through `until`: Instagram and Threads at the three day times, Threads alone at 21:00. */
 export function dneskaiPlanEmptySlots(taken: ReadonlyArray<Pick<DneskaiPlanRow, 'date' | 'local_time'>>, from: string, until: string, skip: readonly string[] = []): Array<{ date: string; time: string; instagram: boolean }> {
   const used = new Set(taken.map((slot) => `${slot.date} ${slot.local_time}`));
   const result: Array<{ date: string; time: string; instagram: boolean }> = [];
@@ -191,7 +193,7 @@ export function dneskaiPlanEmptySlots(taken: ReadonlyArray<Pick<DneskaiPlanRow, 
  * other times ahead, the plan approves the night's news topics into these and education takes what is still free on
  * the day itself from `DNESKAI_NEWS_FALLBACK_HOUR`.
  */
-export const DNESKAI_PLAN_NEWS_TIMES = ['08:00', '17:00', '20:00'] as const;
+export const DNESKAI_PLAN_NEWS_TIMES = ['08:00', '19:00', '21:00'] as const;
 export const DNESKAI_NEWS_FALLBACK_HOUR = 5;
 /** News is placed and the fallback filled only while the slot is at least this far away, so it can be generated. */
 const NEWS_LEAD_MS = 90 * 60_000;
@@ -201,11 +203,11 @@ export function dneskaiNewsPlacement(topics: ReadonlyArray<{ id: string; date: s
   const used = new Set(taken.map((slot) => `${slot.date} ${slot.local_time}`));
   const result: Array<{ topicId: string; date: string; time: string; instagram: boolean }> = [];
   for (const topic of [...topics].sort((a, b) => a.date.localeCompare(b.date) || a.rank - b.rank)) {
-    // A series slot (17:00 Monday to Saturday from 16 November 2026) belongs to its series, not to the news.
+    // A series slot (19:00 Monday to Saturday from 16 November 2026) belongs to its series, not to the news.
     const time = DNESKAI_PLAN_NEWS_TIMES.find((candidate) => !used.has(`${topic.date} ${candidate}`) && !dneskaiSeriesSlot(topic.date, candidate) && Date.parse(pragueScheduledAt(topic.date, candidate)) >= now.getTime() + NEWS_LEAD_MS);
     if (!time) continue;
     used.add(`${topic.date} ${time}`);
-    result.push({ topicId: topic.id, date: topic.date, time, instagram: time !== '20:00' });
+    result.push({ topicId: topic.id, date: topic.date, time, instagram: time !== '21:00' });
   }
   return result;
 }

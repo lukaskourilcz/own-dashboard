@@ -29,7 +29,7 @@ import { enqueueMarketingJob, MarketingWorkerRuntimeError } from './worker-runti
 export type DneskaiBriefsDatabase = SupabaseClient<any>;
 
 /** The daily Instagram slots in Europe/Prague, filled in event rank order. */
-export const DNESKAI_BRIEF_SLOTS = ['08:00', '12:30', '17:00', '20:00'] as const;
+export const DNESKAI_BRIEF_SLOTS = ['08:00', '12:30', '19:00', '21:00'] as const;
 /** A slot counts as used when another DNESKAi post of the day is scheduled within this many minutes of it. */
 export const DNESKAI_BRIEF_SLOT_CLEARANCE_MINUTES = 60;
 /** A slot this close to now is skipped: generation and the owner's review need time before it. */

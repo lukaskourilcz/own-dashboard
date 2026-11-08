@@ -24,6 +24,11 @@ const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => with
 const head = (patch: Partial<DneskaiPlanHead> = {}, content: Partial<ContentRevision> = {}): DneskaiPlanHead => ({ id: '33333333-3333-4333-8333-333333333333', status: 'review', ready: true, content_hash: 'h', revision: revision(content), render_report: null, ...patch });
 
 describe('dneskaiPlanAction', () => {
+  it('moves an approved post whose slot moved to 19:00 or 21:00 while the slot is ahead (8 November 2026)', () => {
+    const moved = slot({ local_time: '19:00' });
+    expect(dneskaiPlanAction(moved, head({ status: 'approved' }, { scheduledAt: '2026-11-08T16:00:00.000Z' }), null, true, now)).toEqual({ kind: 'move', status: 'ready' });
+  });
+
   it('re-tags an Instagram post whose hashtags break the current rule while its slot is ahead (8 November 2026)', () => {
     const old = 'Text.\n\n#dneskai #openai #ai #aitech #gemini #nvidia';
     expect(dneskaiPlanAction(slot(), head({}, { caption: old }), null, true, now)).toEqual({ kind: 'retag', status: 'ready' });
@@ -35,7 +40,7 @@ describe('dneskaiPlanAction', () => {
 
   it('draws again a post rendered before the icy blue and new logo, approved or not, while its slot is ahead (8 November 2026)', () => {
     const stale = { schemaVersion: 'dneskai-render-report/1', status: 'rendered', problems: [], renderKeys: [], renderedAt: '2026-11-08T15:55:00.000Z' };
-    const fresh = { ...stale, renderedAt: '2026-11-08T17:00:00.000Z' };
+    const fresh = { ...stale, renderedAt: '2026-11-08T19:00:00.000Z' };
     expect(dneskaiRenderStale(stale)).toBe(true);
     expect(dneskaiRenderStale(fresh)).toBe(false);
     expect(dneskaiRenderStale(null)).toBe(false);
@@ -114,7 +119,7 @@ describe('dneskaiPlanAction', () => {
   });
 
   it('turns a Threads-only post into Threads once the account exists', () => {
-    const evening = slot({ local_time: '20:00', instagram: false });
+    const evening = slot({ local_time: '21:00', instagram: false });
     const at = dneskaiPlanSlotAt(evening);
     expect(dneskaiPlanAction(evening, head({}, { scheduledAt: at }), null, true, now).kind).toBe('to-threads');
     expect(dneskaiPlanAction(evening, head({}, { scheduledAt: at }), null, false, now)).toMatchObject({ kind: 'wait', code: 'threads-account-missing' });
@@ -164,11 +169,11 @@ describe('dneskaiPlanAction', () => {
 });
 
 describe('dneskaiPlanEmptySlots', () => {
-  it('lists the four daily times, Threads alone at 20:00, minus the taken ones', () => {
+  it('lists the four daily times, Threads alone at 21:00, minus the taken ones', () => {
     const empty = dneskaiPlanEmptySlots([{ date: '2026-11-08', local_time: '08:00' }], '2026-11-08', '2026-11-09');
     expect(empty).toHaveLength(7);
     expect(empty[0]).toEqual({ date: '2026-11-08', time: '12:30', instagram: true });
-    expect(empty.find((item) => item.time === '20:00')).toEqual({ date: '2026-11-08', time: '20:00', instagram: false });
+    expect(empty.find((item) => item.time === '21:00')).toEqual({ date: '2026-11-08', time: '21:00', instagram: false });
   });
 
   it('is off unless DNESKAI_PLAN_ENABLED is true', () => {
@@ -179,7 +184,7 @@ describe('dneskaiPlanEmptySlots', () => {
 
 describe('the night\'s news in the plan (7 November 2026)', () => {
   it('keeps the news times free ahead when news is on', () => {
-    const empty = dneskaiPlanEmptySlots([], '2026-11-20', '2026-11-20', ['08:00', '17:00', '20:00']);
+    const empty = dneskaiPlanEmptySlots([], '2026-11-20', '2026-11-20', ['08:00', '19:00', '21:00']);
     expect(empty.map((slot) => slot.time)).toEqual(['12:30']);
   });
 
@@ -187,15 +192,15 @@ describe('the night\'s news in the plan (7 November 2026)', () => {
     const evening = new Date('2026-11-19T22:00:00Z'); // 23:00 in Prague
     const placed = dneskaiNewsPlacement([
       { id: 'b', date: '2026-11-20', rank: 2 }, { id: 'a', date: '2026-11-20', rank: 1 }, { id: 'c', date: '2026-11-20', rank: 3 }, { id: 'd', date: '2026-11-20', rank: 4 },
-    ], [{ date: '2026-11-20', local_time: '17:00' }], evening);
+    ], [{ date: '2026-11-20', local_time: '19:00' }], evening);
     expect(placed).toEqual([
       { topicId: 'a', date: '2026-11-20', time: '08:00', instagram: true },
-      { topicId: 'b', date: '2026-11-20', time: '20:00', instagram: false },
+      { topicId: 'b', date: '2026-11-20', time: '21:00', instagram: false },
     ]);
     const morning = new Date('2026-11-20T06:00:00Z'); // 07:00 in Prague: 08:00 is too close
-    // Friday 17:00 is a series slot from 16 November 2026, so the news takes Threads at 20:00.
-    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-20', rank: 1 }], [], morning)[0]).toMatchObject({ time: '20:00' });
-    // Sunday 17:00 stays with the news.
-    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-22', rank: 1 }], [], new Date('2026-11-22T06:00:00Z'))[0]).toMatchObject({ time: '17:00' });
+    // Friday 19:00 is a series slot from 16 November 2026, so the news takes Threads at 21:00.
+    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-20', rank: 1 }], [], morning)[0]).toMatchObject({ time: '21:00' });
+    // Sunday 19:00 stays with the news.
+    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-22', rank: 1 }], [], new Date('2026-11-22T06:00:00Z'))[0]).toMatchObject({ time: '19:00' });
   });
 });

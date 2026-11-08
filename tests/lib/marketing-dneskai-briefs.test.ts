@@ -24,17 +24,17 @@ const report = (sourceId: string, id: string, minutes: number, text?: string, pa
   { status: 'selected', targetDate: '2026-10-21', category: 'ai-news', relevance: 0.9, publishedAt: new Date(Date.parse('2026-10-20T12:00:00Z') + minutes * 60000).toISOString(), ...patch }, text ?? `Synthetic excerpt ${id} `.repeat(30));
 
 describe('DNESKAi brief slots (#115)', () => {
-  it('uses 08:00, 12:30, 17:00 and 20:00 Europe/Prague, correct across the 25 October 2026 change', () => {
-    expect(DNESKAI_BRIEF_SLOTS).toEqual(['08:00', '12:30', '17:00', '20:00']);
-    expect(dneskaiBriefSlots('2026-10-24')).toEqual(['2026-10-24T06:00:00.000Z', '2026-10-24T10:30:00.000Z', '2026-10-24T15:00:00.000Z', '2026-10-24T18:00:00.000Z']);
-    expect(dneskaiBriefSlots('2026-10-25')).toEqual(['2026-10-25T07:00:00.000Z', '2026-10-25T11:30:00.000Z', '2026-10-25T16:00:00.000Z', '2026-10-25T19:00:00.000Z']);
+  it('uses 08:00, 12:30, 19:00 and 21:00 Europe/Prague, correct across the 25 October 2026 change', () => {
+    expect(DNESKAI_BRIEF_SLOTS).toEqual(['08:00', '12:30', '19:00', '21:00']);
+    expect(dneskaiBriefSlots('2026-10-24')).toEqual(['2026-10-24T06:00:00.000Z', '2026-10-24T10:30:00.000Z', '2026-10-24T17:00:00.000Z', '2026-10-24T19:00:00.000Z']);
+    expect(dneskaiBriefSlots('2026-10-25')).toEqual(['2026-10-25T07:00:00.000Z', '2026-10-25T11:30:00.000Z', '2026-10-25T18:00:00.000Z', '2026-10-25T20:00:00.000Z']);
   });
 
   it('assigns in rank order, keeps an assigned slot and skips slots used by other posts of the day or too close to now', () => {
     const now = new Date('2026-10-24T20:30:00Z');
-    const briefs = [{ id: 'third', rank: 3, scheduledAt: null }, { id: 'first', rank: 1, scheduledAt: null }, { id: 'second', rank: 2, scheduledAt: '2026-10-25T19:00:00.000Z' }, { id: 'fourth', rank: 4, scheduledAt: null }];
+    const briefs = [{ id: 'third', rank: 3, scheduledAt: null }, { id: 'first', rank: 1, scheduledAt: null }, { id: 'second', rank: 2, scheduledAt: '2026-10-25T20:00:00.000Z' }, { id: 'fourth', rank: 4, scheduledAt: null }];
     const slots = assignDneskaiBriefSlots(briefs, '2026-10-25', ['2026-10-25T11:45:00.000Z'], now);
-    expect(Object.fromEntries(slots)).toEqual({ first: '2026-10-25T07:00:00.000Z', second: '2026-10-25T19:00:00.000Z', third: '2026-10-25T16:00:00.000Z', fourth: null });
+    expect(Object.fromEntries(slots)).toEqual({ first: '2026-10-25T07:00:00.000Z', second: '2026-10-25T20:00:00.000Z', third: '2026-10-25T18:00:00.000Z', fourth: null });
     const late = assignDneskaiBriefSlots([{ id: 'a', rank: 1, scheduledAt: null }], '2026-10-25', [], new Date('2026-10-25T06:45:00Z'));
     expect(late.get('a')).toBe('2026-10-25T11:30:00.000Z');
   });
@@ -402,12 +402,12 @@ describe('createDneskaiBriefs over a store', () => {
       const { store } = fakeStore(rows, [a1, a2], { account: false });
       const { tick, createBriefs, clock } = scheduled(store, '2026-10-20T21:00:00Z');
       expect(await tick()).toMatchObject({ pending: true });
-      // 20:00 in Prague on the target day: the last slot is less than 30 minutes away.
+      // 21:00 in Prague on the target day: the last slot is less than 30 minutes away.
       clock.at = Date.parse('2026-10-21T18:00:00Z');
       const closing = await tick();
       expect(closing).toMatchObject({ status: 'noop', detail: { skipped: 1 } });
       expect(closing.pending).toBeUndefined();
-      // The held brief had the 20:00 slot: it lapses as its slot passing, as the owner brief describes.
+      // The held brief had the 21:00 slot: it lapses as its slot passing, as the owner brief describes.
       expect(rows[0]).toMatchObject({ status: 'skipped', code: 'brief-slot-passed' });
       expect(await tick()).toMatchObject({ status: 'noop', code: 'briefs-current' });
       expect(createBriefs).toHaveBeenCalledTimes(2);
@@ -418,7 +418,7 @@ describe('createDneskaiBriefs over a store', () => {
 describe('other events for the Sources tab', () => {
   it('groups unselected reports into one held or duplicate event each, primary first, without the briefed ones', async () => {
     const { dneskaiOtherEventViews } = await import('@/lib/marketing/dneskai-brief-read');
-    const a = syntheticCandidate('techcrunch-ai', 'o1', 'Synthetic robot dog learns to open doors', { status: 'duplicate', reason: 'collection-already-covered', fetchedAt: '2026-10-20T20:00:00Z' });
+    const a = syntheticCandidate('techcrunch-ai', 'o1', 'Synthetic robot dog learns to open doors', { status: 'duplicate', reason: 'collection-already-covered', fetchedAt: '2026-10-20T21:00:00Z' });
     const b = syntheticCandidate('mit-tech-review', 'o2', 'Synthetic robot dog learns to open doors', { status: 'new', fetchedAt: '2026-10-20T20:05:00Z' });
     const c = syntheticCandidate('wired-ai', 'o3', 'Synthetic satellite outage explained', { status: 'held', reason: 'collection-review-relevance', fetchedAt: '2026-10-20T19:00:00Z' });
     const briefed = syntheticCandidate('openai-blog', 'o4', 'Synthetic launch already briefed', { status: 'new' });
@@ -432,7 +432,7 @@ describe('other events for the Sources tab', () => {
   // SEL-05: an unselected event says which stored selection rule it fails, from the candidate alone.
   it('explains why an open event was not selected, rule by rule, from the stored lead report', async () => {
     const { dneskaiOtherEventViews } = await import('@/lib/marketing/dneskai-brief-read');
-    const now = new Date('2026-10-21T20:00:00Z');
+    const now = new Date('2026-10-21T21:00:00Z');
     const fresh = '2026-10-21T12:00:00Z', old = '2026-10-18T12:00:00Z';
     const make = (id: string, title: string, patch: Partial<DneskaiCandidate>) => syntheticCandidate('techcrunch-ai', id, title, { status: 'new', reason: null, duplicateOf: null, publishedAt: fresh, fetchedAt: fresh, category: 'ai-news', relevance: 0.9, ...patch });
     const views = dneskaiOtherEventViews([
@@ -456,7 +456,7 @@ describe('other events for the Sources tab', () => {
 
   it('leads with an eligible report when an event mixes eligible and weaker ones, and shows up to 30 events', async () => {
     const { dneskaiOtherEventViews, dneskaiEventSelection } = await import('@/lib/marketing/dneskai-brief-read');
-    const now = new Date('2026-10-21T20:00:00Z');
+    const now = new Date('2026-10-21T21:00:00Z');
     const base = { status: 'new' as const, reason: null, duplicateOf: null, publishedAt: '2026-10-21T10:00:00Z', fetchedAt: '2026-10-21T10:00:00Z', category: 'ai-news' as const };
     const weak = syntheticCandidate('wired-ai', 'w1', 'Synthetic agent launch', { ...base, relevance: 0.99, publishedAt: '2026-10-10T10:00:00Z' });
     const strong = syntheticCandidate('openai-blog', 'w2', 'Synthetic agent launch', { ...base, relevance: 0.86 });
@@ -484,7 +484,7 @@ describe('other events for the Sources tab', () => {
 
   it('names the relevance-first rule for an eligible, unpicked event when selection v2 is on', async () => {
     const { dneskaiOtherEventViews, dneskaiEventSelection } = await import('@/lib/marketing/dneskai-brief-read');
-    const now = new Date('2026-10-21T20:00:00Z');
+    const now = new Date('2026-10-21T21:00:00Z');
     const item = syntheticCandidate('openai-blog', 'v2', 'Synthetic agent launch', { status: 'new', reason: null, duplicateOf: null, publishedAt: '2026-10-21T10:00:00Z', fetchedAt: '2026-10-21T10:00:00Z', category: 'tool', relevance: 0.9 });
     expect(dneskaiEventSelection([item], 'new', now)).toMatchObject({ code: 'selection-not-picked' });
     expect(dneskaiEventSelection([item], 'new', now, true)).toMatchObject({ code: 'selection-not-picked-relevance', category: 'tool' });
