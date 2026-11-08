@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PREVIEW_PUBLISHING } from "@/components/panels/publishing-calendar-panel";
 import { PREVIEW_BACKLOG } from "@/components/panels/backlog-panel";
-import { PublishingCalendarSchema, networkOfChannel, publishingDays, publishingNetworkCounts, publishingTargetHref, PUBLISHING_CONNECTED } from "@/lib/publishing-calendar";
+import { PublishingCalendarSchema, networkOfChannel, orderedVersions, publishingDays, publishingNetworkCounts, publishingTargetHref, PUBLISHING_CONNECTED } from "@/lib/publishing-calendar";
 import { backlogProjectCounts, backlogRefHref, filterBacklog } from "@/lib/backlog";
 import { isProjectsSectionProject } from "@/lib/portfolio";
 
@@ -12,14 +12,23 @@ describe("publishing calendar", () => {
     expect(PublishingCalendarSchema.parse(PREVIEW_PUBLISHING)).toEqual(PREVIEW_PUBLISHING);
   });
 
-  it("groups items by day in time order and filters by network", () => {
+  it("shows one card per post by day in time order and filters by the channels a post has", () => {
     const all = publishingDays(PREVIEW_PUBLISHING, new Set(["instagram", "threads"]));
     expect(all.map((day) => day.date)).toEqual(["2026-11-08", "2026-11-09", "2026-11-10"]);
-    expect(all[0]!.items.map((item) => item.id)).toEqual(["p1", "p2", "p3", "p4"]);
-    expect(all[2]!.items).toEqual([]);
+    expect(all[0]!.posts.map((post) => post.id)).toEqual(["p1", "p2", "p3"]);
+    expect(all[2]!.posts).toEqual([]);
+    // Instagram off: the post with Threads too stays, the Threads-only ones stay, nothing is duplicated.
     const threadsOnly = publishingDays(PREVIEW_PUBLISHING, new Set(["threads"]));
-    expect(threadsOnly.flatMap((day) => day.items.map((item) => item.id))).toEqual(["p4", "p5"]);
-    expect(publishingNetworkCounts(PREVIEW_PUBLISHING.items)).toEqual({ facebook: 0, instagram: 3, threads: 2, linkedin: 0 });
+    expect(threadsOnly.flatMap((day) => day.posts.map((post) => post.id))).toEqual(["p1", "p2", "p3", "p4"]);
+    const instagramOnly = publishingDays(PREVIEW_PUBLISHING, new Set(["instagram"]));
+    expect(instagramOnly.flatMap((day) => day.posts.map((post) => post.id))).toEqual(["p1", "p2"]);
+    // A post with a story and an Instagram post counts once for Instagram.
+    expect(publishingNetworkCounts(PREVIEW_PUBLISHING.posts)).toEqual({ facebook: 0, instagram: 2, threads: 4, linkedin: 0 });
+  });
+
+  it("orders a post's versions story, post, Threads, LinkedIn, Facebook", () => {
+    const post = { versions: [...PREVIEW_PUBLISHING.posts[0]!.versions].reverse() };
+    expect(orderedVersions(post).map((version) => version.channel)).toEqual(["story", "instagram", "threads"]);
   });
 
   it("opens a DNESKAi post in the Design Lab and a devShark concept in the Studio", () => {
@@ -28,9 +37,11 @@ describe("publishing calendar", () => {
     expect(publishingTargetHref({ kind: "devshark-studio", draftId: id })).toBe(`/projects/devshark?projectTab=devshark-studio&studioDraft=${id}`);
   });
 
-  it("refuses a thumbnail that is not https", () => {
-    const item = { ...PREVIEW_PUBLISHING.items[0]!, thumbnail: { url: "http://example.com/a.jpg", alt: "", width: 1, height: 1 } };
-    expect(PublishingCalendarSchema.safeParse({ ...PREVIEW_PUBLISHING, items: [item] }).success).toBe(false);
+  it("refuses a picture that is not https and a post without versions", () => {
+    const post = PREVIEW_PUBLISHING.posts[0]!;
+    const http = { ...post, versions: [{ ...post.versions[1]!, pictures: [{ url: "http://example.com/a.jpg", alt: "", width: 1, height: 1 }] }] };
+    expect(PublishingCalendarSchema.safeParse({ ...PREVIEW_PUBLISHING, posts: [http] }).success).toBe(false);
+    expect(PublishingCalendarSchema.safeParse({ ...PREVIEW_PUBLISHING, posts: [{ ...post, versions: [] }] }).success).toBe(false);
   });
 });
 
