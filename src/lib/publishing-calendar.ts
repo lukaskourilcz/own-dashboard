@@ -39,12 +39,18 @@ export const PublishingVersionSchema = z.strictObject({
   caption: z.string().max(2200).nullable(),
   /** The rendered slides (post, Threads) or the 9:16 story frame; empty while not rendered yet. */
   pictures: z.array(Picture).max(10),
+  /** The owner switched this version off: it will not be published (the whole post off turns every version off). */
+  off: z.boolean(),
 });
 export type PublishingVersion = z.infer<typeof PublishingVersionSchema>;
 
 export const PublishingPostSchema = z.strictObject({
   id: z.string().min(1).max(200),
   brand: z.enum(PUBLISHING_BRANDS),
+  /** The plan slot the sharing switches belong to. */
+  slotId: z.uuid(),
+  /** The whole post is switched off. */
+  off: z.boolean(),
   date: z.iso.date(),
   /** The first version's time, for ordering the day. */
   time,
@@ -104,3 +110,16 @@ export function publishingTargetHref(target: NonNullable<PublishingPost["target"
     : new URLSearchParams({ projectTab: "devshark-studio", studioDraft: target.draftId });
   return `/projects/${target.kind === "dneskai-lab" ? "dneskai" : "devshark"}?${params}`;
 }
+
+/** A sharing switch: a channel of a post, or "all" for the whole post (owner request, 8 November 2026). */
+export const PUBLISHING_SWITCH_CHANNELS = ["all", ...PUBLISHING_CHANNELS] as const;
+export const PublishingSwitchSchema = z.strictObject({
+  brand: z.enum(PUBLISHING_BRANDS),
+  slotId: z.uuid(),
+  channel: z.enum(PUBLISHING_SWITCH_CHANNELS),
+  off: z.boolean(),
+});
+export type PublishingSwitch = z.infer<typeof PublishingSwitchSchema>;
+
+/** A version goes out only when neither it nor its whole post is switched off. */
+export const versionLive = (post: Pick<PublishingPost, "off">, version: Pick<PublishingVersion, "off">) => !post.off && !version.off;

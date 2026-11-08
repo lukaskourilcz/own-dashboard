@@ -53,12 +53,27 @@ async function revisionsById(db: Database, owner: string, ids: string[]) {
   return new Map(((data ?? []) as Array<{ id: string; revision: unknown }>).map((row) => [row.id, row.revision]));
 }
 
-async function dneskaiPosts(db: Database, owner: string, now: Date, from: string): Promise<PublishingPost[]> {
+type Switches = ReadonlySet<string>;
+const switchKey = (brand: PublishingBrand, slot: string, channel: string) => `${brand}:${slot}:${channel}`;
+/** The owner's sharing switches as `brand:slot:channel` keys; a row means "off". */
+async function readSwitches(db: Database, owner: string): Promise<Switches> {
+  const { data, error } = await db.from("marketing_publishing_switches").select("brand,slot_id,channel").eq("user_id", owner).limit(1000);
+  if (error) throw new Error("publishing-switches-unavailable");
+  return new Set(((data ?? []) as Array<{ brand: PublishingBrand; slot_id: string; channel: string }>).map((row) => switchKey(row.brand, row.slot_id, row.channel)));
+}
+/** Marks each version and the post off from the switches. */
+function withSwitches(post: Omit<PublishingPost, "off" | "versions"> & { versions: Array<Omit<PublishingVersion, "off">> }, switches: Switches): PublishingPost {
+  return { ...post, off: switches.has(switchKey(post.brand, post.slotId, "all")), versions: post.versions.map((version) => ({ ...version, off: switches.has(switchKey(post.brand, post.slotId, version.channel)) })) };
+}
+type Draft = Parameters<typeof withSwitches>[0];
+type DraftVersion = Draft["versions"][number];
+
+async function dneskaiPosts(db: Database, owner: string, now: Date, from: string, switches: Switches): Promise<PublishingPost[]> {
   const plan = await readDneskaiPlan(db, owner, now, { from, days: PUBLISHING_CALENDAR_DAYS, enabled: dneskaiPlanEnabled() });
   const stories = await revisionsById(db, owner, plan.slots.flatMap((slot) => slot.story?.revisionId ? [slot.story.revisionId] : []));
   return plan.slots.map((slot): PublishingPost => {
     const slides = slot.slides.filter((slide) => https(slide.url)).map((slide) => ({ url: slide.url, alt: (slide.alt || slot.title).slice(0, 500), width: slide.width, height: slide.height }));
-    const versions: PublishingVersion[] = [];
+    const versions: DraftVersion[] = [];
     if (slot.instagram) {
       const at = later(slot.scheduledAt, STORY_DELAY_MS);
       const story = slot.story?.revisionId ? pictures(stories.get(slot.story.revisionId), slot.title).slice(0, 1) : [];
@@ -66,17 +81,17 @@ async function dneskaiPosts(db: Database, owner: string, now: Date, from: string
       versions.push({ channel: "instagram", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.instagram.publicationStatus ?? slot.status, caption: slot.instagram.caption, pictures: slides });
     }
     if (slot.threads) versions.push({ channel: "threads", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.threads.publicationStatus ?? slot.status, caption: slot.threads.caption, pictures: slides });
-    return {
-      id: `dneskai:${slot.id}`, brand: "dneskai", date: slot.date, time: slot.time, scheduledAt: slot.scheduledAt, title: slot.title, status: slot.status,
+    return withSwitches({
+      id: `dneskai:${slot.id}`, brand: "dneskai", slotId: slot.id, date: slot.date, time: slot.time, scheduledAt: slot.scheduledAt, title: slot.title, status: slot.status,
       thumbnail: slides[0] ?? null, target: slot.labPostId ? { kind: "dneskai-lab", postId: slot.labPostId } : null, versions,
-    };
+    }, switches);
   }).filter((post) => post.versions.length > 0);
 }
 
 type DevsharkSlotRow = { id: string; date: string; local_time: string; instagram: boolean; threads: boolean; status: string; draft_id: string;
   instagram_revision_id: string | null; threads_revision_id: string | null; story_revision_id: string | null };
 
-async function devsharkPosts(db: Database, owner: string, from: string, until: string): Promise<PublishingPost[]> {
+async function devsharkPosts(db: Database, owner: string, from: string, until: string, switches: Switches): Promise<PublishingPost[]> {
   const slots = await db.from("marketing_devshark_plan").select("id,date,local_time,instagram,threads,status,draft_id,instagram_revision_id,threads_revision_id,story_revision_id")
     .eq("user_id", owner).gte("date", from).lte("date", until).order("date").order("local_time").limit(100);
   if (slots.error) throw new Error("devshark-plan-unavailable");
@@ -95,7 +110,7 @@ async function devsharkPosts(db: Database, owner: string, from: string, until: s
     const post = row.instagram_revision_id ? revisions.get(row.instagram_revision_id) : undefined;
     const threads = row.threads_revision_id ? revisions.get(row.threads_revision_id) : undefined;
     const slides = pictures(post ?? threads ?? null, title);
-    const versions: PublishingVersion[] = [];
+    const versions: DraftVersion[] = [];
     if (row.instagram) {
       const at = later(scheduledAt, STORY_DELAY_MS);
       const story = pictures(row.story_revision_id ? revisions.get(row.story_revision_id) : null, title).slice(0, 1);
@@ -103,10 +118,10 @@ async function devsharkPosts(db: Database, owner: string, from: string, until: s
       versions.push({ channel: "instagram", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(post) ?? concept?.caption?.slice(0, 2200) ?? null, pictures: slides });
     }
     if (row.threads) versions.push({ channel: "threads", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(threads), pictures: pictures(threads ?? post ?? null, title) });
-    return {
-      id: `devshark:${row.id}`, brand: "devshark", date: row.date, time: row.local_time, scheduledAt, title, status: row.status,
+    return withSwitches({
+      id: `devshark:${row.id}`, brand: "devshark", slotId: row.id, date: row.date, time: row.local_time, scheduledAt, title, status: row.status,
       thumbnail: slides[0] ?? null, target: { kind: "devshark-studio", draftId: row.draft_id }, versions,
-    };
+    }, switches);
   }).filter((post) => post.versions.length > 0);
 }
 
@@ -120,7 +135,9 @@ export async function readPublishingCalendar(db: Database, owner: string, now: D
   const from = pragueMarketingDate(now);
   const days = Array.from({ length: PUBLISHING_CALENDAR_DAYS }, (_, index) => pragueDayAfter(from, index));
   const brands: PublishingBrand[] = ["dneskai", "devshark"];
-  const reads = await Promise.allSettled([dneskaiPosts(db, owner, now, from), devsharkPosts(db, owner, from, days[days.length - 1]!)]);
+  // Without the switches nothing can say what is off, so the whole read fails rather than show a version as live.
+  const switches = await readSwitches(db, owner);
+  const reads = await Promise.allSettled([dneskaiPosts(db, owner, now, from, switches), devsharkPosts(db, owner, from, days[days.length - 1]!, switches)]);
   const unavailable = brands.filter((_, index) => reads[index]!.status === "rejected");
   const posts = reads.flatMap((read) => read.status === "fulfilled" ? read.value : []);
   return PublishingCalendarSchema.parse({ schemaVersion: PUBLISHING_CALENDAR_VERSION, generatedAt: now.toISOString(), from, days, connected: PUBLISHING_CONNECTED, unavailable, posts });
