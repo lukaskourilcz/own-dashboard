@@ -112,3 +112,11 @@ describe("OwnDashboard's slide engine (src/lib/carousel-studio, owned since 7 No
     }
   }, 240000);
 });
+
+describe('uppercase layers keep brand case (owner, 8 November 2026)', () => {
+  it('sets DNESKAi as written inside capitals', async () => {
+    const { uppercaseKeepingBrands } = await import('@/lib/carousel-studio/renderer');
+    expect(uppercaseKeepingBrands('Sleduj DNESKAi', 'cs')).toBe('SLEDUJ DNESKAi');
+    expect(uppercaseKeepingBrands('Změní adresu', 'cs')).toBe('ZMĚNÍ ADRESU');
+  });
+});

@@ -322,6 +322,15 @@ function kitLogoSvg(input: {
   return `<svg x="${round(x)}" y="${round(top)}" width="${round(width)}" height="${round(height)}" viewBox="${chosen.variant.viewBox.join(" ")}" preserveAspectRatio="xMinYMid meet" overflow="visible" aria-label="${escapeXml(logotype.displayName)}" role="img">${markup}</svg>`;
 }
 
+/** Brand names whose letter case is part of the mark: an uppercase layer sets them as written. */
+const CASED_BRANDS = ["DNESKAi"] as const;
+/** The layer's text in capitals, except the brand names, which keep their own case ("SLEDUJ DNESKAi"). */
+export function uppercaseKeepingBrands(raw: string, locale: string): string {
+  let value = raw.toLocaleUpperCase(locale);
+  for (const brand of CASED_BRANDS) if (raw.includes(brand)) value = value.split(brand.toLocaleUpperCase(locale)).join(brand);
+  return value;
+}
+
 /** One text layer, fitted for one canvas. Shared so a hugging panel measures what the text does. */
 function fitTextLayer(
   layer: Extract<CarouselLayer, { type: "text" }>,
@@ -331,7 +340,7 @@ function fitTextLayer(
   height: number
 ) {
   const raw = payload.strings[layer.slot] ?? "";
-  const value = layer.uppercase ? raw.toLocaleUpperCase(payload.locale) : raw;
+  const value = layer.uppercase ? uppercaseKeepingBrands(raw, payload.locale) : raw;
   return fitText({
     value,
     locale: payload.locale,
