@@ -221,6 +221,194 @@
     "https://www.oneusefulthing.org/p/the-twilight-of-the-chatbots",
     "https://www.oneusefulthing.org/p/the-overhang"
    ]
+  },
+  {
+   "order": 17,
+   "slug": "vyhruzky-ani-spropitne",
+   "said": "1. 8. 2025, studie Prompting Science Report 3 a post na X; 23. 6. 2025, One Useful Thing: Using AI Right Now: A Quick Guide (zdvořilost); Search Engine Journal 4. 8. 2025",
+   "confidence": "high",
+   "title": "Vyhrůžky ani spropitné nefungují. AI kvůli nim neodpovídá lépe.",
+   "keyword": "vyhruzky",
+   "summary": "Ethan Mollick, profesor z Wharton School, se svým týmem ověřil rady, že AI odpovídá lépe, když jí vyhrožujete nebo slíbíte spropitné. Na těžkých otázkách z vědy to průměrnou přesnost nezměnilo. U jednotlivých otázek se výsledek někdy zlepšil a jindy zhoršil, aniž by se to dalo předem odhadnout. Podobně podle něj celkově nerozhoduje ani zdvořilost. Místo triků se vyplatí jasné a srozumitelné zadání.",
+   "urls": [
+    "https://www.searchenginejournal.com/researchers-test-if-threats-improve-ai-improves-performance/552813/",
+    "https://x.com/emollick/status/1951289250915221589",
+    "https://www.oneusefulthing.org/p/using-ai-right-now-a-quick-guide"
+   ]
+  },
+  {
+   "order": 18,
+   "slug": "krok-za-krokem-uz-netreba",
+   "said": "8. 6. 2025, studie Prompting Science Report 2 (Wharton Generative AI Labs); 23. 6. 2025, One Useful Thing: Using AI Right Now: A Quick Guide",
+   "confidence": "high",
+   "title": "Pokyn krok za krokem už netřeba. Nové modely uvažují samy.",
+   "keyword": "uvazovani",
+   "summary": "Ethan Mollick, profesor z Wharton School, se spoluautory zjistil, že oblíbený pokyn „přemýšlej krok za krokem“ dnes pomáhá jen málo. Modely s vestavěným uvažováním byly díky němu přesnější jen o pár procent, odpověď ale trvala o 20 až 80 % déle. U starších modelů zase přibylo chyb v otázkách, které by jinak zvládly. Postup krok za krokem podle něj spíš usnadní pochopit, jak AI k závěru došla. To uvidíte i po rozkliknutí shrnutí jejího přemýšlení.",
+   "urls": [
+    "https://gail.wharton.upenn.edu/research-and-insights/tech-report-chain-of-thought/",
+    "https://www.oneusefulthing.org/p/using-ai-right-now-a-quick-guide"
+   ]
+  },
+  {
+   "order": 19,
+   "slug": "nemusite-umet-programovat",
+   "said": "11. 3. 2025, One Useful Thing: Speaking things into existence; 7. 1. 2026, Claude Code and What Comes Next; Fortune 26. 3. 2025",
+   "confidence": "high",
+   "title": "Nemusíte umět programovat. Popište AI, co chcete postavit.",
+   "keyword": "aplikace",
+   "summary": "Ethan Mollick, profesor z Wharton School, si bez psaní kódu nechal od AI postavit funkční hru jen tím, že popsal, co chce, a dával zpětnou vazbu. Radí to zkusit i lidem, kteří neprogramují. Nejvíc z toho podle něj vytěží ten, kdo ví, co chce, a umí posoudit výsledek. Nástroji dejte jen vyhrazenou složku, dělejte zálohy a před zveřejněním vše zkontrolujte. AI mu totiž k projektu vymyslela pochybná reklamní tvrzení.",
+   "urls": [
+    "https://fortune.com/2025/03/26/silicon-valley-ceo-says-vibe-coding-lets-10-engineers-do-the-work-of-100-heres-how-to-use-it/",
+    "https://www.oneusefulthing.org/p/speaking-things-into-existence",
+    "https://www.oneusefulthing.org/p/claude-code-and-what-comes-next"
+   ]
+  },
+  {
+   "order": 20,
+   "slug": "reserse-pres-deep-research",
+   "said": "3. 2. 2025, One Useful Thing: The End of Search, The Beginning of Research; 23. 6. 2025, Using AI Right Now: A Quick Guide; 18. 2. 2026, A Guide to Which AI to Use in the Agentic Era; Fortune 15. 7. 2025",
+   "confidence": "high",
+   "title": "Na rešerše je Deep Research. Zpráva se zdroji je přesnější než rychlá odpověď.",
+   "keyword": "reserse",
+   "summary": "Ethan Mollick, profesor z Wharton School, doporučuje na rozsáhlejší otázky, jako je přehled konkurence, průvodce na cesty nebo výběr dárku, funkci Deep Research, kterou mají ChatGPT, Gemini i Claude. AI pak několik minut prohledává web a sepíše zprávu s odkazy na zdroje. Takové zprávy podle něj nejsou bez chyb, ale jsou mnohem přesnější než běžná odpověď. Na doptávací otázky na začátku odpovězte a důležité údaje ve zdrojích ověřte.",
+   "urls": [
+    "https://fortune.com/2025/07/15/how-to-decide-between-ai-tools-best-for-business-needs-with-examples-chatgpt-gemini-claude-copilot/",
+    "https://www.oneusefulthing.org/p/the-end-of-search-the-beginning-of",
+    "https://www.oneusefulthing.org/p/using-ai-right-now-a-quick-guide"
+   ]
+  },
+  {
+   "order": 21,
+   "slug": "hlas-a-kamera",
+   "said": "23. 6. 2025, One Useful Thing: Using AI Right Now: A Quick Guide; 23. 7. 2026, An opinionated guide to which AI to use to do stuff; Fortune 15. 7. 2025",
+   "confidence": "high",
+   "title": "AI umí poslouchat i koukat. Zkuste hlasový režim a namiřte na problém kameru.",
+   "keyword": "hlas",
+   "summary": "Ethan Mollick, profesor z Wharton School, doporučuje hlasový režim tam, kde nemáte volné ruce, třeba při vaření nebo cestě do práce. Telefon můžete namířit na předmět, problém nebo nápis, případně sdílet obrazovku, a AI reaguje v reálném čase. Nejpřirozeněji podle něj teď působí hlasový režim ChatGPT, kterému lze skočit do řeči. Hlasové režimy ale používají rychlejší modely a méně hledají na webu, takže fakta si ověřte.",
+   "urls": [
+    "https://fortune.com/2025/07/15/how-to-decide-between-ai-tools-best-for-business-needs-with-examples-chatgpt-gemini-claude-copilot/",
+    "https://www.oneusefulthing.org/p/using-ai-right-now-a-quick-guide",
+    "https://www.oneusefulthing.org/p/an-opinionated-guide-to-which-ai-b22"
+   ]
+  },
+  {
+   "order": 22,
+   "slug": "vypnete-trenovani",
+   "said": "5. 9. 2026, post na X; 23. 6. 2025, One Useful Thing: Using AI Right Now: A Quick Guide",
+   "confidence": "high",
+   "title": "Vaše chaty mohou učit AI. Trénování na svých datech si v nastavení vypněte.",
+   "keyword": "trenovani",
+   "summary": "Ethan Mollick, profesor z Wharton School, připomíná, že v ChatGPT i Claude si můžete vypnout, aby se na vašich konverzacích trénovaly budoucí modely. Upozorňuje, že jde o jinou věc než ochranu soukromí obecně. Vypnutí trénování v ChatGPT podle něj nestojí žádné funkce a u firemních a školních verzí se na datech uživatelů obvykle netrénuje. Další možností jsou modely s otevřenými vahami, i ty ale s rostoucími schopnostmi narazí na stejnou otázku.",
+   "urls": [
+    "https://x.com/emollick/status/2096333750594343208",
+    "https://www.oneusefulthing.org/p/using-ai-right-now-a-quick-guide"
+   ]
+  },
+  {
+   "order": 23,
+   "slug": "vlastni-zdroje-v-notebooku",
+   "said": "18. 2. 2026, One Useful Thing: A Guide to Which AI to Use in the Agentic Era; 23. 7. 2026, An opinionated guide to which AI to use to do stuff",
+   "confidence": "high",
+   "title": "Pracujte s vlastními zdroji. Gemini Notebook z nich udělá přehled i podcast.",
+   "keyword": "zdroje",
+   "summary": "Ethan Mollick, profesor z Wharton School, doporučuje na práci s více zdroji Gemini Notebook od Googlu, dříve NotebookLM. Nahrajete do něj studie, videa z YouTube, webové stránky nebo soubory a pak se na ně ptáte. Ze zdrojů umí udělat prezentaci, myšlenkovou mapu, video nebo podcast, do kterého můžete moderátorům skočit do řeči s dotazem. V únoru ho označil za bezplatný a dobrý začátek, v červenci za nejužitečnější rozhraní pro analytiky a pisatele.",
+   "urls": [
+    "https://www.oneusefulthing.org/p/a-guide-to-which-ai-to-use-in-the",
+    "https://www.oneusefulthing.org/p/an-opinionated-guide-to-which-ai-b22"
+   ]
+  },
+  {
+   "order": 24,
+   "slug": "nacvik-vyjednavani",
+   "said": "23. 4. 2024, studie Instructors as Innovators (Ethan a Lilach Mollickovi, Wharton); Harvard Business Publishing Education 25. 6. 2024",
+   "confidence": "medium",
+   "title": "Vyjednávání si nacvičte nanečisto. AI zahraje protistranu a pak vás ohodnotí.",
+   "keyword": "nacvik",
+   "summary": "Ethan Mollick, profesor z Wharton School, a Lilach Mollicková sepsali pro učitele zadání, v nichž AI připraví hraní rolí, například vyjednávání, přizpůsobené zkušenostem studenta. AI hraje protějšek a na konci zhodnotí, jak si člověk vedl. Simulace podle nich umožňují procvičit dovednosti nanečisto, bez skutečných následků. Zadání zveřejnili, aby si je každý mohl upravit pro vlastní situaci.",
+   "urls": [
+    "https://he.hbsp.harvard.edu/2024-06-25-the-faculty-lounge.html",
+    "https://arxiv.org/abs/2407.05181"
+   ]
+  },
+  {
+   "order": 25,
+   "slug": "ai-jako-kriticky-ctenar",
+   "said": "9. 12. 2024, One Useful Thing: 15 Times to use AI, and 5 Not to; 22. 10. 2023, The Best Available Human Standard; elyex 30. 12. 2024",
+   "confidence": "high",
+   "title": "Text nejdřív ukažte AI. Nechte ji zahrát kritického i nechápavého čtenáře.",
+   "keyword": "ctenar",
+   "summary": "Ethan Mollick, profesor z Wharton School, doporučuje nechat AI odhadnout, jak text nebo nápad přijme nepřátelský, vstřícný či laický čtenář. Získáte tak první reakci publika. Sám nechal AI hrát středoškolského učitele, který jeho produkt kritizoval, a vynořily se užitečné námitky. Kvalitní pomoc od skutečných lidí to podle něj nenahradí, ale první zpětnou vazbu máte dřív, než text pošlete dál.",
+   "urls": [
+    "https://elyex.com/los-15-tipos-de-trabajo-para-los-que-deberias-usar-la-ia-segun-un-profesor-universitario/",
+    "https://www.oneusefulthing.org/p/15-times-to-use-ai-and-5-not-to",
+    "https://www.oneusefulthing.org/p/the-best-available-human-standard"
+   ]
+  },
+  {
+   "order": 26,
+   "slug": "nejlepsi-dostupny-clovek",
+   "said": "22. 10. 2023, One Useful Thing: The Best Available Human Standard; post na X 1. 10. 2024; 9. 12. 2024, 15 Times to use AI, and 5 Not to",
+   "confidence": "high",
+   "title": "AI nesrovnávejte s dokonalostí. Měřítkem je člověk, který vám reálně pomůže.",
+   "keyword": "meritko",
+   "summary": "Ethan Mollick, profesor z Wharton School, navrhuje měřítko nejlepšího dostupného člověka: udělá AI v danou chvíli a na daném místě lepší práci než nejlepší člověk, který vám opravdu může pomoct? Pro mnoho lidí takový člověk vůbec není. AI má podle něj smysl tam, kde reálnou alternativu překoná a případné chyby situaci nezhorší. Důležitá tvrzení si ale ověřujte a u zdraví či vzdělávání buďte opatrní.",
+   "urls": [
+    "https://elyex.com/los-15-tipos-de-trabajo-para-los-que-deberias-usar-la-ia-segun-un-profesor-universitario/",
+    "https://www.oneusefulthing.org/p/the-best-available-human-standard",
+    "https://x.com/emollick/status/1841228780922171427"
+   ]
+  },
+  {
+   "order": 27,
+   "slug": "jeden-text-ruzni-ctenari",
+   "said": "9. 12. 2024, One Useful Thing: 15 Times to use AI, and 5 Not to; elyex 30. 12. 2024",
+   "confidence": "high",
+   "title": "Jeden text, různí čtenáři. AI ho přepíše jednodušeji i odborněji.",
+   "keyword": "publikum",
+   "summary": "Ethan Mollick, profesor z Wharton School, považuje za silnou stránku AI převádění obsahu pro různé publikum. Jeden dokument umí zjednodušit, nebo naopak zpodrobnit, a přizpůsobit ho jiným čtenářům či účelům. Hodí se také na shrnutí dlouhých textů, pokud na každém detailu tolik nezáleží, protože ověřování faktů jí podle něj jde hůř.",
+   "urls": [
+    "https://elyex.com/los-15-tipos-de-trabajo-para-los-que-deberias-usar-la-ia-segun-un-profesor-universitario/",
+    "https://www.oneusefulthing.org/p/15-times-to-use-ai-and-5-not-to"
+   ]
+  },
+  {
+   "order": 28,
+   "slug": "ai-jako-spolecnik-pri-cteni",
+   "said": "9. 12. 2024, One Useful Thing: 15 Times to use AI, and 5 Not to; elyex 30. 12. 2024",
+   "confidence": "high",
+   "title": "Čtěte s AI po ruce. Na souvislosti se můžete ptát, kolikrát chcete.",
+   "keyword": "cteni",
+   "summary": "Ethan Mollick, profesor z Wharton School, doporučuje AI jako společníka při čtení textu, kterému rozumíte jen zčásti. Můžete se jí neomezeně ptát na kontext a souvislosti, aniž byste text opustili. Zároveň připomíná, že shrnutí od AI nenahradí vlastní čtení, když se máte látku opravdu naučit.",
+   "urls": [
+    "https://elyex.com/los-15-tipos-de-trabajo-para-los-que-deberias-usar-la-ia-segun-un-profesor-universitario/",
+    "https://www.oneusefulthing.org/p/15-times-to-use-ai-and-5-not-to"
+   ]
+  },
+  {
+   "order": 29,
+   "slug": "ai-rada-pritaka",
+   "said": "1. 5. 2025, One Useful Thing: Personality and Persuasion; 9. 12. 2024, 15 Times to use AI, and 5 Not to; 7. 1. 2026, Claude Code and What Comes Next",
+   "confidence": "high",
+   "title": "AI vám ráda přitaká. Výslovně ji požádejte o kritický posudek.",
+   "keyword": "kritika",
+   "summary": "Ethan Mollick, profesor z Wharton School, upozorňuje, že AI bývá podlézavá. Na jaře 2025 popsal, jak model v ChatGPT čím dál víc souhlasil s uživateli a chválil i špatné nápady, než ho OpenAI označila za chybu. AI podle něj umí přesvědčivě znít, i když se mýlí, a snadno přitaká vašim omylům. Když si od AI nechal postavit hru, výslovně ji požádal o kritické hodnocení, nejen o pochvalu.",
+   "urls": [
+    "https://www.oneusefulthing.org/p/personality-and-persuasion",
+    "https://www.oneusefulthing.org/p/claude-code-and-what-comes-next",
+    "https://www.oneusefulthing.org/p/15-times-to-use-ai-and-5-not-to"
+   ]
+  },
+  {
+   "order": 30,
+   "slug": "rozvetvete-konverzaci",
+   "said": "23. 6. 2025, One Useful Thing: Using AI Right Now: A Quick Guide",
+   "confidence": "high",
+   "title": "Konverzaci můžete rozvětvit. Upravte zadání a porovnejte obě verze.",
+   "keyword": "vetveni",
+   "summary": "Ethan Mollick, profesor z Wharton School, radí využívat větvení konverzace. Když upravíte některé ze svých dřívějších zadání, vznikne nová větev a šipkami mezi verzemi přepínáte. Můžete tak vyzkoušet jiný přístup, aniž byste přišli o předchozí odpověď, a výsledky porovnat vedle sebe.",
+   "urls": [
+    "https://www.oneusefulthing.org/p/using-ai-right-now-a-quick-guide"
+   ]
   }
  ]
 }
