@@ -976,3 +976,10 @@ concepts by time. The `devshark-concepts` step sums the last 24 hours before eac
 `generated`. The function is rewritten in place, so the rest of it stays as it was. The migration adds `vision_score`, `vision_flags`,
 `focal_x`, `focal_y` and `ranked_at` to the links, and `ranked_at` and `rank_cost_usd` to `marketing_media_collections`
 for the daily vision ceiling. It is replayed in PGlite (`tests/lib/marketing-dneskai-media.test.ts`).
+
+`20261108130000_marketing_comment_inbox.sql` adds the comment inbox (owner request, 8 November 2026):
+`marketing_comments` keeps a captured comment's author and text so the owner can answer it,
+`marketing_comment_reply_drafts` the one owner-drafted reply per comment (never auto-sent),
+`marketing_comment_style_samples` a small per-brand sample of the owner's own writing, and a
+`comment_inbox_enabled` switch on `marketing_accounts`. Every table is own-read with service-role writes and
+before-write ownership triggers. It is replayed in PGlite (`tests/lib/marketing-comment-inbox-database.test.ts`).
