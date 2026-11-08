@@ -72,3 +72,13 @@ per call, so a batch of 20 takes one to two hours.
 Edit `src/lib/heydarlink/ambient-shots.ts`. Every prompt must contain "no people", "no faces", "no text" and "no logos"
 in its own words (FLUX dev reads only the positive prompt); shot ids are unique and start with the persona key.
 `tests/lib/heydarlink-ambient.test.ts` checks it.
+
+## Plan frames (8 November 2026)
+
+HeyDarlink's posting plan names ambient pictures by a short ref ("marina skyline golden hour"). A plan frame is a
+frame row whose `shot_id` is the ref's slug (NFKD, no diacritics, lowercase, `&` → `and`, every other run of
+non-alphanumerics → `-`, at most 60 characters), which is what HeyDarlink's publisher matches on. It is not in the shot
+list: the row carries its own prompt and pillar, and the frame is worked only when that prompt contains "no people",
+"no faces", "no text" and "no logos" (`ambientPlanPrompt`). The frames are inserted into the persona's open batch with a
+`created_at` in the plan's time order, so the claim takes the earliest slot first; the batch cap and every gate apply
+unchanged.

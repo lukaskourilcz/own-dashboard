@@ -104,3 +104,11 @@ describe('HeyDarlink ingest', () => {
     expect(plain).not.toHaveBeenCalled();
   });
 });
+
+describe('plan frames named by a HeyDarlink posting-plan ref (8 November 2026)', () => {
+  it('use their own prompt only when it carries the four no-people phrases', async () => {
+    const { ambientPlanPrompt } = await import('@/lib/heydarlink/ambient-batch');
+    expect(ambientPlanPrompt('Candid iPhone photo of a marina skyline at golden hour in Dubai. No people, no faces, no hands, no text, no logos, no watermark.')).toBe(true);
+    expect(ambientPlanPrompt('Candid iPhone photo of a marina skyline at golden hour in Dubai, people strolling.')).toBe(false);
+  });
+});
