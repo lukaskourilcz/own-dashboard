@@ -344,7 +344,16 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) break;
           const restyled = await restyleDneskaiPost(db, owner, { slot: { date: slot.date, local_time: slot.local_time, scheduledAt: dneskaiPlanSlotAt(slot) }, head, env: input.env ?? process.env, signal: input.signal });
           result.rendered++;
-          const patch: Partial<DneskaiPlanRow> = { head_revision_id: head.id, written_revision_id: null, status: 'generating', code: restyled.code };
+          // A published post comes back as a new post; a topic's slot follows the new job through its topic.
+          const fresh = head.status === 'published' && !!slot.topic_id && !!restyled.jobId;
+          if (fresh) {
+            const topic = read(await db.from('marketing_dneskai_topics').select('evidence').eq('user_id', owner).eq('id', slot.topic_id!).maybeSingle(), 'plan-topic-unavailable') as { evidence: Record<string, unknown> | null } | null;
+            const { error } = await db.from('marketing_dneskai_topics').update({ status: 'briefed', updated_at: new Date().toISOString(),
+              evidence: { ...(topic?.evidence ?? {}), jobId: restyled.jobId, revisionId: null, planDate: slot.date, planTime: slot.local_time } }).eq('user_id', owner).eq('id', slot.topic_id!);
+            if (error) throw new Error('plan-topic-write-failed');
+          }
+          const patch: Partial<DneskaiPlanRow> = { head_revision_id: fresh ? null : head.id, written_revision_id: null, threads_revision_id: fresh ? null : slot.threads_revision_id,
+            story_revision_id: fresh ? null : slot.story_revision_id, status: 'generating', code: restyled.code };
           await record(slot, patch); Object.assign(slot, patch);
           result.codes[restyled.code] = (result.codes[restyled.code] ?? 0) + 1;
           break;

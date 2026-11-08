@@ -23,6 +23,8 @@ import type { ContentRevision } from './contracts';
  *    and under the daily cost ceiling like every DNESKAi job;
  * 4. returns the old version, so it cannot go out meanwhile. The finished job supersedes it (`marketing_finish_job`)
  *    and the plan takes the new version from there: render check, slot, approval, Threads twin and story.
+ *    A post that was already published is written again as a new post: an education topic's slot then follows the
+ *    job through its topic (`briefed`, then `generated` by the topic bridge).
  */
 export const DNESKAI_RESTYLE_REQUESTED = 'restyle-requested';
 export const DNESKAI_RESTYLE_QUEUED = 'restyle-queued';
@@ -86,7 +88,7 @@ export async function restyleDneskaiPost(db: Database, owner: string, input: { s
   const { slot, head, env, signal } = input;
   const source = head.revision.sources[0];
   if (!source || !head.revision.deck) return { code: 'restyle-unsupported', pictures: 0, jobId: null };
-  if (!['review', 'returned', 'approved'].includes(head.status)) return { code: `restyle-${head.status}`, pictures: 0, jobId: null };
+  if (!['review', 'returned', 'approved', 'published'].includes(head.status)) return { code: `restyle-${head.status}`, pictures: 0, jobId: null };
   const brief = read(await db.from('marketing_dneskai_briefs').select('id').eq('user_id', owner).eq('event_id', source.sourceId).eq('member_hash', source.sourceRevision)
     .neq('status', 'skipped').order('updated_at', { ascending: false }).limit(1), 'restyle-brief-unavailable') as Array<{ id: string }>;
   if (!brief.length) return { code: 'restyle-brief-missing', pictures: 0, jobId: null };
@@ -107,7 +109,8 @@ export async function restyleDneskaiPost(db: Database, owner: string, input: { s
   if (moved.error || typeof moved.data !== 'number') throw new Error('restyle-entry-move-failed');
 
   // The old version goes back first, so it cannot be approved or published while the new one is written.
-  if (head.status !== 'returned') {
+  // A published post stays as it went out; the new version is a post of its own (the owner deletes the old one).
+  if (head.status === 'review' || head.status === 'approved') {
     const { error } = await db.from('marketing_revisions').update({ status: 'returned', approved_hash: null, approved_at: null, feedback: DNESKAI_RESTYLE_NOTE })
       .eq('user_id', owner).eq('id', head.id).in('status', ['review', 'approved']);
     if (error) throw new Error('restyle-return-failed');
