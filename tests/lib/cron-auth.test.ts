@@ -12,6 +12,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 import { bearerMatches, bearerToken } from "@/lib/cron-auth";
 import * as bankSync from "@/app/api/cron/bank-sync/route";
+import * as dneskaiSeriesRefill from "@/app/api/cron/dneskai-series-refill/route";
 import * as jobsScrape from "@/app/api/cron/jobs-scrape/route";
 import * as paymentMatch from "@/app/api/cron/payment-match/route";
 import * as renewalWarnings from "@/app/api/cron/renewal-warnings/route";
@@ -27,6 +28,7 @@ const cronRoutes = readdirSync(cronDir, { withFileTypes: true })
 
 const handlers: Record<string, (request: Request) => Promise<Response>> = {
   "bank-sync": bankSync.GET,
+  "dneskai-series-refill": dneskaiSeriesRefill.GET,
   "jobs-scrape": jobsScrape.GET,
   "payment-match": paymentMatch.GET,
   "renewal-warnings": renewalWarnings.GET,
