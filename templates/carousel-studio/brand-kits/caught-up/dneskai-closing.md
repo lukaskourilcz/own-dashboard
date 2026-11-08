@@ -22,6 +22,6 @@ finished 1080 × 1350 card instead, the same in Spotlight and Plakát:
   a technologií." in Inter; "@dneskai" in white inside a white outlined pill with no fill, bottom right (owner, 8 November 2026: no "Instagram · Threads").
 - Source: `closing-card-source/card.html` with `photo.jpg`, screenshot at 1080 × 1350 in Playwright Chromium.
   A new screenshot is not byte-identical, so a redraw changes the pinned hash.
-- sha256 `0697e1a978053376e6607fe5ab9ad5cad19e99c2e39043cae937858ad103704d`, pinned in
+- sha256 `109468ded4f3c10525b46e734f93865ae905b310c633772ccb43548aa15c5369`, pinned in
   `src/lib/marketing/dneskai-closing.ts` (`DNESKAI_CLOSING_CARD_SHA256`). The deck still names the closing slide by
   the picture's hash above; the render sees that hash and draws the card.
