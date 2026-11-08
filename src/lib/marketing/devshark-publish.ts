@@ -16,7 +16,7 @@ import { ingestSource, saveRevision } from './store';
 /**
  * devShark publishing (owner decision, 7 November 2026). For each plan slot of today and tomorrow whose concept the
  * owner approved, the step renders the concept once, stores the slides, and saves and approves one revision per
- * channel: the Instagram carousel (12:00) with its story ten minutes later, and the Threads post (12:00 as the
+ * channel: the Instagram carousel (16:00) with its story ten minutes later, and the Threads post (16:00 as the
  * twin, 19:00 alone). Every revision cites the concept as its source, so a concept changed after this stops them.
  * The publisher then sends them like any approved post. At most one render per tick.
  */

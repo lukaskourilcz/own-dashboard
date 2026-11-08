@@ -5,15 +5,16 @@ import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
 
 /**
- * The devShark publishing plan (owner request, 7 November 2026). The cadence is one Instagram post a day at 12:00
- * Prague, which also goes to Threads, and a second Threads post at 19:00: one Instagram and two Threads posts a day.
+ * The devShark publishing plan (owner request, 7 November 2026). The cadence is one Instagram post a day at 16:00
+ * Prague (15:00 UTC in winter; 12:00 until 8 November 2026, moved after the Apify research), which also goes to
+ * Threads, and a second Threads post at 19:00: one Instagram and two Threads posts a day.
  * Only concepts the owner approved (`marketing_devshark_drafts.status = 'approved'`) enter the plan, oldest decision
  * first; the step runs only with DEVSHARK_PLAN_ENABLED=true and never publishes anything itself.
  */
 type Database = ReturnType<typeof createAdminClient>;
 
 export const DEVSHARK_PLAN_SLOTS = [
-  { time: '12:00', instagram: true, threads: true },
+  { time: '16:00', instagram: true, threads: true },
   { time: '19:00', instagram: false, threads: true },
 ] as const;
 export const DEVSHARK_PLAN_DAYS = 30;
