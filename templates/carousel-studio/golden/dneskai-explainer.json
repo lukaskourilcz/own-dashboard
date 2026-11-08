@@ -94,7 +94,7 @@
       "name": "sources",
       "templateId": "dneskai-explainer-sources-4",
       "version": "1.1.0",
-      "pngHash": "fdb16a3daa5d53c318b962d93494754853354525c406e35b6ab4ad4915d9a079"
+      "pngHash": "2d2ce87cf81f85812103baf6664926a5037fbb88918145cc9f3ccc919f3ddc71"
     },
     {
       "name": "single-photo",
@@ -112,7 +112,7 @@
       "name": "single-type",
       "templateId": "dneskai-explainer-single-type",
       "version": "1.1.0",
-      "pngHash": "a4844e73af1318be6f73c0b08317e2dea95b32d6a10bec74c2c5fe47be3f539c"
+      "pngHash": "a9d933f2803e0c84b48bf37b8884d9e8ef3a559efe0091c9a2e7103ba0ff9d4b"
     }
   ]
 }

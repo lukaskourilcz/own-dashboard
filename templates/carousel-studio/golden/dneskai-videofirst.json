@@ -16,7 +16,7 @@
       "name": "cover-photo-crop",
       "templateId": "dneskai-videofirst-cover-photo",
       "version": "1.1.0",
-      "pngHash": "2f593b56d01d6504f59f0cdbd5a986637ac2a24c04640262ecb1cfda108621d9"
+      "pngHash": "3aa1bc034d8c836ea2b738dcfbbcce95c5f3279562aff7ad9f5263152064b2ef"
     },
     {
       "name": "figure",
@@ -46,13 +46,13 @@
       "name": "statement-ink",
       "templateId": "dneskai-videofirst-statement",
       "version": "1.1.0",
-      "pngHash": "cb08db4387b1e56031d064381354b83140a12de213dc762a0d52040430fe75b5"
+      "pngHash": "48ebc8605ec6eccb4f71c01e976228e776c4161c8c385eba359cbc4ffdaf8f6c"
     },
     {
       "name": "sources",
       "templateId": "dneskai-videofirst-sources-4",
       "version": "1.1.0",
-      "pngHash": "3c65b9f8601dc87be869bb61582867d5cd9d8171c652da16ef03373f03389824"
+      "pngHash": "6aaf6439111f798b4c1860e426ccfe09d572084fb3a638d61f869a07fb03cb45"
     },
     {
       "name": "single-photo",
@@ -70,7 +70,7 @@
       "name": "single-type",
       "templateId": "dneskai-videofirst-single-type",
       "version": "1.1.0",
-      "pngHash": "ff746ef7179b04c5c0bac39f98b3d6217ac02a8923c5cc77812035dc1e3b1f44"
+      "pngHash": "45cf889b38c544f26b9f5a635ed9a326d86331eefd831fa754c1269f43db5d1a"
     }
   ]
 }

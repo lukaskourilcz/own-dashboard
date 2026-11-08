@@ -361,6 +361,7 @@ function fitTextLayer(
     fontWeight: layer.fontWeight,
     // Absent on every v1 layer (the schema refuses it there), so v1 lines break where they did.
     ...(layer.keepWithNext ? { keepWithNext: layer.keepWithNext } : {}),
+    ...(layer.balanceLastLine ? { balance: true } : {}),
     ...(layer.leading ? { leading: layer.leading } : {})
   });
 }

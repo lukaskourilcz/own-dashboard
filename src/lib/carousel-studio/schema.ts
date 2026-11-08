@@ -122,6 +122,12 @@ const TextLayerSchema = FrameSchema.extend({
    */
   keepWithNext: z.enum(["cs"]).optional(),
   /**
+   * Rebalance the frame's last line so the block never ends on a lone word, stepping the size down when rebalancing
+   * alone cannot (`text-wrap: pretty`). v2 only, and absent means the block breaks as every v1 layer does. DNESKAi
+   * sets it on its text; devShark keeps its lone words on display headlines.
+   */
+  balanceLastLine: z.boolean().optional(),
+  /**
    * The colour of the payload's emphasised words in this frame (`CarouselPayload.emphasis`). Absent: every word is
    * drawn in `colorToken`, as before (DNESKAi plakat, 8 November 2026). Where it resolves to the slide's own ground
    * colour, the emphasis falls back to `secondary` so a word never disappears.
@@ -408,6 +414,9 @@ export const CarouselTemplateSchema = z.object({
       }
       if (layer.type === "text" && layer.keepWithNext !== undefined && !v2) {
         context.addIssue({ code: "custom", message: `keepWithNext is a ${CAROUSEL_TEMPLATE_V2} field`, path: at("keepWithNext") });
+      }
+      if (layer.type === "text" && layer.balanceLastLine !== undefined && !v2) {
+        context.addIssue({ code: "custom", message: `balanceLastLine is a ${CAROUSEL_TEMPLATE_V2} field`, path: at("balanceLastLine") });
       }
       if (layer.type === "image") {
         imageSlots.add(layer.slot);
