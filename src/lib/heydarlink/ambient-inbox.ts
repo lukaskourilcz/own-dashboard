@@ -16,6 +16,7 @@ import { ambientSha256, uploadAmbientFrame } from './ambient-ingest';
  */
 type Database = ReturnType<typeof createAdminClient>;
 export const AMBIENT_INBOX_BUCKET = 'heydarlink-ambient-inbox';
+export const AMBIENT_INBOX_REVIEWED = 'reviewed';
 const NAME = /^(nina|fatimah|teresa|michaela)__([a-z0-9-]{3,60})(?:__(4x5|9x16))?\.(?:jpe?g|png|webp)$/u;
 const MAX_BYTES = 20_000_000;
 
@@ -50,21 +51,27 @@ export type AmbientInboxResult = { taken: number; uploaded: number; rejected: nu
 
 export async function processAmbientInbox(db: Database, settings: AmbientSettings, input: { signal: AbortSignal; remainingMs: () => number; fetchImpl?: typeof fetch; now?: () => Date }): Promise<AmbientInboxResult> {
   const result: AmbientInboxResult = { taken: 0, uploaded: 0, rejected: 0, costUsd: 0 };
-  const listed = await db.storage.from(AMBIENT_INBOX_BUCKET).list('', { limit: 100, sortBy: { column: 'name', order: 'asc' } });
-  if (listed.error) return result;
-  const files = (listed.data ?? []).filter((item) => item.id && item.name);
+  // `reviewed/` holds pictures the owner's agent already looked at (owner decision, 8 November 2026): they skip
+  // Claude's paid look and keep every free check. Those go first.
+  const files: Array<{ name: string; path: string; reviewed: boolean }> = [];
+  for (const folder of [AMBIENT_INBOX_REVIEWED, ''] as const) {
+    const listed = await db.storage.from(AMBIENT_INBOX_BUCKET).list(folder, { limit: 100, sortBy: { column: 'name', order: 'asc' } });
+    if (listed.error) continue;
+    for (const item of listed.data ?? []) if (item.id && item.name) files.push({ name: item.name, path: folder ? `${folder}/${item.name}` : item.name, reviewed: !!folder });
+  }
   for (const file of files) {
     // About 25 seconds a picture: the download, the gate and the upload.
     if (input.remainingMs() < 25_000 || input.signal.aborted) break;
     const parsed = parseAmbientInboxName(file.name);
     const now = (input.now?.() ?? new Date()).toISOString();
+    const gate = file.reviewed ? 'owner-reviewed' : 'claude';
     const record = async (status: string, patch: Record<string, unknown>) => {
-      await db.from('heydarlink_ambient_imports').upsert({ name: file.name, persona: parsed?.persona ?? null, shot_id: parsed?.shotId ?? null, status, updated_at: now, ...patch }, { onConflict: 'name' });
-      await db.storage.from(AMBIENT_INBOX_BUCKET).move(file.name, `${status === 'uploaded' ? 'done' : 'rejected'}/${file.name}`);
+      await db.from('heydarlink_ambient_imports').upsert({ name: file.path, persona: parsed?.persona ?? null, shot_id: parsed?.shotId ?? null, status, gate, updated_at: now, ...patch }, { onConflict: 'name' });
+      await db.storage.from(AMBIENT_INBOX_BUCKET).move(file.path, `${status === 'uploaded' ? 'done' : 'rejected'}/${file.name}`);
     };
     result.taken++;
     if (!parsed) { result.rejected++; await record('rejected', { reasons: ['inbox:name'] }); continue; }
-    const download = await db.storage.from(AMBIENT_INBOX_BUCKET).download(file.name);
+    const download = await db.storage.from(AMBIENT_INBOX_BUCKET).download(file.path);
     if (download.error || !download.data) continue;
     const source = new Uint8Array(await download.data.arrayBuffer());
     if (source.byteLength > MAX_BYTES) { result.rejected++; await record('rejected', { reasons: ['inbox:too-large'] }); continue; }
@@ -88,7 +95,7 @@ export async function processAmbientInbox(db: Database, settings: AmbientSetting
     // The plan ref is the brief: the shot id with its words back.
     const brief = `Candid phone photo of ${parsed.shotId.replace(/^new-ambient-9-16-/u, '').replaceAll('-', ' ')}, with no people, no faces, no text and no logos.`;
     let costUsd = 0;
-    if (!found.length) {
+    if (!found.length && !file.reviewed) {
       const look = await inspectAmbientFrame({ jpeg, brief, apiKey: settings.anthropicKey, model: settings.gateModel, fetchImpl: input.fetchImpl, signal: input.signal });
       costUsd = look.costUsd; result.costUsd += look.costUsd;
       found.push(...look.reasons);
@@ -97,11 +104,11 @@ export async function processAmbientInbox(db: Database, settings: AmbientSetting
     if (found.length) { result.rejected++; await record('rejected', { ...common, reasons: found.slice(0, 40) }); continue; }
     const sent = await uploadAmbientFrame({ url: settings.ingestUrl, token: settings.ingestToken, jpeg, fetchImpl: input.fetchImpl, signal: input.signal, meta: {
       persona_key: parsed.persona, aspect, pillar: ambientInboxPillar(parsed.shotId), shot_id: parsed.shotId, prompt: brief, provider: 'owner', model: 'owner-supplied',
-      cost_usd: Number(costUsd.toFixed(6)), seed: null, phash: hash, source_ref: `inbox:${file.name}`.slice(0, 200) } });
+      cost_usd: Number(costUsd.toFixed(6)), seed: null, phash: hash, source_ref: `inbox:${file.path}`.slice(0, 200) } });
     if (sent.kind === 'stored') { result.uploaded++; await record('uploaded', { ...common, reasons: [], ingest_id: sent.id }); continue; }
     // A failed upload stays in the inbox for the next tick; a duplicate the server already holds is done.
     if (sent.kind === 'duplicate') { result.rejected++; await record('rejected', { ...common, reasons: [`ingest:${sent.code}`] }); continue; }
-    await db.from('heydarlink_ambient_imports').upsert({ name: file.name, persona: parsed.persona, shot_id: parsed.shotId, status: 'upload-failed', reasons: [`ingest:${sent.code}`], updated_at: now, ...common }, { onConflict: 'name' });
+    await db.from('heydarlink_ambient_imports').upsert({ name: file.path, persona: parsed.persona, shot_id: parsed.shotId, status: 'upload-failed', gate, reasons: [`ingest:${sent.code}`], updated_at: now, ...common }, { onConflict: 'name' });
     break;
   }
   return result;

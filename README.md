@@ -203,6 +203,7 @@ The migrations, in the order they run:
 105. `20261108250000_drop_comment_reply_signature.sql` — comment replies carry no signature; the per-reply signature column is removed.
 106. `20261109010000_dneskai_series_waves.sql` — the DNESKAi series refill waves: one wave per twelve days, its cap reserved up front.
 107. `20261109030000_heydarlink_ambient_inbox.sql` — the private inbox bucket for the owner's own HeyDarlink ambient pictures, and the record of each import.
+108. `20261109040000_heydarlink_ambient_import_gate.sql` — an imported ambient picture records whether Claude or the owner's review looked at it.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.
