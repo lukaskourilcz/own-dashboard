@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { AMBIENT_ASPECTS, AMBIENT_CAPS, AMBIENT_GATE, AMBIENT_PERSONAS, ambientFalUsd, ambientSeed, ambientShotList, heydarlinkAmbientSettings, type AmbientAspect, type AmbientPersona, type AmbientSettings, type AmbientShot } from './ambient-config';
 import { ambientDuplicateGate, ambientFormatGate, inspectAmbientFrame, readAmbientFormat } from './ambient-gates';
 import { CropRefused, gradeAmbientFrame } from './ambient-grade';
+import { processAmbientInbox } from './ambient-inbox';
 import { ambientSha256, uploadAmbientFrame } from './ambient-ingest';
 import { ambientPhash } from './ambient-phash';
 import { AmbientRenderError, ambientStockSeed, renderAmbientFrame } from './ambient-render';
@@ -194,8 +195,11 @@ export type AmbientTickResult = { status: 'idle' | 'worked' | 'skipped'; code?: 
 export async function runHeydarlinkAmbientTick(db: Database, env: Environment, input: { signal: AbortSignal; remainingMs: () => number; now?: () => Date; fetchImpl?: typeof fetch }): Promise<AmbientTickResult> {
   const settings = heydarlinkAmbientSettings(env);
   if ('idle' in settings) return { status: 'skipped', code: settings.idle, frames: 0, uploaded: 0, costUsd: 0, opened: 0 };
-  const refill = await refillAmbientStock(db, settings, env, { signal: input.signal, now: input.now, fetchImpl: input.fetchImpl });
-  let frames = 0, uploaded = 0, costUsd = 0, code: string | undefined;
+  // The owner's own pictures go first (8 November 2026); they cost only Claude's look.
+  const inbox = await processAmbientInbox(db, settings, { signal: input.signal, remainingMs: input.remainingMs, now: input.now, fetchImpl: input.fetchImpl });
+  // HEYDARLINK_AMBIENT_REFILL=false keeps the low-stock refill from opening generated batches.
+  const refill = env.HEYDARLINK_AMBIENT_REFILL === 'false' ? { checked: false, opened: [] as AmbientPersona[] } : await refillAmbientStock(db, settings, env, { signal: input.signal, now: input.now, fetchImpl: input.fetchImpl });
+  let frames = inbox.taken, uploaded = inbox.uploaded, costUsd = inbox.costUsd, code: string | undefined;
   for (let index = 0; index < 4; index++) {
     const result = await workAmbientFrame(db, settings, { signal: input.signal, remainingMs: input.remainingMs, now: input.now, fetchImpl: input.fetchImpl });
     if (result.status === 'idle' || result.status === 'deferred') { code = result.code; break; }
