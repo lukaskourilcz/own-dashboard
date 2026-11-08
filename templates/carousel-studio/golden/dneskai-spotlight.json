@@ -46,13 +46,13 @@
       "name": "statement-ink",
       "templateId": "dneskai-spotlight-statement",
       "version": "1.1.0",
-      "pngHash": "cfb7a749a95c1ca57189c5ad09a349e0467ce61765d3a3e47e882491246fff7c"
+      "pngHash": "d5ea824c90611a0aa9be55d634f16ff41c459472b035aeec693f4e36857a5458"
     },
     {
       "name": "sources",
       "templateId": "dneskai-spotlight-sources-4",
       "version": "1.1.0",
-      "pngHash": "acb94a5bab424d21d7dec204d13acf0772369ff52534e2f1f8cda1fe3d9a7427"
+      "pngHash": "ab5af0c0ff01ea0762de24754691b3ae7e38803ef8f82ae54ec1b3cfdd4e0def"
     },
     {
       "name": "single-photo",
@@ -70,7 +70,7 @@
       "name": "single-type",
       "templateId": "dneskai-spotlight-single-type",
       "version": "1.1.0",
-      "pngHash": "c2033c4289d8d7283f88847aa344fc0955172193a4384520e393baaa7ce67fd4"
+      "pngHash": "cec843c8eee17028597a7ae8871cddcf55da65401ca8685c72e60ab209a73725"
     }
   ]
 }
