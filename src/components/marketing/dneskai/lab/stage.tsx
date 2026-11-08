@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { DneskaiCodeText } from '../code-text';
 
 type Lang = 'en' | 'cs';
-export type DneskaiStageView = 'feed' | 'profile' | 'pixels' | 'studio';
+export type DneskaiStageView = 'feed' | 'profile' | 'pixels' | 'studio' | 'story';
 /**
  * One slide as the stage shows it. While the owner edits, `render` is the saved JPEG only when the draft slide would
  * render to exactly the same pixels (same words, pictures, place and deck length); otherwise it is null and `draft`
@@ -37,13 +37,15 @@ export const DNESKAI_PHONE_WIDTH = 390;
  * The phone chrome is decorative and hidden from assistive technology; the slide image carries the alt text. A slide
  * without a render shows its state and problem in words, never a stand-in picture.
  */
-export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCovers, onLoaded, caption, lang, slides: given, preview = null, studio = null }: {
+export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCovers, onLoaded, caption, lang, slides: given, preview = null, studio = null, story = null }: {
   lab: DneskaiLabPost; slide: number; onSlide: (index: number) => void; view: DneskaiStageView; onView: (view: DneskaiStageView) => void;
   profileCovers: readonly DneskaiLabAsset[]; onLoaded: (url: string, ok: boolean) => void; caption: string; lang: Lang;
   /** The draft's slides while editing; the saved revision's otherwise. */
   slides?: DneskaiStageSlide[]; preview?: DneskaiStagePreview | null;
   /** The Design Studio view; absent hides it (a guest tour, a post without a deck). */
   studio?: DneskaiStageStudio | null;
+  /** The Instagram story the post goes out as, drawn from the draft's cover at 1080 × 1920; absent hides the view. */
+  story?: DneskaiStagePreview | null;
 }) {
   const t = dneskaiLab[lang];
   const id = useId();
@@ -52,7 +54,7 @@ export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCove
   const current = slides[slide] ?? null;
   const draftPreview = current?.draft && preview?.slide === slide ? preview : null;
   const touch = useRef<number | null>(null);
-  const views: DneskaiStageView[] = studio ? ['feed', 'profile', 'pixels', 'studio'] : ['feed', 'profile', 'pixels'];
+  const views: DneskaiStageView[] = [...(['feed', 'profile', 'pixels'] as const), ...(studio ? ['studio' as const] : []), ...(story ? ['story' as const] : [])];
   return <section aria-label={lab.post.title} className="min-w-0 space-y-3" data-testid="dneskai-lab-stage">
     <div className="flex flex-wrap items-center justify-end gap-2">
       <fieldset className="flex shrink-0 rounded-md border border-border bg-surface-secondary p-0.5" data-testid="dneskai-stage-views">
@@ -98,6 +100,19 @@ export function DneskaiLabStage({ lab, slide, onSlide, view, onView, profileCove
         <span className="tabular" aria-live="polite">{t.stage.slideOf(slide + 1, total)}</span>
         <span className="lg:hidden">{t.stage.swipeHelp}</span>
       </figcaption>
+    </figure>}
+
+    {view === 'story' && story && <figure className="mx-auto w-full max-w-[280px] space-y-2" data-testid="dneskai-story">
+      <p className="text-xs text-foreground-muted">{t.stage.storyHelp}</p>
+      <div className="relative aspect-[9/16] overflow-hidden rounded-[14px] border border-border bg-surface-inset shadow-soft">
+        {story.status === 'rendered' && story.image
+          // eslint-disable-next-line @next/next/no-img-element -- an in-memory data URL of the draft, never a stored asset
+          ? <img src={story.image} alt={t.stage.storyAlt(lab.post.title)} className="absolute inset-0 size-full object-cover" data-testid="dneskai-story-image" />
+          : <div className="absolute inset-0 flex flex-col justify-center gap-2 p-4" role="status">
+            <p className="text-sm font-medium">{story.status === 'loading' ? t.draft.loading : t.draft.unavailable}</p>
+            {story.code && <DneskaiCodeText code={story.code} lang={lang} />}
+          </div>}
+      </div>
     </figure>}
 
     {view === 'profile' && <div className="mx-auto w-full space-y-2" style={{ maxWidth: DNESKAI_PHONE_WIDTH }} data-testid="dneskai-profile-grid">

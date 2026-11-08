@@ -31,7 +31,9 @@ const en = {
   },
   stage: {
     label: 'Stage',
-    views: { label: 'Preview', feed: 'Feed', profile: 'Profile', pixels: '1:1', studio: 'Studio' },
+    views: { label: 'Preview', feed: 'Feed', profile: 'Profile', pixels: '1:1', studio: 'Studio', story: 'Story 9:16' },
+    storyHelp: 'The story this post goes out as, drawn from the cover at 1080 × 1920. Edit the cover headline, photo or crop and it follows.',
+    storyAlt: (title: string) => `Instagram story of ${title}`,
     studio: {
       help: 'The exact slide the renderer draws. Drag a text to move it, drag its right edge for width, arrows move by 1 px (Shift by 10); write the words in the panel beside it. Each change draws the slide again.',
       blocks: { headline: 'Headline', body: 'Text', kicker: 'Label' }, selectHint: 'Click a text on the slide to select it.',
@@ -287,7 +289,9 @@ const cs: typeof en = {
   },
   stage: {
     label: 'Náhled',
-    views: { label: 'Zobrazení', feed: 'Feed', profile: 'Profil', pixels: '1:1', studio: 'Studio' },
+    views: { label: 'Zobrazení', feed: 'Feed', profile: 'Profil', pixels: '1:1', studio: 'Studio', story: 'Story 9:16' },
+    storyHelp: 'Story, ve které příspěvek vyjde, vykreslená z obálky v 1080 × 1920. Upravte titulek, fotku nebo výřez obálky a story se změní s nimi.',
+    storyAlt: (title: string) => `Instagram story příspěvku ${title}`,
     studio: {
       help: 'Přesně ten slide, který renderer vykreslí. Text přesunete tažením, šířku tažením pravého okraje, šipky posouvají o 1 px (se Shiftem o 10); slova píšete v panelu vedle. Každá změna slide znovu vykreslí.',
       blocks: { headline: 'Nadpis', body: 'Text', kicker: 'Štítek' }, selectHint: 'Klepnutím na text ve slidu ho vyberete.',
