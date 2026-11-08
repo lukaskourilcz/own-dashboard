@@ -5,7 +5,7 @@ import { parseContentRevision, renderReportBlocks, type ContentRevision } from '
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
-import { DNESKAI_GENERATION_KIT, dneskaiKitOf } from './dneskai-slides';
+import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
 import { prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from './dneskai-revision-edit';
@@ -95,7 +95,8 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
       if (slot.written_revision_id === head.id && report?.status !== 'refused' && head.revision.deck && !head.revision.assets.length) return { kind: 'rerender', status: 'ready' };
       return { kind: 'wait', status: 'failed', code: 'render-blocked' };
     }
-    if (!ownerEdit && head.revision.deck && dneskaiKitOf(head.revision.deck) !== DNESKAI_GENERATION_KIT) return { kind: 'spotlight', status: 'ready' };
+    // A deck in a retired kit is redrawn in one of the rotating styles; Spotlight, Plakát and Video-first stay as drawn.
+    if (!ownerEdit && head.revision.deck && !DNESKAI_GENERATION_KITS.includes(dneskaiKitOf(head.revision.deck))) return { kind: 'spotlight', status: 'ready' };
     if (!ownerEdit && Date.parse(head.revision.scheduledAt) !== slotAt) return { kind: 'move', status: 'ready' };
     if (!slot.instagram && head.revision.account.platform === 'instagram') {
       return threadsAccount ? { kind: 'to-threads', status: 'ready' } : { kind: 'wait', status: 'ready', code: 'threads-account-missing' };
@@ -237,7 +238,8 @@ async function keepNewsCurrent(db: Database, owner: string, slot: DneskaiPlanRow
 /** Saves the plan's own edit of the head (Spotlight and/or the slot's time) and renders it, reusing the JPEGs when the deck is unchanged. */
 async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit: { kit: boolean; scheduledAt: string }, wiring: Wiring, signal: AbortSignal) {
   const deck = head.revision.deck;
-  const deckEdit = edit.kit && deck ? { kit: DNESKAI_GENERATION_KIT, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
+  const kit = deck ? dneskaiGenerationKit([head.revision.title, ...deck.slides.map((slide) => slide.headline ?? '')].join('\n')) : null;
+  const deckEdit = edit.kit && deck && kit ? { kit, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
   const revision = await prepareDneskaiRevisionEdit(head.revision, { caption: head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
   let reuse = reusableDneskaiRender(head.revision, head.render_report, revision);
   if (reuse) { try { reuse = { ...reuse, assets: await refreshMarketingAssetUrls(db, owner, reuse.assets) }; } catch { reuse = null; } }
