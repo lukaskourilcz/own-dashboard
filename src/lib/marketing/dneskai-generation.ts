@@ -6,7 +6,7 @@ import { DNESKAI_GENERATION_KIT, DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, type
 import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
-import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
+import { dneskaiKeywordLine } from "./dneskai-caption";
 
 /**
  * Generation v5 for DNESKAi (#116): one structured Claude call turns a research brief (#115) into the
@@ -523,19 +523,19 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): D
 export { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from "./dneskai-caption";
 
 /**
- * The published caption: the model's text, the keyword line when the post has a keyword (#158), the AI disclosure and
- * the hashtags (at most `DNESKAI_HASHTAG_LIMIT`; the keyword line carries none). No
+ * The published caption: the model's text, the keyword line when the post has a keyword (#158) and the hashtags (no
+ * AI disclosure since 8 November 2026, owner decision) (at most `DNESKAI_HASHTAG_LIMIT`; the keyword line carries none). No
  * source list, link or picture credit (owner rule, 22 October 2026). Refused when the whole passes 2,200 characters.
  */
 export function assembleDneskaiCaption(copy: DneskaiCopy, offer: DneskaiBriefOffer, keyword: string | null = null): { caption: string } | { issue: DneskaiCopyIssue } {
   void offer;
   const body = copy.caption.replace(/\r\n?/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   const tags = dneskaiHashtags(copy.hashtags).map((tag) => `#${tag}`).join(" ");
-  // #158: with an approved keyword, code's own line asks for the comment, before the disclosure. The model never does.
-  const caption = [body, ...(keyword ? [dneskaiKeywordLine(keyword)] : []), DNESKAI_AI_DISCLOSURE, tags].join("\n\n");
+  // #158: with an approved keyword, code's own line asks for the comment, before the hashtags. The model never does.
+  const caption = [body, ...(keyword ? [dneskaiKeywordLine(keyword)] : []), tags].join("\n\n");
   if (caption.length <= DNESKAI_CAPTION_LIMIT) return { caption };
   const room = DNESKAI_CAPTION_LIMIT - (caption.length - body.length);
-  return { issue: issue("caption-too-long", null, "caption", `With the AI disclosure and hashtags the caption passes ${DNESKAI_CAPTION_LIMIT} characters; keep the caption under ${Math.max(100, room)} characters.`) };
+  return { issue: issue("caption-too-long", null, "caption", `With the hashtags the caption passes ${DNESKAI_CAPTION_LIMIT} characters; keep the caption under ${Math.max(100, room)} characters.`) };
 }
 
 const RENDER_ADVICE: Record<string, string> = {

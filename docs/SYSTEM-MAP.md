@@ -125,8 +125,8 @@ pictures by sha256 from the brief. Code then checks every rule before rendering:
 - no sentence about sources or verification (`dneskaiTalksAboutSources`).
 
 The studio's own fit check (`validateDneskaiDeck`) then refuses text that would be cut. One retry, on the next tick,
-with targeted feedback. Code appends the AI disclosure („Text připravil jazykový model. Výběr a schválení: redakce
-DNESKAi.“) and up to 10 hashtags, `#dneskai` first. Details: `docs/marketing-generation.md`.
+with targeted feedback. Code appends up to 10 hashtags, `#dneskai` first (no AI disclosure line since 8 November
+2026). Details: `docs/marketing-generation.md`.
 
 ### The owner's post rules (binding)
 
@@ -166,7 +166,8 @@ times plus 20:00, so three Instagram posts and four Threads posts a day. The tic
 fills empty slots with approved education topics and prepares the slots of today and the next two days: it renders
 the post in Spotlight, moves it to its slot, approves the exact version for the owner and derives a Threads twin
 (`dneskai-threads.ts`: the same slides, the caption without hashtags or keyword line, shortened to 500 characters,
-then the AI disclosure and `#dneskai`). The topic bridge briefs a planned topic for exactly its slot. A news post's
+then the article's topic as one hashtag, which the publisher sends as the Threads `topic_tag`, so the post shows
+"dneskai › <topic>"; no AI disclosure since 8 November 2026). The topic bridge briefs a planned topic for exactly its slot. A news post's
 brief stays current until a day after its slot. The owner sees today and tomorrow in the tab **Dnes a zítra** and the
 30 days below it (`GET /api/marketing/dneskai/plan`); every post opens in the Design Lab with one click. An edit saved
 in the Lab wins: the plan approves the owner's version and derives a new Threads twin. Threads twins stay out of the

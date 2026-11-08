@@ -26,10 +26,12 @@ enforce them; a change that lets any of them through is a bug.
 
 - The same ban on text about sources and verification.
 - No source list, no links, no picture credits.
-- It ends with the AI disclosure ("Text připravil jazykový model. Výběr a schválení: redakce DNESKAi.") and
-  the hashtags.
+- It ends with the hashtags. **No AI disclosure line** ("Text připravil jazykový model…"): the owner removed it
+  from every post on 8 November 2026; the publisher drops it from captions stored before that.
+- On Threads the post's topic tag is always the article's topic (the caption's first hashtag after `#dneskai`),
+  sent as `topic_tag`, never `dneskai` and never a hashtag line in the text.
 - **No call to comment or follow in model text.** The one allowed call is the keyword line, and code writes it
-  from the approved keyword, in its own paragraph before the disclosure: „Napište do komentáře „SKILL“ a pošleme
+  from the approved keyword, in its own paragraph before the hashtags: „Napište do komentáře „SKILL“ a pošleme
   vám návod do zpráv.“ Only posts with a keyword (education) carry it; news posts do not. It holds no hashtag.
 - **At most 10 hashtags**, `#dneskai` first. Generation keeps to it, and every caption edit is checked. The keyword
   line does not count toward them.
@@ -45,7 +47,7 @@ enforce them; a change that lets any of them through is a bug.
 
 - Prompt and checks: `src/lib/marketing/dneskai-generation.ts` (`SYSTEM_RULES`, `validateDneskaiCopy`,
   `validateDneskaiReplyMessage`, `dneskaiTalksAboutSources`, `buildDneskaiDeck`, `assembleDneskaiCaption`,
-  `DNESKAI_HASHTAG_LIMIT`). The keyword line and the disclosure: `src/lib/marketing/dneskai-caption.ts`
+  `DNESKAI_HASHTAG_LIMIT`). The keyword line, the public text and the topic: `src/lib/marketing/dneskai-caption.ts`
   (`dneskaiKeywordLine`, `dneskaiCaptionWithKeyword`, also applied on every owner edit).
 - What each slide type draws: `DNESKAI_PLACED_FIELDS` and `DNESKAI_TEXT_LIMITS` in
   `src/lib/marketing/dneskai-slide-layout.ts`, held to the vendored studio by

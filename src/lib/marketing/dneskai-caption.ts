@@ -4,8 +4,8 @@
  */
 
 /**
- * The AI disclosure every DNESKAi caption ends its text with. It states how the post was made, names no source and
- * does not claim a legal requirement.
+ * The AI disclosure older DNESKAi captions ended their text with. The owner removed it from every post on 8 November
+ * 2026: new captions no longer carry it, and `dneskaiPublicText` drops it from stored ones when they are published.
  */
 export const DNESKAI_AI_DISCLOSURE = 'Text připravil jazykový model. Výběr a schválení: redakce DNESKAi.';
 
@@ -36,4 +36,29 @@ export function dneskaiCaptionWithKeyword(caption: string, keyword: string | nul
     kept.splice(at, 0, line);
   }
   return kept.join('\n\n');
+}
+
+const DNESKAI_BRAND_TAG = 'dneskai';
+const TAG = /#([\p{L}\p{N}_]+)/gu;
+const TAG_PARAGRAPH = /^(?:#[\p{L}\p{N}_]+\s*)+$/u;
+
+/**
+ * The topic of a DNESKAi post: its first hashtag that is not the brand's own, the most specific one by the caption
+ * rules (product, company, field). Null when the caption has none.
+ */
+export function dneskaiTopic(caption: string): string | null {
+  for (const match of caption.matchAll(TAG)) if (match[1]!.toLowerCase() !== DNESKAI_BRAND_TAG) return match[1]!.slice(0, 50);
+  return null;
+}
+
+/**
+ * What a DNESKAi post sends as its public text (owner decision, 8 November 2026): the stored caption without the AI
+ * disclosure. On Threads the closing hashtag paragraph is not shown either; its topic goes out as the post's
+ * `topic_tag`, so Threads shows "dneskai › <topic>" instead of a hashtag line.
+ */
+export function dneskaiPublicText(caption: string, platform: 'instagram' | 'threads'): { text: string; topicTag: string | null } {
+  const paragraphs = caption.split(/\n{2,}/).filter((paragraph) => paragraph.trim() !== DNESKAI_AI_DISCLOSURE);
+  if (platform === 'instagram') return { text: paragraphs.join('\n\n').trim(), topicTag: null };
+  const topicTag = dneskaiTopic(paragraphs.filter((paragraph) => TAG_PARAGRAPH.test(paragraph.trim())).join(' '));
+  return { text: paragraphs.filter((paragraph) => !TAG_PARAGRAPH.test(paragraph.trim())).join('\n\n').trim(), topicTag };
 }

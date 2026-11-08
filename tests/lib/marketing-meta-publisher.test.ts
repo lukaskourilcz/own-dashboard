@@ -85,6 +85,13 @@ describe('DNESKAi Instagram publisher against a mocked Graph API', () => {
     expect(calls.findIndex(call => call.url.pathname.endsWith('/content_publishing_limit'))).toBeLessThan(calls.findIndex(call => call.method === 'POST'));
     expect(JSON.stringify(checkpoints)).not.toContain(token);
   });
+  it('leaves the AI disclosure out of a stored DNESKAi caption it publishes (owner, 8 November 2026)', async () => {
+    const { input, posts, reapprove } = fixture();
+    input.revisionRow.revision = { ...input.revisionRow.revision, caption: `${caption}\n\nText připravil jazykový model. Výběr a schválení: redakce DNESKAi.\n\n#dneskai #fio` };
+    reapprove();
+    expect((await publishMarketingRevision(input)).status).toBe('published');
+    expect(posts()[3]!.body.get('caption')).toBe(`${caption}\n\n#dneskai #fio`);
+  });
   it('sends collaborators on the carousel parent only when the revision carries them', async () => {
     const { input, posts } = fixture({ collaborators: ['partner.lab', 'second_author'] });
     expect((await publishMarketingRevision(input)).status).toBe('published');

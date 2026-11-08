@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseContentRevision, revisionReadiness, type ContentRevision } from '@/lib/marketing/contracts';
 import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from '@/lib/marketing/dneskai-caption';
-import { DNESKAI_THREADS_TOPIC_TAG, THREADS_TEXT_MAX, dneskaiThreadsText, dneskaiThreadsTwin } from '@/lib/marketing/dneskai-threads';
+import { THREADS_TEXT_MAX, dneskaiThreadsText, dneskaiThreadsTwin } from '@/lib/marketing/dneskai-threads';
 import { deck } from './marketing-dneskai-revision-fixture';
 
 const caption = (body: string) => `${body}\n\n${dneskaiKeywordLine('NAVOD')}\n\n${DNESKAI_AI_DISCLOSURE}\n\n#dneskai #ai #novinky`;
@@ -15,17 +15,18 @@ function instagram(overrides: Partial<ContentRevision> = {}): ContentRevision {
 }
 
 describe('dneskaiThreadsText', () => {
-  it('drops hashtags and the keyword line, keeps the disclosure and adds one topic tag', () => {
+  it('drops hashtags, the keyword line and the disclosure, and ends with the article\'s topic', () => {
     const text = dneskaiThreadsText(caption('Krátký text o #AI nástroji.'));
-    expect(text).toBe(`Krátký text o nástroji.\n\n${DNESKAI_AI_DISCLOSURE}\n\n${DNESKAI_THREADS_TOPIC_TAG}`);
+    expect(text).toBe('Krátký text o nástroji.\n\n#AI');
+    expect(text).not.toContain(DNESKAI_AI_DISCLOSURE);
     expect(text).not.toContain('Napište do komentáře');
   });
 
-  it('shortens a long caption to 500 characters without cutting the disclosure', () => {
+  it('shortens a long caption to 500 characters and keeps the topic', () => {
     const long = Array.from({ length: 30 }, (_, index) => `Věta číslo ${index + 1} vysvětluje další krok.`).join(' ');
     const text = dneskaiThreadsText(caption(long));
     expect(text.length).toBeLessThanOrEqual(THREADS_TEXT_MAX);
-    expect(text.endsWith(`${DNESKAI_AI_DISCLOSURE}\n\n${DNESKAI_THREADS_TOPIC_TAG}`)).toBe(true);
+    expect(text).toMatch(/\n\n#[\p{L}\p{N}_]+$/u);
     expect(text.startsWith('Věta číslo 1 vysvětluje')).toBe(true);
   });
 

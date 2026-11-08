@@ -62,7 +62,7 @@ describe("the education DM (#158)", () => {
 });
 
 describe("the code-written keyword line (#158)", () => {
-  it("appends the exact line before the disclosure only with a keyword, and never as a hashtag", () => {
+  it("appends the exact line before the hashtags only with a keyword, and never as a hashtag", () => {
     const offer = dneskaiBriefOffer(briefFixture(pictures), publishers);
     expect(dneskaiKeywordLine("SKILL")).toBe("Napište do komentáře „SKILL“ a pošleme vám návod do zpráv.");
     const plain = assembleDneskaiCaption(validCopy(pictures), offer);
@@ -70,8 +70,8 @@ describe("the code-written keyword line (#158)", () => {
     if (!("caption" in plain) || !("caption" in keyed)) throw new Error("caption expected");
     expect(plain.caption).not.toContain("Napište do komentáře");
     const paragraphs = keyed.caption.split("\n\n");
-    expect(paragraphs.at(-3)).toBe(dneskaiKeywordLine("LIGHTROOM"));
-    expect(paragraphs.at(-2)).toBe(DNESKAI_AI_DISCLOSURE);
+    expect(paragraphs.at(-2)).toBe(dneskaiKeywordLine("LIGHTROOM"));
+    expect(keyed.caption).not.toContain(DNESKAI_AI_DISCLOSURE);
     expect(dneskaiCaptionHashtags(keyed.caption)).toBe(dneskaiCaptionHashtags(plain.caption));
     // Ten hashtags pass with the keyword line; the generation schema refuses eleven proposals.
     const ten = assembleDneskaiCaption({ ...validCopy(pictures), hashtags: Array.from({ length: 9 }, (_, index) => `tema${index}`) }, offer, "LIGHTROOM");
@@ -89,7 +89,7 @@ describe("generating an education post (#158)", () => {
     expect(JSON.parse(call.prompt).education.links).toContain(LINK);
     expect(call.prompt).not.toContain("LIGHTROOM");
     expect(draft.revision.engagement).toEqual({ keyword: "LIGHTROOM", replyMessage: REPLY, publicReply: DNESKAI_DEFAULT_PUBLIC_REPLY });
-    expect(draft.revision.caption).toContain(`\n\n${dneskaiKeywordLine("LIGHTROOM")}\n\n${DNESKAI_AI_DISCLOSURE}\n\n`);
+    expect(draft.revision.caption).toContain(`\n\n${dneskaiKeywordLine("LIGHTROOM")}\n\n#dneskai `);
   });
   it("retries a DM that breaks the truth rules, naming only the field", async () => {
     const model = fakeModel([{ ...validCopy(pictures), replyMessage: REPLY.replace("2 použití", "7 použití") }, { ...validCopy(pictures), replyMessage: REPLY }]);
