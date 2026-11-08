@@ -105,7 +105,8 @@ const inset: CarouselLayerInput = {
 };
 
 const headline = (frame: Frame, options: Parameters<typeof text>[2]): CarouselLayerInput =>
-  text("headline", frame, { colorToken: "foreground", fontToken: "headline", fontWeight: 800, align: "middle", uppercase: UPPERCASE, ...options });
+  // Key words (`[[…]]`) in the post's colour (owner request, 8 November 2026); on the blue statement ground they are ink.
+  text("headline", frame, { colorToken: "foreground", fontToken: "headline", fontWeight: 800, align: "middle", uppercase: UPPERCASE, emphasisColorToken: "secondary", ...options });
 
 /** The pair of quotation marks above a quote; the API writes them. */
 const mark = (frame: Frame): CarouselLayerInput =>
@@ -114,6 +115,13 @@ const mark = (frame: Frame): CarouselLayerInput =>
 /** The speaker line under a quote: Inter 700, uppercase, centred. */
 const speaker = (frame: Frame): CarouselLayerInput =>
   text("kicker", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 30, maxFontSize: 30, maxChars: 28, maxLines: 1, uppercase: true, tracking: 0.02, align: "middle" });
+
+/**
+ * A series post's label and running number above the cover headline ("Slovník AI #3", owner decision, 8 November
+ * 2026): Inter 700, uppercase, centred. Only series posts set it; without it the cover carries its headline alone.
+ */
+const seriesLine = (frame: Frame): CarouselLayerInput =>
+  text("series", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 24, maxFontSize: 24, maxChars: 48, maxLines: 1, uppercase: true, tracking: 0.04, align: "middle" });
 
 const copy = (frame: Frame, options: Parameters<typeof body>[1]): CarouselLayerInput =>
   body(frame, { colorToken: "surface", align: "middle", ...options });
@@ -128,7 +136,8 @@ const coverPhoto = template({
     photo("image-1", 0, W, H, BLEED_FADE),
     inset,
     logo,
-    headline(box(LEFT, 772, MEASURE, 490), { minFontSize: 46, maxFontSize: 64, maxChars: 110, maxLines: 6 })
+    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7 }),
+    seriesLine(box(LEFT, H - 140, MEASURE, 40))
   ]
 });
 
@@ -141,8 +150,8 @@ const figure = template({
   layers: [
     photo("image-1", 0, W, DEPTH, DEPTH_FADE),
     logo,
-    headline(box(LEFT, 668, MEASURE, 290), { minFontSize: 42, maxFontSize: 64, maxChars: 110, maxLines: 5 }),
-    copy(box(LEFT, 1_000, MEASURE, 260), { minFontSize: 27, maxFontSize: 30, maxChars: 260, maxLines: 7 })
+    headline(box(LEFT, 560, MEASURE, 400), { minFontSize: 56, maxFontSize: 88, maxChars: 110, maxLines: 6 }),
+    copy(box(LEFT, 980, MEASURE, 290), { minFontSize: 32, maxFontSize: 36, maxChars: 260, maxLines: 8 })
   ]
 });
 
@@ -151,7 +160,7 @@ const quote = (bodyChars: number): CarouselLayerInput[] => [
   mark(box(LEFT, 668, MEASURE, 180)),
   speaker(box(LEFT, 1_088, MEASURE, 34)),
   headline(box(LEFT, 850, MEASURE, 236), { minFontSize: 42, maxFontSize: 96, maxChars: 110, maxLines: 5 }),
-  copy(box(LEFT, 1_126, MEASURE, 160), { minFontSize: 25, maxFontSize: 28, maxChars: bodyChars, maxLines: 6 })
+  copy(box(LEFT, 1_126, MEASURE, 160), { minFontSize: 28, maxFontSize: 32, maxChars: bodyChars, maxLines: 6 })
 ];
 
 const split = template({
@@ -178,12 +187,13 @@ const statement = template({
   description: "One sentence set as a quote under a pair of quotation marks, centred on blueprint blue, or on ink in the INK variant, with a quieter note under it.",
   backgroundToken: "accent",
   version: FLOWED,
-  variants: [{ id: "INK", backgroundToken: "background" }],
+  // On the light blue ground (#6ec1ff since 8 November 2026) the words are ink; the INK variant draws them white.
+  variants: [{ id: "INK", backgroundToken: "background", inkToken: "foreground" }],
   layers: [
     logo,
-    mark(box(LEFT, 256, MEASURE, 180)),
-    headline(box(LEFT, 440, MEASURE, 500), { minFontSize: 50, maxFontSize: 104, maxChars: 170, maxLines: 8 }),
-    copy(box(LEFT, 960, MEASURE, 290), { minFontSize: 28, maxFontSize: 32, maxChars: 240, maxLines: 8 })
+    { ...mark(box(LEFT, 256, MEASURE, 180)), colorToken: "background" } as CarouselLayerInput,
+    headline(box(LEFT, 440, MEASURE, 500), { colorToken: "background", minFontSize: 50, maxFontSize: 104, maxChars: 170, maxLines: 8, emphasisColorToken: "background" }),
+    copy(box(LEFT, 960, MEASURE, 290), { colorToken: "background", minFontSize: 32, maxFontSize: 38, maxChars: 240, maxLines: 8 })
   ]
 });
 
@@ -223,7 +233,7 @@ const singlePhoto = template({
   layers: [
     photo("image-1", 0, W, H, BLEED_FADE),
     logo,
-    headline(box(LEFT, 772, MEASURE, 490), { minFontSize: 46, maxFontSize: 64, maxChars: 110, maxLines: 6 })
+    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7 })
   ]
 });
 
@@ -270,7 +280,7 @@ const QUOTE: Item[] = [["quote-mark", 0], ["headline", 2, MARK_PULL], ["kicker",
 const SOURCES = Array.from({ length: DNESKAI_MAX_THUMBNAILS + 1 }, (_, count) => sources(count));
 
 const TEMPLATES: DneskaiKitTemplate[] = [
-  { role: "cover-photo", template: coverPhoto, flow: floor(["headline", 0]) },
+  { role: "cover-photo", template: coverPhoto, flow: floor(["series", 0], ["headline", "headlineToNote"]) },
   { role: "figure", template: figure, flow: floor(["headline", 0], ["body", "headlineToBody"]) },
   { role: "split", template: split, flow: floor(...QUOTE) },
   { role: "split-pair", template: splitPair, flow: floor(...QUOTE) },

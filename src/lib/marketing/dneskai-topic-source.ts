@@ -25,14 +25,27 @@ export function dneskaiOwnerLinkSource(candidate: Pick<DneskaiCandidate, 'source
   return { id: DNESKAI_OWNER_LINK_SOURCE_ID, name: url.hostname.replace(/^www\./, ''), url: `${url.origin}/`, kind: 'html', weekdays: [0, 1, 2, 3, 4, 5, 6], maxItems: 1 };
 }
 
+/**
+ * Pages a topic reads at most (owner decision, 8 November 2026): the first explains the topic, the others add their
+ * pictures when the first one has only a logo or text. The topic bridge makes each one a member of the topic's brief.
+ */
+export const DNESKAI_TOPIC_MAX_URLS = 3;
+
+/** The distinct https URLs a topic stores in `evidence.urls`, in order, at most `DNESKAI_TOPIC_MAX_URLS`. */
+export function dneskaiTopicUrls(evidence: Record<string, unknown> | null): string[] {
+  const urls = Array.isArray(evidence?.urls) ? evidence.urls : [];
+  const result: string[] = [];
+  for (const value of urls) {
+    if (typeof value !== 'string' || value.length > 2048 || result.includes(value)) continue;
+    try { if (new URL(value).protocol === 'https:') result.push(value); } catch { /* not a URL */ }
+    if (result.length === DNESKAI_TOPIC_MAX_URLS) break;
+  }
+  return result;
+}
+
 /** The first https URL a topic stores in `evidence.urls`, or null (a manual topic with a title only). */
 export function dneskaiTopicUrl(evidence: Record<string, unknown> | null): string | null {
-  const urls = Array.isArray(evidence?.urls) ? evidence.urls : [];
-  for (const value of urls) {
-    if (typeof value !== 'string' || value.length > 2048) continue;
-    try { if (new URL(value).protocol === 'https:') return value; } catch { /* not a URL */ }
-  }
-  return null;
+  return dneskaiTopicUrls(evidence)[0] ?? null;
 }
 
 /** Markdown from the reader as plain text: pictures dropped, links reduced to their words, blank runs closed. */
@@ -63,12 +76,16 @@ export function createJinaTopicReader(env: Record<string, string | undefined> = 
 }
 
 /** The candidate row of an owner link, with the identity hashes the candidates table keeps unique per owner and project. */
-export function dneskaiOwnerLinkCandidate(input: { topicId: string; kind: 'news' | 'education'; url: string; page: DneskaiTopicPage; fallbackTitle: string; fallbackText: string | null; now: Date }) {
+export function dneskaiOwnerLinkCandidate(input: { topicId: string; kind: 'news' | 'education'; url: string; page: DneskaiTopicPage; fallbackTitle: string; fallbackText: string | null; now: Date; part?: number; lead?: string | null }) {
   const title = (input.page.title || input.fallbackTitle).slice(0, 500);
-  const text = (input.page.text || input.fallbackText || '').slice(0, 12000);
+  // A series topic's own summary (a paraphrase of this page) leads, so the post is about the tip, not the whole page.
+  const page = input.page.text || input.fallbackText || '';
+  const text = (input.lead?.trim() && input.page.text ? `${input.lead.trim()}\n\n${page}` : page).slice(0, 12000);
   const identity = dneskaiCheapIdentity({ title, text, url: input.url });
+  // The first page keeps the id it always had; a further page of the same topic is numbered from 2.
+  const id = input.part && input.part > 1 ? `${DNESKAI_OWNER_LINK_SOURCE_ID}:${input.topicId}:${input.part}` : `${DNESKAI_OWNER_LINK_SOURCE_ID}:${input.topicId}`;
   const candidate = DneskaiCandidateSchema.parse({
-    targetDate: null, id: `${DNESKAI_OWNER_LINK_SOURCE_ID}:${input.topicId}`, sourceId: DNESKAI_OWNER_LINK_SOURCE_ID, externalId: identity.canonicalUrl.slice(0, 300),
+    targetDate: null, id, sourceId: DNESKAI_OWNER_LINK_SOURCE_ID, externalId: identity.canonicalUrl.slice(0, 300),
     title, text, url: input.url, publishedAt: null, fetchedAt: input.now.toISOString(), mediaUrls: [], contentHash: contentHash({ title, text, url: identity.canonicalUrl }),
     category: input.kind === 'news' ? 'ai-news' : 'tool', relevance: null, duplicateOf: null, status: 'new', reason: 'topic-approved-by-owner',
   });

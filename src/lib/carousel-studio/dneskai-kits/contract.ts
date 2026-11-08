@@ -30,9 +30,11 @@ export type DneskaiTextField = (typeof DNESKAI_TEXT_FIELDS)[number];
 /**
  * Slots code writes: never a field OwnDashboard gates. `folio` stays named so a template from before
  * the owner's 22 October 2026 decision still parses; no current template places it. `quote-mark`
- * is the pair of quotation marks a kit may set above a quoted headline (`DNESKAI_QUOTE_MARK`).
+ * is the pair of quotation marks a kit may set above a quoted headline (`DNESKAI_QUOTE_MARK`). `series` is a series
+ * post's label and running number on its cover ("Slovník AI #3", owner decision, 8 November 2026); a kit that sets
+ * no such line ignores it, and every other post leaves it empty.
  */
-export const DNESKAI_CODE_OWNED_SLOTS = ["folio", "title", "images-label", "disclosure", "quote-mark"] as const;
+export const DNESKAI_CODE_OWNED_SLOTS = ["folio", "title", "images-label", "disclosure", "quote-mark", "series"] as const;
 /** What the `quote-mark` slot holds in every locale: an opening and a closing double quotation mark. */
 export const DNESKAI_QUOTE_MARK = "\u201c\u201d";
 

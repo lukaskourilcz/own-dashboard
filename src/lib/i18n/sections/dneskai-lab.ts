@@ -1,5 +1,6 @@
 import type { DneskaiKit, DneskaiLabApprovalBlock } from '@/lib/marketing/dneskai-lab';
 import type { DneskaiShapeId } from '@/lib/marketing/dneskai-slide-layout';
+import type { DneskaiSeries } from '@/lib/marketing/dneskai-series';
 
 /** The DNESKAi Design Lab (design-lab-spec.md). Every string exists in English and Czech with the same meaning. */
 const en = {
@@ -112,10 +113,8 @@ const en = {
     title: 'Post',
     caption: 'Caption',
     feedLine: 'First line in the feed',
-    slot: 'Time', sources: 'Sources', disclosure: 'AI disclosure',
+    slot: 'Time', sources: 'Sources',
     slotExpired: (time: string) => `The original time ${time} has passed. The nearest possible time is filled in; change it if you like, then save.`,
-    disclosureMissing: 'This deck has no disclosure slide.',
-    disclosureText: 'The last slide states that AI helped prepare the post. Code writes it.',
   },
   actions: {
     label: 'Post actions',
@@ -228,6 +227,7 @@ const en = {
     listLabel: (group: string) => `${group}: proposed topics`,
     verdict: { fact: 'Fact', hype: 'Hype', unclear: 'Unclear' } as Record<'fact' | 'hype' | 'unclear', string>,
     manual: 'Added by hand',
+    series: { explainer: 'Series: AI glossary', mosseri: 'Series: Mosseri tips', karpathy: 'Series: Karpathy tips', cherny: 'Series: Boris Cherny tips', mollick: 'Series: Ethan Mollick tips', pocock: 'Series: Matt Pocock tips' } as Record<DneskaiSeries, string>,
     approved: 'Approved',
     approve: 'Approve',
     reject: 'Reject',
@@ -369,10 +369,8 @@ const cs: typeof en = {
     title: 'Příspěvek',
     caption: 'Popisek',
     feedLine: 'První řádek ve feedu',
-    slot: 'Čas', sources: 'Zdroje', disclosure: 'Označení AI',
+    slot: 'Čas', sources: 'Zdroje',
     slotExpired: (time: string) => `Původní čas ${time} už minul. Je doplněný nejbližší možný čas. Můžete ho změnit, pak uložte.`,
-    disclosureMissing: 'Tato sada nemá slide s označením AI.',
-    disclosureText: 'Poslední slide uvádí, že s přípravou příspěvku pomohla AI. Píše ho kód.',
   },
   actions: {
     label: 'Akce příspěvku',
@@ -483,6 +481,7 @@ const cs: typeof en = {
     listLabel: (group: string) => `${group}: navržené náměty`,
     verdict: { fact: 'Fact', hype: 'Hype', unclear: 'Nejasné' },
     manual: 'Přidáno ručně',
+    series: { explainer: 'Série: Slovník AI', mosseri: 'Série: Mosseri tipy', karpathy: 'Série: Karpathy tipy', cherny: 'Série: Boris Cherny tipy', mollick: 'Série: Ethan Mollick tipy', pocock: 'Série: Matt Pocock tipy' },
     approved: 'Schváleno',
     approve: 'Schválit',
     reject: 'Zamítnout',

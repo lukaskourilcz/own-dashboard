@@ -80,6 +80,14 @@ const copy = (frame: Frame, options: Parameters<typeof body>[1]): CarouselLayerI
 const label = (frame: Frame): CarouselLayerInput =>
   text("kicker", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 26, maxFontSize: 26, maxChars: 28, maxLines: 1, uppercase: true, tracking: 0.12, align: "start" });
 
+/**
+ * A series post's label and running number above the cover headline ("Slovník AI #3", owner decision, 8 November
+ * 2026), in the kit's label face. Only series posts set it. Its frame waits at the foot, below every text the fade
+ * or veil is checked against, so a cover without it renders exactly as before; the flow lifts it above the headline.
+ */
+const seriesLine = (frame: Frame): CarouselLayerInput =>
+  text("series", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 24, maxFontSize: 24, maxChars: 48, maxLines: 1, uppercase: true, tracking: 0.08, align: "start" });
+
 const coverPhoto = template({
   id: "dneskai-plakat-cover-photo",
   name: "DNESKAi plakát · cover photo",
@@ -89,7 +97,8 @@ const coverPhoto = template({
   layers: [
     photo("image-1", 0, W, H, BLEED_FADE),
     logo,
-    headline(box(LEFT, 760, MEASURE, 510), { minFontSize: 64, maxFontSize: 112, maxChars: 110, maxLines: 5 })
+    headline(box(LEFT, 760, MEASURE, 510), { minFontSize: 64, maxFontSize: 112, maxChars: 110, maxLines: 5 }),
+    seriesLine(box(LEFT, H - 140, MEASURE, 40))
   ]
 });
 
@@ -137,11 +146,12 @@ const statement = template({
   description: "One sentence in tall capitals on blue, its key words in ink, with a quieter note under it; on ink in the INK variant.",
   backgroundToken: "accent",
   version: FLOWED,
-  variants: [{ id: "INK", backgroundToken: "background" }],
+  // On the light blue ground (#6ec1ff since 8 November 2026) the words are ink; the INK variant draws them white.
+  variants: [{ id: "INK", backgroundToken: "background", inkToken: "foreground" }],
   layers: [
     logo,
-    headline(box(LEFT, 260, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 170, maxLines: 7, emphasisColorToken: "background" }),
-    copy(box(LEFT, 920, MEASURE, 330), { colorToken: "foreground", minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 8 })
+    headline(box(LEFT, 260, MEASURE, 620), { colorToken: "background", minFontSize: 64, maxFontSize: 104, maxChars: 170, maxLines: 7, emphasisColorToken: "background" }),
+    copy(box(LEFT, 920, MEASURE, 330), { colorToken: "background", minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 8 })
   ]
 });
 
@@ -217,7 +227,7 @@ const SOURCES = Array.from({ length: DNESKAI_MAX_THUMBNAILS + 1 }, (_, count) =>
 const SPLIT: Item[] = [["kicker", 0], ["headline", "labelToText"], ["body", "headlineToBody"]];
 
 const TEMPLATES: DneskaiKitTemplate[] = [
-  { role: "cover-photo", template: coverPhoto, flow: floor(["headline", 0]) },
+  { role: "cover-photo", template: coverPhoto, flow: floor(["series", 0], ["headline", "headlineToNote"]) },
   { role: "figure", template: figure, flow: floor(["headline", 0], ["body", "headlineToBody"]) },
   { role: "split", template: split, flow: floor(...SPLIT) },
   { role: "split-pair", template: splitPair, flow: floor(...SPLIT) },

@@ -222,6 +222,21 @@
             "videofirst"
           ]
         },
+        "emphasis": {
+          "type": "string",
+          "enum": [
+            "#6ec1ff",
+            "#a78bfa",
+            "#f472b6",
+            "#ff7a6b",
+            "#fbbf24",
+            "#a3e635",
+            "#34d399",
+            "#22d3ee",
+            "#fde047",
+            "#e879f9"
+          ]
+        },
         "topic": {
           "type": "string",
           "pattern": "^[\\p{L}\\p{N}_]{1,50}$"
@@ -268,6 +283,11 @@
               "credit": {
                 "type": "string",
                 "maxLength": 120
+              },
+              "series": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
               },
               "sources": {
                 "maxItems": 4,

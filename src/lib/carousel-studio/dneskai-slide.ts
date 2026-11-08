@@ -110,6 +110,8 @@ export interface DneskaiSlideInput {
   kicker?: string;
   /** Accepted and ignored: no slide shows a picture credit; it belongs in the Instagram caption. */
   credit?: string;
+  /** A series post's cover only: its label and running number, written by code, never by the model. */
+  series?: string;
   /** The sources slide's lines, one source each, at most `DNESKAI_MAX_SOURCES`. */
   sources?: readonly string[];
   images?: readonly DneskaiImageInput[];
@@ -118,6 +120,8 @@ export interface DneskaiSlideInput {
   locale?: "cs" | "en";
   /** The owner's hand placement of the words (`dneskai-boxes.ts`). Absent: the kit's own layout, unchanged. */
   layout?: DneskaiBoxes;
+  /** The post's key-word colour, `#rrggbb` (owner request, 8 November 2026). Absent: the kit's own. */
+  emphasisColor?: string;
 }
 
 export type DneskaiProblemCode =
@@ -257,6 +261,7 @@ function strings(input: DneskaiSlideInput, template: CarouselTemplate): Record<s
     body: dneskaiMarkedWords(input.body?.trim() ?? "").plain,
     kicker: dneskaiMarkedWords(input.kicker?.trim() ?? "").plain,
     credit: input.credit?.trim() ?? "",
+    series: input.series?.replace(/\s+/gu, " ").trim() ?? "",
     title: fixed.title,
     "images-label": fixed.imagesLabel,
     disclosure: fixed.disclosure,
@@ -480,6 +485,7 @@ export async function renderDneskaiSlide(input: DneskaiSlideInput): Promise<Dnes
     images,
     deck: input.position,
     index: 0,
+    ...(input.emphasisColor ? { emphasisColor: input.emphasisColor } : {}),
     ...(input.layout && Object.keys(input.layout).length ? { relaxedChecks: DNESKAI_PLACED_RELAXED_CHECKS } : {})
   });
   if (!rendered) throw new Error(`Template ${template.id} has no slide to render`);

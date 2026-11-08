@@ -5,7 +5,9 @@ import { parseContentRevision, renderReportBlocks, type ContentRevision } from '
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
-import { DNESKAI_GENERATION_KIT, dneskaiKitOf } from './dneskai-slides';
+import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
+import { dneskaiEmphasisFor } from './dneskai-palette';
+import { DNESKAI_RESTYLE_FAILED, DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, dneskaiRestyleJobKey, restyleDneskaiPost } from './dneskai-restyle';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
 import { prepareDneskaiRevisionEdit, renderAndAttachDneskaiRevision, reusableDneskaiRender } from './dneskai-revision-edit';
@@ -16,6 +18,7 @@ import { createHash } from 'node:crypto';
 import { createDneskaiSlideStorage } from './worker-runtime';
 import { STORY_HEIGHT, STORY_WIDTH, composeStoryFromCover, storyRenderKey } from './story-image';
 import { synchronizeMarketingSources } from './orchestrator';
+import { DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesCaption, dneskaiSeriesDeck, dneskaiSeriesHeading, dneskaiSeriesNumbers, dneskaiSeriesOf, dneskaiSeriesSlot, type DneskaiSeries } from './dneskai-series';
 
 /**
  * The DNESKAi publishing plan step (owner decision, 7 November 2026). The owner approved every education topic and
@@ -58,7 +61,7 @@ export type DneskaiPlanTwin = { id: string; status: string; ready: boolean; cont
 
 export type DneskaiPlanAction =
   | { kind: 'wait'; status: DneskaiPlanStatus; code: string | null }
-  | { kind: 'spotlight' | 'rerender' | 'move' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus }
+  | { kind: 'spotlight' | 'rerender' | 'move' | 'series' | 'to-threads' | 'approve' | 'twin' | 'approve-twin' | 'story' | 'approve-story'; status: DneskaiPlanStatus }
   /** The post has no photo on its first slide: retired and the slot freed for another post (8 November 2026). */
   | { kind: 'drop'; status: 'skipped'; code: 'plan-photo-missing' };
 
@@ -70,6 +73,16 @@ const PHOTO_MISSING_CODES = new Set(['media-photo-missing']);
 /** A slot's story goes out this long after its Instagram post. */
 export const DNESKAI_STORY_DELAY_MS = 10 * 60_000;
 
+/** A series post is renumbered only while its slot is at least this far away, so the new version can be drawn and approved. */
+const SERIES_RENUMBER_LEAD_MS = 30 * 60_000;
+
+/** True when the post does not carry `heading` (its series label and number) on its cover and its first caption line. */
+export function dneskaiSeriesOutOfDate(revision: Pick<ContentRevision, 'deck' | 'caption'>, heading: string): boolean {
+  const cover = revision.deck?.slides[0];
+  if (cover?.type === 'cover-photo' && cover.series !== heading) return true;
+  return revision.caption.replace(/^\s+/, '').split('\n')[0]?.trim() !== heading;
+}
+
 /** The slot's instant in Prague time. */
 export const dneskaiPlanSlotAt = (slot: Pick<DneskaiPlanRow, 'date' | 'local_time'>) => pragueScheduledAt(slot.date, slot.local_time);
 
@@ -77,7 +90,7 @@ export const dneskaiPlanSlotAt = (slot: Pick<DneskaiPlanRow, 'date' | 'local_tim
  * The one thing a slot needs next. Pure: the executor reads the head, its Threads twin and the Threads account, asks
  * this, does that one step and records the returned status and code on the slot.
  */
-export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | null, twin: DneskaiPlanTwin | null, threadsAccount: boolean, now: Date, story: DneskaiPlanTwin | null = null): DneskaiPlanAction {
+export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | null, twin: DneskaiPlanTwin | null, threadsAccount: boolean, now: Date, story: DneskaiPlanTwin | null = null, heading: string | null = null): DneskaiPlanAction {
   if (!head) return slot.topic_id ? { kind: 'wait', status: 'generating', code: null } : { kind: 'wait', status: 'failed', code: 'plan-post-missing' };
   const slotAt = Date.parse(dneskaiPlanSlotAt(slot));
   if (head.status === 'published') return { kind: 'wait', status: 'published', code: null };
@@ -95,13 +108,22 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
       if (slot.written_revision_id === head.id && report?.status !== 'refused' && head.revision.deck && !head.revision.assets.length) return { kind: 'rerender', status: 'ready' };
       return { kind: 'wait', status: 'failed', code: 'render-blocked' };
     }
-    if (!ownerEdit && head.revision.deck && dneskaiKitOf(head.revision.deck) !== DNESKAI_GENERATION_KIT) return { kind: 'spotlight', status: 'ready' };
+    // A deck in a retired kit (Video-first included) is redrawn in one of the rotating styles; Spotlight and Plakát stay as drawn.
+    if (!ownerEdit && head.revision.deck && !DNESKAI_GENERATION_KITS.includes(dneskaiKitOf(head.revision.deck))) return { kind: 'spotlight', status: 'ready' };
     if (!ownerEdit && Date.parse(head.revision.scheduledAt) !== slotAt) return { kind: 'move', status: 'ready' };
+    // A series post carries its label and running number, the owner's edit included (8 November 2026).
+    if (heading && head.revision.deck && dneskaiSeriesOutOfDate(head.revision, heading)) return { kind: 'series', status: 'ready' };
+    // The key words take the colour of the slot (owner request, 8 November 2026); a post moved here is redrawn in it.
+    if (!ownerEdit && head.revision.deck && head.revision.deck.emphasis !== dneskaiEmphasisFor(dneskaiPlanSlotAt(slot))) return { kind: 'move', status: 'ready' };
     if (!slot.instagram && head.revision.account.platform === 'instagram') {
       return threadsAccount ? { kind: 'to-threads', status: 'ready' } : { kind: 'wait', status: 'ready', code: 'threads-account-missing' };
     }
     if (Date.parse(head.revision.scheduledAt) <= now.getTime() + APPROVAL_LEAD_MS) return { kind: 'wait', status: 'failed', code: 'slot-passed' };
     return { kind: 'approve', status: 'approved' };
+  }
+  // An approved series post whose number changed (an earlier one was skipped) is renumbered while there is time.
+  if (head.status === 'approved' && heading && head.revision.deck && dneskaiSeriesOutOfDate(head.revision, heading) && Date.parse(head.revision.scheduledAt) > now.getTime() + SERIES_RENUMBER_LEAD_MS) {
+    return { kind: 'series', status: 'ready' };
   }
   if (head.status === 'approved' && slot.instagram && head.revision.account.platform === 'instagram') {
     const gone = ['skipped', 'superseded', 'returned', 'failed'];
@@ -148,7 +170,8 @@ export function dneskaiNewsPlacement(topics: ReadonlyArray<{ id: string; date: s
   const used = new Set(taken.map((slot) => `${slot.date} ${slot.local_time}`));
   const result: Array<{ topicId: string; date: string; time: string; instagram: boolean }> = [];
   for (const topic of [...topics].sort((a, b) => a.date.localeCompare(b.date) || a.rank - b.rank)) {
-    const time = DNESKAI_PLAN_NEWS_TIMES.find((candidate) => !used.has(`${topic.date} ${candidate}`) && Date.parse(pragueScheduledAt(topic.date, candidate)) >= now.getTime() + NEWS_LEAD_MS);
+    // A series slot (17:00 Monday to Saturday from 16 November 2026) belongs to its series, not to the news.
+    const time = DNESKAI_PLAN_NEWS_TIMES.find((candidate) => !used.has(`${topic.date} ${candidate}`) && !dneskaiSeriesSlot(topic.date, candidate) && Date.parse(pragueScheduledAt(topic.date, candidate)) >= now.getTime() + NEWS_LEAD_MS);
     if (!time) continue;
     used.add(`${topic.date} ${time}`);
     result.push({ topicId: topic.id, date: topic.date, time, instagram: time !== '20:00' });
@@ -161,21 +184,29 @@ export type DneskaiPlanResult = { filled: number; news?: number; worked: number;
 const read = <T>(result: { data: T | null; error: unknown }, code: string): T => { if (result.error) throw new Error(code); return result.data as T; };
 const SLOT_COLUMNS = 'id,user_id,project_id,date,local_time,instagram,threads,kind,revision_id,topic_id,head_revision_id,threads_revision_id,written_revision_id,threads_base_revision_id,story_revision_id,story_base_revision_id,status,code';
 
-/** Fills empty slots with approved, unplanned education topics, oldest approval first. */
+/**
+ * Fills empty slots with approved, unplanned education topics, oldest approval first. A series slot (8 November 2026)
+ * takes the next topic of its series, in the series' order, even at a news time; without one it stays free until the
+ * plan prepares that day, then an ordinary topic takes it (`dneskaiSeriesAssignment`).
+ */
 async function fillPlan(db: Database, owner: string, project: string, today: string, options: { news: boolean; now: Date } = { news: false, now: new Date() }): Promise<number> {
   const from = pragueDayAfter(today, 1), until = pragueDayAfter(today, DNESKAI_PLAN_DAYS - 1);
   const taken = read(await db.from('marketing_dneskai_plan').select('date,local_time').eq('user_id', owner).eq('project_id', project).gte('date', today).lte('date', until).limit(400), 'plan-unavailable') as Array<{ date: string; local_time: string }>;
   // With the night's news on, the news times stay free ahead; on the day itself, from 05:00, education takes what is left.
-  const ahead = dneskaiPlanEmptySlots(taken, from, until, options.news ? DNESKAI_PLAN_NEWS_TIMES : []);
+  const ahead = dneskaiPlanEmptySlots(taken, from, until).filter((slot) => !options.news || !(DNESKAI_PLAN_NEWS_TIMES as readonly string[]).includes(slot.time) || !!dneskaiSeriesSlot(slot.date, slot.time));
   const fallback = options.news && pragueHourOf(options.now) >= DNESKAI_NEWS_FALLBACK_HOUR
     ? dneskaiPlanEmptySlots(taken, today, today).filter((slot) => Date.parse(pragueScheduledAt(slot.date, slot.time)) >= options.now.getTime() + NEWS_LEAD_MS) : [];
   const empty = [...fallback, ...ahead].slice(0, FILL_LIMIT);
   if (!empty.length) return 0;
-  const topics = read(await db.from('marketing_dneskai_topics').select('id,evidence').eq('user_id', owner).eq('project_id', project).eq('kind', 'education').eq('status', 'approved')
-    .is('evidence->>planDate', null).order('approved_at', { ascending: true }).order('created_at', { ascending: true }).limit(empty.length), 'plan-topics-unavailable') as Array<{ id: string; evidence: Record<string, unknown> | null }>;
+  type Topic = { id: string; evidence: Record<string, unknown> | null };
+  const plain = read(await db.from('marketing_dneskai_topics').select('id,evidence').eq('user_id', owner).eq('project_id', project).eq('kind', 'education').eq('status', 'approved')
+    .is('evidence->>planDate', null).is('evidence->>series', null).order('approved_at', { ascending: true }).order('created_at', { ascending: true }).limit(empty.length), 'plan-topics-unavailable') as Topic[];
+  const series = read(await db.from('marketing_dneskai_topics').select('id,evidence').eq('user_id', owner).eq('project_id', project).eq('kind', 'education').eq('status', 'approved')
+    .is('evidence->>planDate', null).not('evidence->>series', 'is', null).order('approved_at', { ascending: true }).order('created_at', { ascending: true }).limit(200), 'plan-topics-unavailable') as Topic[];
+  const order = (topic: Topic) => typeof topic.evidence?.seriesOrder === 'number' ? topic.evidence.seriesOrder : Number.MAX_SAFE_INTEGER;
+  const pairs = dneskaiSeriesAssignment(empty, [...[...series].sort((a, b) => order(a) - order(b)), ...plain], pragueDayAfter(today, DNESKAI_PLAN_HORIZON_DAYS));
   let filled = 0;
-  for (const [index, topic] of topics.entries()) {
-    const slot = empty[index]!;
+  for (const { slot, topic } of pairs) {
     const inserted = await db.from('marketing_dneskai_plan').insert({ user_id: owner, project_id: project, date: slot.date, local_time: slot.time, instagram: slot.instagram, threads: true, kind: 'education', topic_id: topic.id }).select('id');
     if (inserted.error) continue; // A slot taken meanwhile or a topic planned by another tick: the next pass sees it.
     const { error } = await db.from('marketing_dneskai_topics').update({ evidence: { ...(topic.evidence ?? {}), planDate: slot.date, planTime: slot.time }, updated_at: new Date().toISOString() }).eq('user_id', owner).eq('id', topic.id);
@@ -237,8 +268,10 @@ async function keepNewsCurrent(db: Database, owner: string, slot: DneskaiPlanRow
 /** Saves the plan's own edit of the head (Spotlight and/or the slot's time) and renders it, reusing the JPEGs when the deck is unchanged. */
 async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit: { kit: boolean; scheduledAt: string }, wiring: Wiring, signal: AbortSignal) {
   const deck = head.revision.deck;
-  const deckEdit = edit.kit && deck ? { kit: DNESKAI_GENERATION_KIT, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
-  const revision = await prepareDneskaiRevisionEdit(head.revision, { caption: head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
+  const kit = deck ? dneskaiGenerationKit([head.revision.title, ...deck.slides.map((slide) => slide.headline ?? '')].join('\n')) : null;
+  const deckEdit = edit.kit && deck && kit ? { kit, slides: deck.slides.map((_, from) => ({ from })) } : undefined;
+  const prepared = await prepareDneskaiRevisionEdit(head.revision, { caption: head.revision.caption, scheduledAt: edit.scheduledAt, ...(deckEdit ? { deck: deckEdit } : {}) }, wiring.listBriefAssetHashes, wiring.loadBriefPool);
+  const revision = prepared.deck ? { ...prepared, deck: { ...prepared.deck, emphasis: dneskaiEmphasisFor(edit.scheduledAt) } } : prepared;
   let reuse = reusableDneskaiRender(head.revision, head.render_report, revision);
   if (reuse) { try { reuse = { ...reuse, assets: await refreshMarketingAssetUrls(db, owner, reuse.assets) }; } catch { reuse = null; } }
   const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
@@ -310,9 +343,34 @@ async function placeNews(db: Database, owner: string, project: string, now: Date
   return placed;
 }
 
+/**
+ * Each series slot's heading, "Slovník AI #3" (owner decision, 8 November 2026): the running number counts the
+ * series' published posts first, then the ones still to come in slot order; a skipped or failed one is not counted.
+ */
+async function seriesHeadings(db: Database, owner: string, project: string): Promise<Map<string, string>> {
+  const rows = read(await db.from('marketing_dneskai_plan').select('id,date,local_time,status,topic_id').eq('user_id', owner).eq('project_id', project).eq('kind', 'education')
+    .gte('date', DNESKAI_SERIES_START).not('topic_id', 'is', null).order('date').limit(1000), 'plan-unavailable') as Array<{ id: string; date: string; local_time: string; status: string; topic_id: string }>;
+  if (!rows.length) return new Map();
+  const topics = read(await db.from('marketing_dneskai_topics').select('id,evidence').eq('user_id', owner).in('id', rows.map((row) => row.topic_id)).not('evidence->>series', 'is', null).limit(1000), 'plan-topics-unavailable') as Array<{ id: string; evidence: Record<string, unknown> | null }>;
+  const seriesOf = new Map(topics.flatMap((topic) => { const series = dneskaiSeriesOf(topic.evidence); return series ? [[topic.id, series] as const] : []; }));
+  const slots = rows.flatMap((row) => { const series = seriesOf.get(row.topic_id); return series ? [{ ...row, series }] : []; });
+  const numbers = dneskaiSeriesNumbers(slots);
+  const series = new Map<string, DneskaiSeries>(slots.map((slot) => [slot.id, slot.series]));
+  return new Map([...numbers].map(([id, number]) => [id, dneskaiSeriesHeading(series.get(id)!, number)]));
+}
+
+/** Saves the post with its series heading on the cover and the first caption line, and draws it; unchanged slides keep their JPEGs. */
+async function saveSeriesHeading(db: Database, owner: string, head: DneskaiPlanHead, heading: string, wiring: Wiring, signal: AbortSignal) {
+  const deck = head.revision.deck!;
+  const revision = parseContentRevision({ ...head.revision, caption: dneskaiSeriesCaption(head.revision.caption, heading), deck: dneskaiSeriesDeck(deck, heading), assets: [] });
+  const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
+  const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: saved.id, revision }, { render: wiring.render, loadMedia: wiring.loadMedia, signal });
+  return { id: saved.id, ready: rendered.ready };
+}
+
 const pragueHourOf = (now: Date) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Prague', hour: '2-digit', hourCycle: 'h23' }).format(now));
 
-export async function advanceDneskaiPlan(db: Database, owner: string, project: string, input: { now: Date; signal: AbortSignal; remainingMs: () => number; news?: boolean }): Promise<DneskaiPlanResult> {
+export async function advanceDneskaiPlan(db: Database, owner: string, project: string, input: { now: Date; signal: AbortSignal; remainingMs: () => number; news?: boolean; env?: Record<string, string | undefined> }): Promise<DneskaiPlanResult> {
   z.uuid().parse(owner); z.uuid().parse(project);
   const result: DneskaiPlanResult = { filled: 0, worked: 0, rendered: 0, approved: 0, twins: 0, codes: {} };
   const today = pragueMarketingDate(input.now);
@@ -321,6 +379,7 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
   const slots = read(await db.from('marketing_dneskai_plan').select(SLOT_COLUMNS).eq('user_id', owner).eq('project_id', project).gte('date', today)
     .lte('date', pragueDayAfter(today, DNESKAI_PLAN_HORIZON_DAYS)).not('status', 'in', '(published,skipped)').order('date').order('local_time').limit(20), 'plan-unavailable') as DneskaiPlanRow[];
   const account = await threadsAccountOf(db, owner);
+  const headings = await seriesHeadings(db, owner, project);
   let wiring: Wiring | null = null;
   const wired = () => (wiring ??= { render: getRenderDneskaiDeck(db), loadMedia: getDneskaiMediaLoader(db, owner), listBriefAssetHashes: getBriefAssetHashLister(db, owner), loadBriefPool: getBriefPoolLoader(db, owner) });
   const record = async (slot: DneskaiPlanRow, patch: Partial<DneskaiPlanRow>) => {
@@ -336,9 +395,32 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
       for (let pass = 0; pass < 4; pass++) {
         if (input.remainingMs() < 8_000) break;
         const head = await resolveHead(db, owner, slot);
+        // Restyle (owner request, 8 November 2026): regenerate the post for this slot, then wait for the new version.
+        if (slot.code === DNESKAI_RESTYLE_REQUESTED && head) {
+          if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) break;
+          const restyled = await restyleDneskaiPost(db, owner, { slot: { date: slot.date, local_time: slot.local_time, scheduledAt: dneskaiPlanSlotAt(slot) }, head, env: input.env ?? process.env, signal: input.signal });
+          result.rendered++;
+          // The slot keeps the version the restyle started from: the job key is derived from it (`dneskaiRestyleJobKey`).
+          const patch: Partial<DneskaiPlanRow> = { head_revision_id: head.id, written_revision_id: null, status: 'generating', code: restyled.code };
+          await record(slot, patch); Object.assign(slot, patch);
+          result.codes[restyled.code] = (result.codes[restyled.code] ?? 0) + 1;
+          break;
+        }
+        if (slot.code === DNESKAI_RESTYLE_QUEUED && head && (head.status === 'returned' || head.status === 'published')) {
+          // The restyle job of this version: a failure is shown on the slot; a published post's new version is a new post the slot takes over.
+          const key = dneskaiRestyleJobKey(owner, head.id, head.content_hash, dneskaiPlanSlotAt(slot));
+          const job = read(await db.from('marketing_jobs').select('status').eq('user_id', owner).eq('idempotency_key', key).maybeSingle(), 'plan-job-unavailable') as { status: string } | null;
+          if (job?.status === 'failed') { const patch = { status: 'failed' as const, code: DNESKAI_RESTYLE_FAILED }; await record(slot, patch); Object.assign(slot, patch); break; }
+          if (head.status === 'published' && job?.status === 'review' && await revisionRow(db, owner, key)) {
+            const patch: Partial<DneskaiPlanRow> = { head_revision_id: key, written_revision_id: null, threads_revision_id: null, threads_base_revision_id: null, story_revision_id: null, story_base_revision_id: null, status: 'ready', code: null };
+            await record(slot, patch); Object.assign(slot, patch);
+            continue;
+          }
+          await record(slot, { status: 'generating' }); break;
+        }
         const twin = slot.threads_revision_id ? await revisionRow(db, owner, slot.threads_revision_id) : null;
         const story = slot.story_revision_id ? await revisionRow(db, owner, slot.story_revision_id) : null;
-        const action = !head && slot.topic_id && await topicLacksPhoto(db, owner, slot.topic_id) ? { kind: 'drop' as const, status: 'skipped' as const, code: 'plan-photo-missing' as const } : dneskaiPlanAction(slot, head, twin, !!account, input.now, story);
+        const action = !head && slot.topic_id && await topicLacksPhoto(db, owner, slot.topic_id) ? { kind: 'drop' as const, status: 'skipped' as const, code: 'plan-photo-missing' as const } : dneskaiPlanAction(slot, head, twin, !!account, input.now, story, headings.get(slot.id) ?? null);
         if (action.kind === 'drop') {
           for (const id of [head?.id, slot.threads_revision_id, slot.story_revision_id]) if (id) await db.rpc('marketing_dneskai_plan_retire', { p_owner: owner, p_revision_id: id });
           // The freed time is filled with another post on the next pass.
@@ -359,6 +441,14 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: current.id, revision: current.revision }, { render: wiring.render, loadMedia: wiring.loadMedia, signal: input.signal });
           result.rendered++;
           const patch = { ...base, status: rendered.ready ? 'ready' as const : 'failed' as const, code: rendered.ready ? null : 'render-blocked' };
+          await record(slot, patch); Object.assign(slot, patch);
+          break;
+        }
+        if (action.kind === 'series') {
+          if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) { await record(slot, { ...base, code: 'plan-render-waiting' }); break; }
+          const saved = await saveSeriesHeading(db, owner, current, headings.get(slot.id)!, wired(), input.signal);
+          result.rendered++;
+          const patch = { ...base, head_revision_id: saved.id, written_revision_id: saved.id, status: saved.ready ? 'ready' as const : 'failed' as const, code: saved.ready ? null : 'render-blocked' };
           await record(slot, patch); Object.assign(slot, patch);
           break;
         }

@@ -57,10 +57,33 @@ export function devsharkTokens(value: string): Token[][] {
 export const devsharkPlain = (value: string) => value.replace(/\[\[|\]\]/g, '');
 const joined = (tokens: Token[]) => tokens.map((token, at) => (at && !token.glue ? ' ' : '') + token.text).join('');
 
-function wrap(value: string, face: string, size: number, width: number): { lines: Token[][]; unknown: number; overlong: boolean } {
+/**
+ * Moves the trailing word-group of the penultimate line onto the last line, so a wrapped block does not end on a lone
+ * word (`text-wrap: pretty`). Punctuation glued to its word moves with it, and the move is taken only when the two
+ * words then still fit the measure. Returns whether a lone last word remains (the caller may shrink the face to clear
+ * it). A single-line or already-balanced paragraph is left untouched.
+ */
+function balanceLastLine(lines: Token[][], face: string, size: number, width: number): boolean {
+  if (lines.length < 2) return false;
+  const last = lines[lines.length - 1]!;
+  if (last.length !== 1) return false; // a blank line, or two-plus words, is not an orphan
+  const prev = lines[lines.length - 2]!;
+  let start = prev.length - 1;
+  while (start > 0 && prev[start]!.glue) start -= 1; // keep a word and its glued punctuation whole
+  if (start <= 0) return true; // the penultimate line is a single group; moving it would empty the line
+  const group = prev.slice(start);
+  const moved = [{ ...group[0]!, glue: false }, ...group.slice(1), ...last];
+  if (measureStudioText(joined(moved), face, size).width > width) return true; // the two words would not fit one line
+  lines[lines.length - 2] = prev.slice(0, start);
+  lines[lines.length - 1] = moved;
+  return false;
+}
+
+function wrap(value: string, face: string, size: number, width: number, balance = false): { lines: Token[][]; unknown: number; overlong: boolean; orphaned: boolean } {
   const lines: Token[][] = [];
-  let unknown = 0, overlong = false;
+  let unknown = 0, overlong = false, orphaned = false;
   for (const paragraph of devsharkTokens(value)) {
+    const pLines: Token[][] = [];
     let line: Token[] = [];
     for (const token of paragraph) {
       const word = measureStudioText(token.text, face, size);
@@ -69,12 +92,35 @@ function wrap(value: string, face: string, size: number, width: number): { lines
       const candidate = [...line, token];
       if (line.length && measureStudioText(joined(candidate), face, size).width > width) {
         const last = token.glue ? line.pop() : undefined;
-        lines.push(line); line = last ? [{ ...last, glue: false }, token] : [{ ...token, glue: false }];
+        pLines.push(line); line = last ? [{ ...last, glue: false }, token] : [{ ...token, glue: false }];
       } else line = candidate;
     }
-    lines.push(line);
+    pLines.push(line);
+    if (balance && balanceLastLine(pLines, face, size, width)) orphaned = true;
+    lines.push(...pLines);
   }
-  return { lines, unknown, overlong };
+  return { lines, unknown, overlong, orphaned };
+}
+
+/** The body's wrapped lines as plain text, rebalanced to avoid a lone last word at the given size. A test and preview seam. */
+export function devsharkBodyLines(value: string, width: number, size: number = DEFAULT_SIZES.body): string[] {
+  return wrap(value, FACE.body, size, width, true).lines.map(joined);
+}
+
+/** The smallest body size the owner's house layout will shrink to when rebalancing alone cannot clear a lone last word. */
+export const BODY_MIN_SIZE = 56;
+const BODY_SIZE_STEP = 4;
+/**
+ * The largest body size, from the default down to `BODY_MIN_SIZE`, at which the body — after rebalancing — does not end
+ * on a lone word; `BODY_MIN_SIZE` if none does. The step mirrors `text-wrap: pretty`: rebalance first, shrink only when
+ * a word cannot be pulled back. The published renderer and the Studio preview both size the body through this, so they
+ * agree.
+ */
+export function fitDevsharkBodySize(value: string, width: number): number {
+  for (let size = DEFAULT_SIZES.body; size >= BODY_MIN_SIZE; size -= BODY_SIZE_STEP) {
+    if (!wrap(value, FACE.body, size, width, true).orphaned) return size;
+  }
+  return BODY_MIN_SIZE;
 }
 
 export type StudioBlock = { key: StudioBlockKey; box: Required<DevsharkBox>; height: number; text: string };
@@ -104,7 +150,7 @@ export function devsharkAutoBoxes(slide: DevsharkSlide, index: number): Partial<
   const stack: { key: StudioBlockKey; size: number; height: number; gap: number }[] = [];
   if (index === 0 && slide.kind !== 'closing') stack.push({ key: 'kicker', size: DEFAULT_SIZES.kicker, height: kickerHeight(DEFAULT_SIZES.kicker), gap: 0 });
   stack.push({ key: 'headline', size: headlineSize, height: textHeight(slide.headline, 'headline', headlineSize, width), gap: stack.length ? HOUSE_LAYOUT.gaps.headline : 0 });
-  if (slide.body) stack.push({ key: 'body', size: DEFAULT_SIZES.body, height: textHeight(slide.body, 'body', DEFAULT_SIZES.body, width), gap: HOUSE_LAYOUT.gaps.body });
+  if (slide.body) { const size = fitDevsharkBodySize(slide.body, width); stack.push({ key: 'body', size, height: textHeight(slide.body, 'body', size, width), gap: HOUSE_LAYOUT.gaps.body }); }
   if (slide.code) stack.push({ key: 'code', size: DEFAULT_SIZES.code, height: codeHeight(slide.code, DEFAULT_SIZES.code), gap: HOUSE_LAYOUT.gaps.code });
   const total = stack.reduce((sum, block) => sum + block.gap + block.height, 0);
   let y = Math.max(HOUSE_LAYOUT.top, HOUSE_LAYOUT.middle - total / 2);
@@ -155,7 +201,8 @@ export function layoutDevsharkSlide(deck: Pick<DevsharkDeck, 'cover' | 'slides'>
       parts += `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${height}" rx="${CODE.radius}" fill="${CODE.background}"/>`;
       parts += `<text xml:space="preserve" x="${box.x + CODE.pad}" y="${box.y + CODE.pad + box.size * ASCENT}" fill="${CODE.foreground}" font-family="${escapeXml(f.rasterFamily)}" font-size="${box.size}" font-weight="${f.weight}">${lines.map((line, at) => `<tspan x="${box.x + CODE.pad}" dy="${at ? box.size * LEADING.code : 0}">${escapeXml(line)}</tspan>`).join('')}</text>`;
     } else {
-      const wrapped = wrap(value, FACE[key], box.size, box.w);
+      // The body is balanced so it does not end on a lone word; the headline is display text and keeps its lone words.
+      const wrapped = wrap(value, FACE[key], box.size, box.w, key === 'body');
       if (wrapped.unknown) warnings.push({ block: key, code: 'unsupported-character' });
       if (wrapped.overlong) warnings.push({ block: key, code: 'word-too-wide' });
       const leading = LEADING[key];

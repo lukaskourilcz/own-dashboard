@@ -1,3 +1,4 @@
+import { DNESKAI_EMPHASIS_PALETTE } from "./dneskai-palette";
 import { z } from "zod";
 
 /**
@@ -26,12 +27,12 @@ export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
  */
 export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight", "plakat", "videofirst"];
 /**
- * Owner decision, 8 November 2026 (replacing Spotlight-only of 6 November): every generated DNESKAi post is drawn in
- * one of these styles, picked at random with equal odds and stored in the deck's `kit`, so a re-render keeps it. The
+ * Owner decision, 8 November 2026 (replacing Spotlight-only of 6 November; Video-first dropped the same evening, so
+ * only two styles remain): every generated DNESKAi post is drawn in one of these styles, picked at random with equal odds and stored in the deck's `kit`, so a re-render keeps it. The
  * Lab offers the same kits for a switch. Decks saved in another kit keep it until the owner switches them; the studio
  * still draws every kit so those decks keep rendering.
  */
-export const DNESKAI_GENERATION_KITS: readonly DneskaiKitId[] = ["spotlight", "plakat", "videofirst"];
+export const DNESKAI_GENERATION_KITS: readonly DneskaiKitId[] = ["spotlight", "plakat"];
 /** The first generation kit, kept for callers that need one default. */
 export const DNESKAI_GENERATION_KIT: DneskaiKitId = "spotlight";
 export const DNESKAI_OFFERED_KIT_IDS: readonly DneskaiKitId[] = DNESKAI_GENERATION_KITS;
@@ -90,6 +91,8 @@ export const DneskaiSlideSchema = z.strictObject({
   body: z.string().max(700).optional(),
   kicker: z.string().max(80).optional(),
   credit: z.string().max(120).optional(),
+  /** A series post's cover: its label and running number ("Slovník AI #3", 8 November 2026). Code writes it, never the model. */
+  series: z.string().min(1).max(60).optional(),
   sources: z.array(z.string().min(1).max(240)).max(4).optional(),
   images: z.array(DneskaiSlideImageSchema).max(4),
   alt: z.string().min(1).max(1000),
@@ -102,14 +105,18 @@ export const DneskaiSlideSchema = z.strictObject({
   if (slide.variant && slide.type === "statement" && !["accent", "ink"].includes(slide.variant)) context.addIssue({ code: "custom", message: "statement variant must be accent or ink", path: ["variant"] });
   if (slide.variant && slide.type === "single" && !["photo", "type"].includes(slide.variant)) context.addIssue({ code: "custom", message: "single variant must be photo or type", path: ["variant"] });
   if (slide.variant && !["statement", "single"].includes(slide.type)) context.addIssue({ code: "custom", message: "only statement and single slides take a variant", path: ["variant"] });
+  if (slide.series !== undefined && slide.type !== "cover-photo") context.addIssue({ code: "custom", message: "only a cover carries a series line", path: ["series"] });
 });
 export type DneskaiSlide = z.infer<typeof DneskaiSlideSchema>;
 
+const DNESKAI_EMPHASIS_HEX_VALUES = DNESKAI_EMPHASIS_PALETTE.map((entry) => entry.hex) as [typeof DNESKAI_EMPHASIS_PALETTE[number]["hex"], ...typeof DNESKAI_EMPHASIS_PALETTE[number]["hex"][]];
 export const DneskaiDeckSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_SLIDES_VERSION),
   format: z.enum(["carousel", "single-image"]),
   /** Absent means editorial; editorial is never written, so one deck has one hash. */
   kit: DneskaiKitIdSchema.exclude(["editorial"]).optional(),
+  /** The post's key-word colour from `DNESKAI_EMPHASIS_PALETTE` (owner request, 8 November 2026); absent: the kit's own. */
+  emphasis: z.enum(DNESKAI_EMPHASIS_HEX_VALUES).optional(),
   /** The post's Threads topic as people write the name (owner, 8 November 2026): `FioBanka`, `OpenAI`. */
   topic: z.string().regex(/^[\p{L}\p{N}_]{1,50}$/u).optional(),
   slides: z.array(DneskaiSlideSchema).min(1).max(10),

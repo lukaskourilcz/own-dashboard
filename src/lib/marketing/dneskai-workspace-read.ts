@@ -13,6 +13,7 @@ import {
   DNESKAI_COSTS_VERSION, DNESKAI_WORKSPACE_VERSION, DneskaiCostsReadSchema, DneskaiEngagementReceiptSchema, DneskaiWorkspaceJobSchema, DneskaiWorkspacePostSchema,
   DneskaiWorkspaceReadSchema, DneskaiWorkspaceWaitingSchema, pragueDayAfter, type DneskaiCostsRead, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
 } from './dneskai-workspace';
+import { dneskaiSeriesOf } from './dneskai-series';
 import { DNESKAI_TOPIC_ARCHIVED_STATUSES, DNESKAI_TOPIC_OWNER_CODES, DNESKAI_TOPICS_VERSION, type DneskaiTopicOwnerCode, DneskaiTopicSchema, DneskaiTopicsReadSchema, emptyDneskaiTopicGroups, type DneskaiTopic, type DneskaiTopicsRead } from './dneskai-topics';
 
 /**
@@ -319,6 +320,9 @@ function topicCode(evidence: unknown): DneskaiTopicOwnerCode | null {
   return typeof code === 'string' && (DNESKAI_TOPIC_OWNER_CODES as readonly string[]).includes(code) ? code as DneskaiTopicOwnerCode : null;
 }
 
+/** The recurring series a topic belongs to (8 November 2026), from its evidence. */
+const seriesOf = (evidence: unknown) => dneskaiSeriesOf(evidence && typeof evidence === 'object' && !Array.isArray(evidence) ? evidence as Record<string, unknown> : null);
+
 function topicSource(evidence: unknown): DneskaiTopic['source'] {
   const value = evidence && typeof evidence === 'object' ? evidence as { urls?: unknown; handle?: unknown } : {};
   const url = Array.isArray(value.urls) ? value.urls.find((item): item is string => typeof item === 'string' && /^https:\/\//.test(item) && item.length <= 2048) ?? null : null;
@@ -350,7 +354,8 @@ export async function readDneskaiTopics(db: Database, owner: string, project: st
   for (const row of all) {
     const topic = DneskaiTopicSchema.safeParse({ id: row.id, kind: row.kind, sourceKind: row.source_kind, source: topicSource(row.evidence), title: row.title_cs, summary: row.summary,
       keyword: row.keyword, verdict: row.verdict, status: row.status, proposedFor: row.proposed_for, approvedAt: iso(row.approved_at), createdAt: iso(row.created_at), updatedAt: iso(row.updated_at),
-      ...(topicCode(row.evidence) ? { code: topicCode(row.evidence) } : {}) });
+      ...(topicCode(row.evidence) ? { code: topicCode(row.evidence) } : {}),
+      ...(seriesOf(row.evidence) ? { series: seriesOf(row.evidence)! } : {}) });
     if (!topic.success) { unreadable += 1; continue; }
     groups[topic.data.kind][topic.data.status].push(topic.data);
   }

@@ -232,8 +232,8 @@
       "label": "Logo on light",
       "file": "DNESKAi-logo.svg",
       "mediaType": "image/svg+xml",
-      "sha256": "3fc530282b94b0e104c918ae771d252c601f826526f734a3f174529f9cdaee03",
-      "bytes": 9934,
+      "sha256": "0fe91493de7ec3debb82794f6235057a25c926c023a8977810b57b18f71796ef",
+      "bytes": 2198,
       "sourcePath": "public/brand/DNESKAi-logo.svg",
       "use": "White or paper surfaces (#ffffff, #f7f7f5).",
       "grounds": [
@@ -242,9 +242,8 @@
       ],
       "onPhoto": false,
       "inks": [
-        "#2f5ae6",
-        "#1a3ab0",
-        "#10266f"
+        "#14161a",
+        "#1e88d9"
       ],
       "viewBox": [
         50,
@@ -261,8 +260,8 @@
       "label": "Logo on dark",
       "file": "DNESKAi-logo-dark.svg",
       "mediaType": "image/svg+xml",
-      "sha256": "401b30e8117b59579a09f87deb3e224464ca59197050496df04fe28b162d9c33",
-      "bytes": 9934,
+      "sha256": "ecee7585033ac7fefa8f489fb50b7f4b8df0ec6a544fec42fcf9d24650ab10c8",
+      "bytes": 2198,
       "sourcePath": "public/brand/DNESKAi-logo-dark.svg",
       "use": "Near-black surfaces (#14161a).",
       "grounds": [
@@ -270,9 +269,8 @@
       ],
       "onPhoto": false,
       "inks": [
-        "#4d6ff0",
-        "#9db2ff",
-        "#d2dcff"
+        "#ffffff",
+        "#6ec1ff"
       ],
       "viewBox": [
         50,
@@ -337,22 +335,22 @@
       "label": "Square mark",
       "file": "DNESKAi-square.svg",
       "mediaType": "image/svg+xml",
-      "sha256": "5aabe8408ee811a5b69464d0bb1a9ffa6a92a9878f39eeaee73f0da85ad997f2",
-      "bytes": 9834,
+      "sha256": "ea3270ae24d41e1dec6709b5a3c9f0983739f1b16a49eb0a3cc9a661e394304b",
+      "bytes": 2258,
       "sourcePath": "public/brand/DNESKAi-square.svg",
       "use": "Favicon, app icons, social avatars and any square format.",
       "grounds": [],
       "onPhoto": false,
       "inks": [
-        "#14161a",
+        "#0a0a0a",
         "#ffffff",
-        "#2f5ae6"
+        "#6ec1ff"
       ],
       "viewBox": [
-        -311.7307692307693,
-        -1549.2307692307693,
-        3288.4615384615386,
-        3288.4615384615386
+        0,
+        0,
+        1080,
+        1080
       ],
       "logoSlot": false
     },
@@ -362,22 +360,22 @@
       "label": "Square mark, blinking",
       "file": "DNESKAi-square-blink.svg",
       "mediaType": "image/svg+xml",
-      "sha256": "958230efe1917affdd4bfcf5963bc4a3d3878a3d87fe912fa7e648f84edc1841",
-      "bytes": 9834,
+      "sha256": "ea3270ae24d41e1dec6709b5a3c9f0983739f1b16a49eb0a3cc9a661e394304b",
+      "bytes": 2258,
       "sourcePath": "public/brand/DNESKAi-square-blink.svg",
-      "use": "Blinking cursor. Only for SVG inlined on the web.",
+      "use": "The square mark for SVG inlined on the web (the blinking block was retired with the blue square, 8 November 2026).",
       "grounds": [],
       "onPhoto": false,
       "inks": [
-        "#14161a",
+        "#0a0a0a",
         "#ffffff",
-        "#2f5ae6"
+        "#6ec1ff"
       ],
       "viewBox": [
-        -311.7307692307693,
-        -1549.2307692307693,
-        3288.4615384615386,
-        3288.4615384615386
+        0,
+        0,
+        1080,
+        1080
       ],
       "logoSlot": false
     },
@@ -387,16 +385,16 @@
       "label": "Square mark, 512 px PNG",
       "file": "DNESKAi-square-512.png",
       "mediaType": "image/png",
-      "sha256": "f8295f7fa293d6ebd176a4dc078acfbdbfea190512d1370eb88eaef65c4ec31c",
-      "bytes": 19220,
+      "sha256": "0c4a7ff2a49154cfb23a6c6e7d8e8d63b88f401ff0fe1d09b0a293fe57a5e720",
+      "bytes": 7415,
       "sourcePath": "public/brand/png/DNESKAi-square-512.png",
       "use": "The square mark at 512 px, for platforms that take only raster avatars.",
       "grounds": [],
       "onPhoto": false,
       "inks": [
-        "#14161a",
+        "#0a0a0a",
         "#ffffff",
-        "#2f5ae6"
+        "#6ec1ff"
       ],
       "pixels": {
         "width": 512,
@@ -410,17 +408,16 @@
       "label": "Share card, light",
       "file": "DNESKAi-og.svg",
       "mediaType": "image/svg+xml",
-      "sha256": "9d16018be516bc9ab97e31be66c51616eafd7c1d65c647a8fe1c61a496e5ad3a",
-      "bytes": 10056,
+      "sha256": "e611e491847bb3d2c272c62e9d6b5be0a96b21533f219ec142dd65da1b81ec5b",
+      "bytes": 2320,
       "sourcePath": "public/brand/DNESKAi-og.svg",
       "use": "Default 1200 × 630 share card on white.",
       "grounds": [],
       "onPhoto": false,
       "inks": [
         "#ffffff",
-        "#2f5ae6",
-        "#1a3ab0",
-        "#10266f"
+        "#14161a",
+        "#1e88d9"
       ],
       "viewBox": [
         0,
@@ -436,17 +433,16 @@
       "label": "Share card, dark",
       "file": "DNESKAi-og-dark.svg",
       "mediaType": "image/svg+xml",
-      "sha256": "c44a2a827697c02c8d75ad0210e33feacb9063a3dde7781b5786f3fa7b3560ed",
-      "bytes": 10056,
+      "sha256": "fd4e5fa7864b0f446dfc3390f6c3e155c77bf1cfbe3de64dab6d9cfc842b8c1d",
+      "bytes": 2320,
       "sourcePath": "public/brand/DNESKAi-og-dark.svg",
-      "use": "Default 1200 × 630 share card on #14161a.",
+      "use": "Default 1200 × 630 share card on #0a0a0a.",
       "grounds": [],
       "onPhoto": false,
       "inks": [
-        "#14161a",
-        "#4d6ff0",
-        "#9db2ff",
-        "#d2dcff"
+        "#0a0a0a",
+        "#ffffff",
+        "#6ec1ff"
       ],
       "viewBox": [
         0,

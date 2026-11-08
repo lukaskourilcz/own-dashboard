@@ -119,4 +119,18 @@ describe('uppercase layers keep brand case (owner, 8 November 2026)', () => {
     expect(uppercaseKeepingBrands('Sleduj DNESKAi', 'cs')).toBe('SLEDUJ DNESKAi');
     expect(uppercaseKeepingBrands('Změní adresu', 'cs')).toBe('ZMĚNÍ ADRESU');
   });
+
+  it("sets a series post's label above the cover headline in the photo-led kits, and ignores it elsewhere (8 November 2026)", async () => {
+    const studio = await import("@/lib/carousel-studio");
+    const cover = (await studio.dneskaiGoldenCases()).find((entry) => entry.name === "cover-photo")!.input;
+    for (const kit of ["spotlight", "plakat", "videofirst"] as const) {
+      const plain = await studio.renderDneskaiSlide({ ...cover, kit });
+      const series = await studio.renderDneskaiSlide({ ...cover, kit, series: "Tipy od tvůrce Claude Code Borise Chernyho #16" });
+      expect({ kit, status: series.status, truncated: series.truncatedSlots, blocking: series.problems.filter((problem) => problem.blocking) }).toEqual({ kit, status: "rendered", truncated: [], blocking: [] });
+      expect(series.pngHash).not.toBe(plain.pngHash);
+    }
+    const editorial = await studio.renderDneskaiSlide({ ...cover, kit: "editorial" });
+    expect((await studio.renderDneskaiSlide({ ...cover, kit: "editorial", series: "Slovník AI #1" })).pngHash).toBe(editorial.pngHash);
+  }, 60000);
 });
+

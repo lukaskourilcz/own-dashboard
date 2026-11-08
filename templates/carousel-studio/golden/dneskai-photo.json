@@ -4,7 +4,7 @@
     "width": 1080,
     "height": 1350
   },
-  "updatedAt": "2026-10-22",
+  "updatedAt": "2026-11-08",
   "entries": [
     {
       "name": "cover-photo",
@@ -22,19 +22,19 @@
       "name": "figure",
       "templateId": "dneskai-figure",
       "version": "1.1.0",
-      "pngHash": "d13b9c5590094cfdb62246eb2cff35bcb88932f60fc8c98510940e05180a274f"
+      "pngHash": "547fa9babd7d2394adef2b317ad1fdf7047e1d6647ee7a667c68dac9dfe4edae"
     },
     {
       "name": "split",
       "templateId": "dneskai-split",
       "version": "1.1.0",
-      "pngHash": "c79f428e43672c09b3198b932b2187a79efffca54dbeb7e00039a75155cbb669"
+      "pngHash": "084fcfe85526638856d3be5b03804415c45ae411cbc7e7cc0a409a87814c9fd2"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-split-pair",
       "version": "1.1.0",
-      "pngHash": "6625716a90f6a8ffe1a6b36773bed5b0c0383745566b21d15149b19ce60eedce"
+      "pngHash": "ca139e1f344034176ec4f349da8ef20c1bce9a3f8d59d66e59824d7c8afb0a2f"
     },
     {
       "name": "statement",
@@ -46,13 +46,13 @@
       "name": "statement-ink",
       "templateId": "dneskai-statement",
       "version": "1.1.0",
-      "pngHash": "2d3b6d18a7ff38d6cd0efd49dd662d4e0916c8646d89cd3b7cbfe0faba3648e5"
+      "pngHash": "d50fbbf03d4bfe2eb02af640381fa09d680cb51a7b9f9794c7b8ba476a1f7a75"
     },
     {
       "name": "sources",
       "templateId": "dneskai-sources-4",
       "version": "1.1.0",
-      "pngHash": "6250c7c0562707e721593633fe1ed94f37b0a90caa9ab5a570b78942e3f65e8c"
+      "pngHash": "c0e1de79b803f5ddc08c9fb01601c0fd7a03fcae5b6f9691b612e365d19ab936"
     },
     {
       "name": "single-photo",
@@ -70,7 +70,7 @@
       "name": "single-type",
       "templateId": "dneskai-single-type",
       "version": "1.1.0",
-      "pngHash": "7b2ee780a6037c7d3d833c0c98121f01357e55dfd97c08b890c1ef8c037499da"
+      "pngHash": "90d8162e75a675b339f1e10e9246db4abf430709d2f8cdde3ba245878ec08285"
     }
   ]
 }

@@ -13,6 +13,9 @@ enforce them; a change that lets any of them through is a bug.
 
 - **The first slide shows the headline and nothing else.** A carousel's cover and a single-image post's only
   slide carry no kicker, no body, no picture credit and no label.
+  One exception (owner decision, 8 November 2026): a series post's cover carries its series label and running
+  number above the headline („Slovník AI #3“). Code writes it (`series` on the cover slide, `dneskai-series.ts`);
+  the model never does. The same heading opens the caption and the Threads post.
 - **Every post shows a photo, on its first slide too** (owner decision, 8 November 2026). No text-only opener and
   no type-only single post; a post without a usable photo is not published (`media-photo-missing`,
   `plan-photo-missing`). An AI illustration (`generated`, credit „Ilustrace: AI“ in the database) is the last resort.
@@ -27,7 +30,7 @@ enforce them; a change that lets any of them through is a bug.
 - **Slide order** (owner, 8 November 2026): slides 1 and 2 carry a picture, slide 3 may be text alone, slide 4
   carries a picture, then the closing slide. Fewer than three usable pictures: at most three written slides. One
   usable picture: slide 2 shows it again, cropped closer.
-- **Style**: each post is drawn at random in Spotlight, Plakát or Video-first (stored in the deck's `kit`). Key words of a
+- **Style**: each post is drawn at random in Spotlight or Plakát (stored in the deck's `kit`; Video-first was dropped on 8 November 2026 and a queued Video-first post is redrawn). Key words of a
   headline are marked `[[like this]]`; Plakát and Video-first colour them, other kits drop the marks. Never a box behind the text.
 - **No text about sources or verification.** No slide says where information comes from, which article,
   text or announcement states it, or whether it is confirmed or independently verified. Never "Zdrojem je

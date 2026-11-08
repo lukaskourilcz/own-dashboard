@@ -25,6 +25,8 @@ export function createDneskaiTopicsFixture(now: Date): DneskaiTopicsRead {
       source: { label: '@ukazkovy.tvurce', url: 'https://www.example.com/reel/ukazka-6' } }),
     topic(7, { kind: 'news', status: 'expired', proposedFor: pragueDayAfter(today, -2), title: 'Ukázka: starší zpráva, která propadla po 48 hodinách', updatedAt: hoursAgo(20) }),
     topic(8, { kind: 'education', status: 'rejected', title: 'Ukázka: zamítnutý návod na automatické odpovědi', updatedAt: hoursAgo(3) }),
+    // 8 November 2026: a recurring series topic, added by hand with its source pages.
+    topic(9, { kind: 'education', sourceKind: 'manual', series: 'explainer', title: 'Ukázka: Harness — co to vlastně znamená?', source: { label: 'example.com', url: 'https://www.example.com/slovnik/harness' } }),
   ];
   const groups = { news: emptyDneskaiTopicGroups(), education: emptyDneskaiTopicGroups() };
   for (const item of topics) groups[item.kind][item.status].push(item);

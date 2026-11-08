@@ -4,7 +4,7 @@
     "width": 1080,
     "height": 1350
   },
-  "updatedAt": "2026-10-22",
+  "updatedAt": "2026-11-08",
   "entries": [
     {
       "name": "cover-photo",
@@ -22,19 +22,19 @@
       "name": "figure",
       "templateId": "dneskai-bold-figure",
       "version": "1.1.0",
-      "pngHash": "60035c83a8941bdc55ed52a175be2d5a20b24e4b0180c59b1f3051ed53ff2ee0"
+      "pngHash": "c70b3d962095df483f0948d892af39fc6c98fe5c98cba79897e358ba1c00cbe1"
     },
     {
       "name": "split",
       "templateId": "dneskai-bold-split",
       "version": "1.1.0",
-      "pngHash": "50d7dbb9e5b35703a576137673e5264d50db55fbcefa6d8d74191b6a754023df"
+      "pngHash": "381db3791d85b92b8714525e82def322cf455c7fe6207905c73272d5009870ef"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-bold-split-pair",
       "version": "1.1.0",
-      "pngHash": "2216c51cec146fde0595e279095544c569977f6e383c407ae8323ffc94fec550"
+      "pngHash": "0d9b770327c3781c2ae9d2a0b453b93049b09c1b2b8cf3be22776ccaedfdc658"
     },
     {
       "name": "statement",
@@ -46,25 +46,25 @@
       "name": "statement-ink",
       "templateId": "dneskai-bold-statement",
       "version": "1.1.0",
-      "pngHash": "5d9d578a78a93eb55410c75a15c6c080245bca10dbcbfec082a507cfec69713c"
+      "pngHash": "5699c5c6c2d138bb93ae9be48fa33e5ec8a113649f04fa906b83ccacc1fad06d"
     },
     {
       "name": "sources",
       "templateId": "dneskai-bold-sources-4",
       "version": "1.1.0",
-      "pngHash": "b4c9bfeb0181750b61d4b0adf574425d230744ddbed3b7510faf81d802835f8e"
+      "pngHash": "edc6b8b8628126464d7f591e54cad64c97c30bc617c056992fb9778708dbaa59"
     },
     {
       "name": "single-photo",
       "templateId": "dneskai-bold-single-photo",
       "version": "1.1.0",
-      "pngHash": "ba84a328eed3caf78706d4d10c053dd5b4d869139d16ac65010ecfa7db19f92a"
+      "pngHash": "71b7d46832dd1a48f93104c7e507d24a78a5aec37eb1f28c6fddb9c1d965a356"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-bold-single-photo",
       "version": "1.1.0",
-      "pngHash": "88bb8ddce6195306bf5d85789a5ccfb15e213fbd709305aae31d981ad53681b0"
+      "pngHash": "b42cebb7c740f3ece9c83980277894a9f8a091785ae3a3b36d5c444097123197"
     },
     {
       "name": "single-type",

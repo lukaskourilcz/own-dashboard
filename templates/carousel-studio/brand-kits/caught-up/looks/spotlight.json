@@ -25,12 +25,12 @@
       "source": "The one supporting colour, shared with the ticker look: a grey between --text-secondary and white for the sources slide's labels on ink, where #3c4149 reads at under 2:1. It clears 5.7:1 on #14161a."
     },
     "accent": {
-      "value": "#2f5ae6",
-      "source": "Blueprint blue: --accent-primary and the DNESK colour of the logotype; the accent statement's ground."
+      "value": "#6ec1ff",
+      "source": "The icy blue of the new avatar (owner, 8 November 2026): the statement ground, with ink words on it."
     },
     "secondary": {
-      "value": "#1a3ab0",
-      "source": "The Ai colour of the logotype (brandAi in lib/og-theme.ts); kept for the palette's seven tokens, unused by the kit's layers."
+      "value": "#6ec1ff",
+      "source": "The icy blue of the new avatar (owner, 8 November 2026): the key words of a headline on a photograph or on ink, unless the post sets its own colour."
     }
   },
   "fonts": {

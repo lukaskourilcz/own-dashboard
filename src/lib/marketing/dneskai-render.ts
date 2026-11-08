@@ -7,7 +7,7 @@ import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-la
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { DNESKAI_CLOSING_FILE, DNESKAI_CLOSING_SHA256 } from "./dneskai-closing";
+import { DNESKAI_CLOSING_CARD_FILE, DNESKAI_CLOSING_CARD_SHA256, DNESKAI_CLOSING_CARD_TEMPLATE, DNESKAI_CLOSING_FILE, DNESKAI_CLOSING_SHA256, isDneskaiClosingSlide } from "./dneskai-closing";
 
 /** The closing slide's picture, read from the app's files and checked against its pinned hash. */
 let closingBytes: Promise<Buffer> | null = null;
@@ -17,6 +17,16 @@ export function dneskaiClosingBytes(): Promise<Buffer> {
     return bytes;
   }).catch((error: unknown) => { closingBytes = null; throw error; });
   return closingBytes;
+}
+
+/** The finished closing card as a PNG, read once and checked against its pinned hash. */
+let closingCard: Promise<Buffer> | null = null;
+export function dneskaiClosingCardBytes(): Promise<Buffer> {
+  closingCard ??= readFile(path.join(process.cwd(), ...DNESKAI_CLOSING_CARD_FILE)).then((bytes) => {
+    if (createHash("sha256").update(bytes).digest("hex") !== DNESKAI_CLOSING_CARD_SHA256) throw new Error("closing-card-changed");
+    return bytes;
+  }).catch((error: unknown) => { closingCard = null; throw error; });
+  return closingCard;
 }
 
 /**
@@ -188,8 +198,9 @@ function textProblems(slide: DneskaiSlide, index: number, metrics: Fonts, faces:
  * The slide as the studio takes it. Code writes the folio, the sources title and the disclosure;
  * DNESKAi is Czech-only.
  */
-export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, images: DneskaiSlideInput["images"] = [], kit: DneskaiKitId = "editorial"): DneskaiSlideInput {
+export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, images: DneskaiSlideInput["images"] = [], kit: DneskaiKitId = "editorial", emphasis?: string): DneskaiSlideInput {
   return {
+    ...(emphasis ? { emphasisColor: emphasis } : {}),
     // Absent is the editorial kit; naming it would change nothing but is left out like everywhere else.
     ...(kit !== "editorial" ? { kit } : {}),
     type: slide.type,
@@ -198,6 +209,7 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
     ...(slide.body !== undefined ? { body: slide.body } : {}),
     ...(slide.kicker !== undefined ? { kicker: slide.kicker } : {}),
     ...(slide.credit !== undefined ? { credit: slide.credit } : {}),
+    ...(slide.series !== undefined ? { series: slide.series } : {}),
     ...(slide.sources !== undefined ? { sources: slide.sources } : {}),
     images,
     position,
@@ -215,7 +227,7 @@ export function dneskaiStudioInput(slide: DneskaiSlide, position: Position, imag
  * studio takes them, trimmed and with blank source lines dropped, so an edit to the surrounding
  * whitespace is a hit. The alt text is not drawn and is not part of the key.
  */
-export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encoder: { sharp: string; vips: string }, kit: DneskaiKitId = "editorial"): string {
+export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encoder: { sharp: string; vips: string }, kit: DneskaiKitId = "editorial", emphasis?: string): string {
   const images = [...slide.images].sort((left, right) => left.slot < right.slot ? -1 : left.slot > right.slot ? 1 : 0)
     .map((image) => ({ slot: image.slot, assetSha256: image.assetSha256, crop: image.crop ?? null }));
   return sha256(canonicalJson({
@@ -232,8 +244,14 @@ export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encode
     locale: "cs",
     // Keyed only when not editorial, so every editorial key stays what it was before kits existed.
     ...(kit !== "editorial" ? { kit } : {}),
+    // Keyed only on a series cover, so every other key stays what it was.
+    ...(slide.series?.trim() ? { series: slide.series.trim() } : {}),
     // Keyed only when the owner placed words by hand, so every other key stays what it was.
     ...(slide.layout && Object.keys(slide.layout).length ? { layout: slide.layout } : {}),
+    // Keyed only when the post has its own key-word colour, so every other key stays what it was.
+    ...(emphasis ? { emphasis } : {}),
+    // The closing slide is the finished card, so a new card is a new key.
+    ...(isDneskaiClosingSlide(slide) ? { closingCard: DNESKAI_CLOSING_CARD_SHA256 } : {}),
   }));
 }
 
@@ -319,7 +337,7 @@ export async function validateDneskaiDeck(value: DneskaiDeck, loadMedia: LoadDne
     const loaded = await slideImages(slide, index, load, signal);
     problems.push(...loaded.problems);
     if (loaded.problems.length) continue;
-    problems.push(...await studioProblems(engine, dneskaiStudioInput(slide, { index, count: deck.slides.length }, loaded.images, kit), index));
+    problems.push(...await studioProblems(engine, dneskaiStudioInput(slide, { index, count: deck.slides.length }, loaded.images, kit, deck.emphasis), index));
   }
   return problems;
 }
@@ -378,6 +396,14 @@ function storageStage<T>(run: () => Promise<T>): Promise<T> {
 
 type RenderedSlide = { png: Buffer; pngHash: string; svgHash: string; template: { id: string; version: string }; problems: DneskaiSlideRenderProblem[] };
 
+/** The closing slide drawn as the finished card, whatever the deck's kit (owner, 8 November 2026). */
+async function closingCardRender(): Promise<RenderedSlide> {
+  let png: Buffer;
+  try { png = await dneskaiClosingCardBytes(); }
+  catch { throw new DneskaiRenderError("render-rasterization-failed"); }
+  return { png, pngHash: sha256(png), svgHash: "", template: { ...DNESKAI_CLOSING_CARD_TEMPLATE }, problems: [] };
+}
+
 /**
  * The `RenderDneskaiDeck` port (dneskai-ports.ts). `storage` returns the owner's slide store; the
  * worker runtime passes `createDneskaiSlideStorage`.
@@ -396,7 +422,7 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
     const ownProblems = deck.slides.map((slide, index) => textProblems(slide, index, metrics, faces));
     const refusedByText = ownProblems.some((found) => found.length > 0);
     const encoder = await dneskaiEncoderIdentity();
-    const renderKeys = deck.slides.map((slide, index) => dneskaiRenderKey(slide, { index, count }, encoder, kit));
+    const renderKeys = deck.slides.map((slide, index) => dneskaiRenderKey(slide, { index, count }, encoder, kit, deck.emphasis));
     const cached = await Promise.all(renderKeys.map((key) => storageStage(() => storage.find(key))));
     abortCheck();
 
@@ -407,12 +433,13 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
       problems.push(...ownProblems[index]!);
       const hit = cached[index];
       if (hit) { problems.push(...cachedProblems(index, hit)); rendered.push(null); continue; }
+      if (isDneskaiClosingSlide(slide)) { rendered.push(refusedByText ? null : await closingCardRender()); continue; }
       const loaded = await slideImages(slide, index, load, input.signal);
       abortCheck();
       problems.push(...loaded.problems);
       if (loaded.problems.length) { rendered.push(null); continue; }
       const engine = await studio();
-      const studioInput = dneskaiStudioInput(slide, { index, count }, loaded.images, kit);
+      const studioInput = dneskaiStudioInput(slide, { index, count }, loaded.images, kit, deck.emphasis);
       if (refusedByText) {
         // The deck is refused already: report the studio's problems too, without drawing a slide nobody keeps.
         problems.push(...await studioProblems(engine, studioInput, index));
@@ -499,18 +526,24 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
   const kit = dneskaiKitOf(deck);
   const [metrics, faces] = await Promise.all([fonts(), kitFieldFaces(kit)]);
   const encoder = await dneskaiEncoderIdentity();
-  const renderKey = dneskaiRenderKey(slide, position, encoder, kit);
+  const renderKey = dneskaiRenderKey(slide, position, encoder, kit, deck.emphasis);
   const own = textProblems(slide, index, metrics, faces);
   const hit = previewCache.get(renderKey);
   if (hit && !own.length) {
     previewCache.delete(renderKey); previewCache.set(renderKey, hit);
     return { status: "rendered", image: hit.image, renderKey, problems: [], cached: true, blocks: hit.blocks };
   }
+  if (isDneskaiClosingSlide(slide) && !own.length) {
+    const card = await closingCardRender();
+    const sharp = await sharpModule();
+    const image = await sharp(card.png).resize(DNESKAI_PREVIEW_IMAGE.width, DNESKAI_PREVIEW_IMAGE.height, { fit: "fill" }).webp({ quality: DNESKAI_PREVIEW_IMAGE.quality }).toBuffer();
+    return { status: "rendered", image, renderKey, problems: [], cached: false, blocks: [] };
+  }
   const loaded = await slideImages(slide, index, mediaLoader(loadMedia), options.signal);
   abortCheck();
   const engine = await studio();
   if (loaded.problems.length) return { status: "refused", image: null, renderKey, problems: [...own, ...loaded.problems], cached: false, blocks: [] };
-  const input = dneskaiStudioInput(slide, position, loaded.images, kit);
+  const input = dneskaiStudioInput(slide, position, loaded.images, kit, deck.emphasis);
   if (own.length) return { status: "refused", image: null, renderKey, problems: [...own, ...await studioProblems(engine, input, index)], cached: false, blocks: [] };
   let result;
   try { result = await engine.renderDneskaiSlide(input); }

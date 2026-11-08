@@ -92,7 +92,7 @@ New topics are paused (owner decision, 6 November 2026) unless `DNESKAI_NEW_TOPI
 | 2 media | Downloads the pictures of selected stories (og:image, article figures), stores them by sha256 with credit, pHash and size. A short plan is topped up from Apify (blocked pages), the company's newsroom, Pexels/Unsplash and, last, one Gemini illustration; Claude vision then scores the pictures (8 November 2026) | `dneskai-media*.ts` |
 | 3 briefs | Groups stories into events, picks up to four, writes one brief per slot (`marketing_dneskai_briefs`); with `DNESKAI_TITLING_ENABLED` the events become news topics instead | `dneskai-events.ts`, `dneskai-briefs.ts` |
 | 3a enrichment | Only with `DNESKAI_TOPIC_BRIEFS_ENABLED`: approved topics become briefs (news: the event's brief; education: a brief of the report; link-library and manual topics: their URL read through Jina Reader and stored as an `owner-link` report first) and queued jobs; topic status approved → enriching → briefed → generated | `dneskai-topic-bridge.ts`, `dneskai-topic-source.ts` |
-| 4 generation | Runs one queued job: Claude writes the deck and caption, the studio checks and renders the slides in a style picked at random among `DNESKAI_GENERATION_KITS` (Spotlight, Plakát, Video-first; 8 November 2026) and appends the closing slide | `generation.ts`, `dneskai-generation.ts`, `worker-runtime.ts` |
+| 4 generation | Runs one queued job: Claude writes the deck and caption, the studio checks and renders the slides in a style picked at random among `DNESKAI_GENERATION_KITS` (Spotlight and Plakát; 8 November 2026) and appends the closing slide | `generation.ts`, `dneskai-generation.ts`, `worker-runtime.ts` |
 | 5 publishing | Publishes an approved post inside its 15-minute window | `publisher.ts`, `orchestrator.ts` |
 | 6 reconciliation | Confirms an uncertain publication from the account's media list, never posts twice | `publisher.ts` |
 | 7 token | Refreshes the 60-day Instagram token ten days before it expires | `meta-account.ts` |
@@ -116,7 +116,7 @@ headlines become one event. The deployed SQL (`marketing_dneskai_finish`) picks 
 relevance. A prepared migration switches this to relevance first, with at most one non-news story a day, and gives
 held stories one automatic second review (section 6).
 
-### Generation (`marketing-copy/7`)
+### Generation (`marketing-copy/8`)
 
 One structured Claude call per brief (Claude Sonnet 5.5, $2/$10 per million tokens). The model writes the title,
 caption, hashtags and 4 to 7 slides (types `cover-photo`, `figure`, `split`, `statement`, or one `single`), and picks
@@ -156,10 +156,10 @@ kits:
 | Ticker | Dark news screen, compact type, blue floor rule |
 | Spotlight | The owner's photo-led reference: full-bleed photos fading into ink, centred headlines, before/after quote slides, optional round inset picture on the cover |
 | Plakát | The owner's poster mockup of 8 November 2026: full-bleed photos under a dark fade, tall Anton headlines in capitals at the foot, key words (`[[…]]`) only in light blue, blue text slide |
-| Video-first | The owner's video mockup of 8 November 2026: photos under an even dark veil, big centred Anton captions kept out of the bottom fifth, key words in light blue. With `MARKETING_DNESKAI_SLIDE_VIDEOS_ENABLED` its photo slides go out as carousel video items (`dneskai-slide-video.ts`: 5.5 s, 1080 × 1350, blurred slide revealing the sharp one with a slow zoom, made by ffmpeg from the approved JPEG; stored per revision hash and slide in `marketing-reels`; at most two made per publishing run, the post waits as `slide-videos-pending`). Off, it publishes its JPEGs. Still a carousel, never a Reel |
+| Video-first | Out of the rotation since the evening of 8 November 2026 (owner: two styles only); the plan redraws a queued Video-first post. The owner's video mockup of 8 November 2026: photos under an even dark veil, big centred Anton captions kept out of the bottom fifth, key words in light blue. With `MARKETING_DNESKAI_SLIDE_VIDEOS_ENABLED` its photo slides go out as carousel video items (`dneskai-slide-video.ts`: 5.5 s, 1080 × 1350, blurred slide revealing the sharp one with a slow zoom, made by ffmpeg from the approved JPEG; stored per revision hash and slide in `marketing-reels`; at most two made per publishing run, the post waits as `slide-videos-pending`). Off, it publishes its JPEGs. Still a carousel, never a Reel |
 
 Since 8 November 2026 generation draws every post at random (a hash of its copy, so a re-render keeps it) in one of
-`DNESKAI_GENERATION_KITS` (Spotlight, Plakát, Video-first), and every carousel ends with code's closing slide
+`DNESKAI_GENERATION_KITS` (Spotlight and Plakát), and every carousel ends with code's closing slide
 (`dneskai-closing.ts`: the owner's Higgsfield picture and „Sleduj DNESKAi…“). The engine supports two optional text
 layer fields for it: `emphasisColorToken` (marked words in another colour) and `leading` (baseline distance).
 
@@ -173,7 +173,7 @@ The owner approved every education topic and the last week's news into a rolling
 (`marketing_dneskai_plan`, behind `DNESKAI_PLAN_ENABLED`): Instagram at 08:00, 12:30 and 17:00, Threads at the same
 times plus 20:00, so three Instagram posts and four Threads posts a day. The tick's `plan` step (`dneskai-plan.ts`)
 fills empty slots with approved education topics and prepares the slots of today and the next two days: it renders
-the post in its style (Spotlight, Plakát or Video-first), moves it to its slot, approves the exact version for the owner and derives a Threads twin
+the post in its style (Spotlight or Plakát), moves it to its slot, approves the exact version for the owner and derives a Threads twin
 (`dneskai-threads.ts`: the same slides, only the caption's first paragraph without hashtags or keyword line,
 shortened to 500 characters, then the article's topic as one hashtag, which the publisher sends as the Threads
 `topic_tag`, so the post shows "dneskai › <topic>"; the topic is the deck's `topic`, the name as people write it,
@@ -190,6 +190,21 @@ Every approved Instagram post also goes out as an Instagram story ten minutes la
 account since 7 November 2026, which the Stories API requires. With `DNESKAI_NEW_TOPICS_ENABLED=true` the plan keeps
 08:00, 17:00 and 20:00 free ahead; the night's news topics take them, best brief rank first, and the plan approves
 them for the owner; from 05:00 education fills whatever is still free that day.
+
+**Extra times and restyle (8 November 2026).** Slots may also sit at 10:00 and 14:30 (Instagram and Threads); the
+plan never fills those by itself. A slot with the code `restyle-requested` is written again in the house style
+(`docs/dneskai-style-guide.md`) for its time (`dneskai-restyle.ts`): the step tops its brief up to four pictures from
+Pexels (`MARKETING_DNESKAI_STOCK_ENABLED`, `PEXELS_API_KEY`; credits stay in the database), keeps the brief current,
+moves its calendar entry to the slot, returns the old version and enqueues one regeneration job with a restyle note.
+The finished job supersedes the old version and the plan carries the new one on as usual. One restyle per tick; the
+job cap is 24 per 24 hours since that day.
+
+### Series (8 November 2026)
+
+Six recurring series (Slovník AI, and tips from Mosseri, Karpathy, Cherny, Mollick and Pocock) take 12:30 every day
+and 17:00 from Monday to Saturday, from 16 November 2026. They are education topics tagged `evidence.series`; the plan
+seats them, numbers them and writes their label on the cover and the first caption line (`dneskai-series.ts`,
+`dneskai-plan.ts`). Details, the weekly grid and the backlogs: `docs/dneskai-series.md`.
 
 ### devShark posts (7 November 2026)
 

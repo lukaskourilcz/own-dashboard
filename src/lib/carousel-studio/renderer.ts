@@ -15,7 +15,7 @@ import type { FaceMetrics } from "./font-metrics.generated";
 import { fitText, type FittedText } from "./text";
 import { isCutFor, prepareCarouselImages } from "./images";
 import { fontFiles, measureEm, resolveFace } from "./fonts";
-import { validateTemplateForBrand, type TemplateCheck } from "./validation";
+import { contrastRatio, validateTemplateForBrand, type TemplateCheck } from "./validation";
 import { groundsBehindLayer, type SlideRendering } from "./grounds";
 import { LOGO_ID, chooseLogotypeVariant, logotypeForBrand, type KitLogotype } from "./brand-kit";
 import {
@@ -66,6 +66,8 @@ function layerSvg(input: {
   width: number;
   height: number;
   accentToken?: string;
+  /** The variant's `inkToken`: text set in `background` draws in it. */
+  inkToken?: string;
   /** Collector for slots whose text had to be clipped to fit. */
   truncatedSlots?: string[];
   /** Decoded PNG bytes per image slot. Absent means the slide draws without a photograph. */
@@ -84,7 +86,7 @@ function layerSvg(input: {
   const y = px(layer.y, height);
   const w = px(layer.width, width);
   const h = px(layer.height, height);
-  const color = (name: string) => token(brand, name === "accent" && input.accentToken ? input.accentToken : name);
+  const color = (name: string) => token(brand, name === "accent" && input.accentToken ? input.accentToken : name === "background" && input.inkToken ? input.inkToken : name);
   if (layer.type === "shape") {
     const fill = layer.fillToken === "accent" && input.accentToken ? input.accentToken : layer.fillToken;
     // Strokes follow the variant's accent remap exactly as fills and inks do. They did not until
@@ -229,7 +231,11 @@ function layerSvg(input: {
   // in order through the fitted lines. A layer without an emphasis colour draws exactly the string it always did.
   const flags = layer.emphasisColorToken ? payload.emphasis?.[layer.slot] : undefined;
   let emphasisFill = layer.emphasisColorToken ? color(layer.emphasisColorToken) : "";
-  if (emphasisFill && emphasisFill.toLowerCase() === color(input.slide.rendering.background).toLowerCase()) emphasisFill = color("secondary");
+  const groundFill = token(brand, input.slide.rendering.background);
+  if (emphasisFill && emphasisFill.toLowerCase() === groundFill.toLowerCase()) emphasisFill = color("secondary");
+  // Key words in the colour of the words around them stand out in `secondary` when it reads on the ground (3:1, large
+  // text); on a ground it does not read on (the light blue statement), they stay in the text's colour.
+  if (emphasisFill && emphasisFill.toLowerCase() === color(layer.colorToken).toLowerCase() && contrastRatio(color("secondary"), groundFill) >= 3) emphasisFill = color("secondary");
   let wordAt = 0;
   const words = (line: string) => line.split(" ").map((word, at) => {
     const emphasised = flags?.[wordAt++] === true;
@@ -420,6 +426,12 @@ export interface CarouselRenderInput {
    * owner placed by hand in the Design Studio: the caller reports them as advice and refuses cut copy itself.
    */
   relaxedChecks?: readonly string[];
+  /**
+   * The colour of the key words for this post (DNESKAi, owner request of 8 November 2026: ten colours that rotate from
+   * post to post). It replaces the look's `secondary` token, the colour every DNESKAi kit marks key words in. A hex
+   * colour, `#rrggbb`; absent keeps the look's own.
+   */
+  emphasisColor?: string;
 }
 
 /**
@@ -514,7 +526,9 @@ function renderSlides(input: CarouselRenderInput, wanted?: number): RenderedSlid
   const declared = BrandTokensSchema.parse(input.brand);
   // A kitted brand is drawn from its kit or not at all: `kitStyleFor` throws for a missing or
   // damaged kit, and so does a kit that gives the logo slot nothing to draw.
-  const style = kitStyleWithLook(kitStyleFor(declared), input.look);
+  const looked = kitStyleWithLook(kitStyleFor(declared), input.look);
+  if (input.emphasisColor !== undefined && !/^#[0-9a-f]{6}$/i.test(input.emphasisColor)) throw new Error(`Emphasis colour ${input.emphasisColor} is not #rrggbb`);
+  const style = looked && input.emphasisColor ? { ...looked, palette: { ...looked.palette, secondary: input.emphasisColor.toLowerCase() } } : looked;
   if (style && !logotypeForBrand(declared.id)) throw new Error(`Brand kit ${style.venture} marks no logotype file for the logo slot`);
   const brand = style ? dressBrand(declared, style) : declared;
   const template = style ? kitTemplate(parsed, style) : parsed;
@@ -548,7 +562,7 @@ function renderSlides(input: CarouselRenderInput, wanted?: number): RenderedSlid
       const fitted = fitTextLayer(layer, payload, slideTokens, canvas.width, canvas.height);
       return [[layer.slot, fitted.lines.length * fitted.fontSize * leadingOf(layer)] as const];
     }));
-    const rendering = { background: backgroundToken, accent: variant?.accentToken ?? "accent" };
+    const rendering = { background: backgroundToken, accent: variant?.accentToken ?? "accent", ...(variant?.inkToken ? { ink: variant.inkToken } : {}) };
     const content = slide.layers.map((layer, layerIndex) => layerSvg({
       layer,
       payload,
@@ -556,6 +570,7 @@ function renderSlides(input: CarouselRenderInput, wanted?: number): RenderedSlid
       width: canvas.width,
       height: canvas.height,
       accentToken: variant?.accentToken,
+      inkToken: variant?.inkToken,
       truncatedSlots,
       images: input.images,
       hugged,

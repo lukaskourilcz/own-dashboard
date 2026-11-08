@@ -123,7 +123,7 @@ describe('DNESKAi topics list (#154)', () => {
 
   it('shows the empty state with the last search time', async () => {
     await show();
-    for (const n of [1, 2, 3, 4, 5, 6]) {
+    for (const n of [1, 2, 3, 4, 5, 6, 9]) {
       act(() => button(row(n)!, `${t.reject}: ${row(n)!.querySelector('p')!.textContent}`)!.click());
       await wait();
     }
@@ -148,5 +148,12 @@ describe('DNESKAi topics list (#154)', () => {
     await wait();
     expect(statusOf(1)).toBe('proposed');
     expect(container.textContent).toContain(t.failed);
+  });
+
+  it('marks a recurring series topic with its series (8 November 2026)', async () => {
+    await show();
+    expect(row(9)?.textContent).toContain(t.series.explainer);
+    expect(row(5)?.textContent).not.toContain(t.series.explainer);
+    expect(dneskaiLab.cs.topics.series.explainer).toBe('Série: Slovník AI');
   });
 });

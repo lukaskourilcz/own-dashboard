@@ -12,7 +12,8 @@ import { extractArticleMedia, registrableDomain, type DneskaiImageUrlPolicy, typ
  *    403), keeping the publisher-own host rules;
  * 2. the official newsroom of the company the story is about (`press-kit`, credit „Foto: <firma>“);
  * 3. licensed stock from Pexels or Unsplash (`stock`, credit „Foto: <autor> / Pexels“), only while a key is set;
- * 4. one AI illustration from Gemini (`generated`, credit „Ilustrace: AI“), only when nothing else was found.
+ * 4. one AI illustration (`generated`, credit „Ilustrace: AI“) from fal's Seedream 4.5 when `FAL_API_KEY` is set, else
+ *    from Gemini, only when nothing else was found.
  *
  * Credits stay in the database: the post-content skill forbids credits on slides and in captions. Every source has
  * its own switch and is inert while its key is missing.
@@ -28,9 +29,12 @@ export function dneskaiMediaSourceSwitches(env: Environment = process.env) {
     apify: env.MARKETING_DNESKAI_MEDIA_APIFY_ENABLED === 'true' && !!env.APIFY_TOKEN,
     pressKit: env.MARKETING_DNESKAI_PRESS_KIT_ENABLED === 'true',
     stock: env.MARKETING_DNESKAI_STOCK_ENABLED === 'true' && (!!env.PEXELS_API_KEY || !!env.UNSPLASH_ACCESS_KEY),
-    generated: env.MARKETING_DNESKAI_GENERATED_ENABLED === 'true' && !!env.GEMINI_API_KEY,
+    generated: env.MARKETING_DNESKAI_GENERATED_ENABLED === 'true' && (!!falKey(env) || !!env.GEMINI_API_KEY),
   };
 }
+
+/** fal's key: `FAL_API_KEY` as set on Vercel, or `FAL_KEY`, the name fal's own clients read. */
+export const falKey = (env: Environment) => env.FAL_API_KEY || env.FAL_KEY || undefined;
 
 const matchesDomain = (hostname: string, domain: string) => hostname === domain || hostname.endsWith(`.${domain}`);
 const timeoutSignal = (ms: number, signal?: AbortSignal) => signal ? AbortSignal.any([signal, AbortSignal.timeout(ms)]) : AbortSignal.timeout(ms);
@@ -164,8 +168,38 @@ const InteractionSchema = z.object({
   steps: z.array(z.object({ content: z.array(z.object({ type: z.string(), data: z.string().optional() }).loose()).optional() }).loose()).optional(),
 }).loose();
 
-/** One illustration from Gemini as image bytes, or null. */
+/**
+ * fal's Seedream 4.5 (ByteDance), $0.04 per image (fal pricing, read 8 November 2026), the model the owner already uses
+ * for DNESKAi's closing slide. 1920 × 2400 is the 4:5 post shape at the model's smallest allowed side. `sync_mode`
+ * returns the image inline, so fal keeps no copy in its request history.
+ */
+export const DNESKAI_FAL_ILLUSTRATION_MODEL = { id: 'fal-ai/bytedance/seedream/v4.5/text-to-image', width: 1920, height: 2400, usdPerImage: 0.04 } as const;
+export const DNESKAI_FAL_ILLUSTRATION_URL = `https://fal.run/${DNESKAI_FAL_ILLUSTRATION_MODEL.id}`;
+/** The provider an illustration comes from, as its origin URL: fal when its key is set, else Gemini. */
+export const dneskaiIllustrationUrl = (env: Environment = process.env) => falKey(env) ? DNESKAI_FAL_ILLUSTRATION_URL : DNESKAI_ILLUSTRATION_URL;
+
+const FalSchema = z.object({ images: z.array(z.object({ url: z.string() }).loose()).min(1) }).loose();
+const DATA_URI = /^data:image\/(?:png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/;
+
+async function generateFalIllustration(prompt: string, key: string, deps: { fetchImpl?: typeof fetch; signal?: AbortSignal }): Promise<Uint8Array | null> {
+  const model = DNESKAI_FAL_ILLUSTRATION_MODEL;
+  try {
+    const response = await (deps.fetchImpl ?? fetch)(DNESKAI_FAL_ILLUSTRATION_URL, {
+      method: 'POST', redirect: 'error', signal: timeoutSignal(60_000, deps.signal),
+      headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, image_size: { width: model.width, height: model.height }, num_images: 1, sync_mode: true }),
+    });
+    if (!response.ok) return null;
+    const parsed = FalSchema.safeParse(await response.json());
+    const data = parsed.success && parsed.data.images[0]!.url.length <= 22_000_000 ? DATA_URI.exec(parsed.data.images[0]!.url)?.[1] : undefined;
+    return data ? new Uint8Array(Buffer.from(data, 'base64')) : null;
+  } catch { return null; }
+}
+
+/** One illustration as image bytes, or null: from fal when its key is set, else from Gemini. */
 export async function generateDneskaiIllustration(prompt: string, env: Environment, deps: { fetchImpl?: typeof fetch; signal?: AbortSignal } = {}): Promise<Uint8Array | null> {
+  const fal = falKey(env);
+  if (fal) return generateFalIllustration(prompt, fal, deps);
   if (!env.GEMINI_API_KEY) return null;
   const model = DNESKAI_ILLUSTRATION_MODEL;
   try {

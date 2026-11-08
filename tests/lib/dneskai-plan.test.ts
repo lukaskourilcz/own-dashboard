@@ -1,18 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
-import { dneskaiDeckLacksPhoto, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
+import { dneskaiDeckLacksPhoto, dneskaiNewsPlacement, dneskaiPlanAction, dneskaiSeriesOutOfDate, dneskaiPlanEmptySlots, dneskaiPlanEnabled, dneskaiPlanSlotAt, type DneskaiPlanHead, type DneskaiPlanRow } from '@/lib/marketing/dneskai-plan';
 import { deck } from './marketing-dneskai-revision-fixture';
+import { dneskaiEmphasisFor } from '@/lib/marketing/dneskai-palette';
 
 /** The plan step's decisions (owner decision, 7 November 2026), one slot at a time. Synthetic values only. */
 const now = new Date('2026-11-07T14:00:00Z'); // 15:00 in Prague
 const slot = (patch: Partial<DneskaiPlanRow> = {}): DneskaiPlanRow => ({ id: '11111111-1111-4111-8111-111111111111', user_id: 'u', project_id: 'p', date: '2026-11-08', local_time: '08:00', instagram: true, threads: true,
   kind: 'news', revision_id: '22222222-2222-4222-8222-222222222222', topic_id: null, head_revision_id: null, threads_revision_id: null, written_revision_id: null, threads_base_revision_id: null, status: 'planned', code: null, ...patch });
-const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => parseContentRevision({ schemaVersion: 'marketing-content/2', brand: 'dneskai', title: 'Titulek', caption: 'Text.', format: 'carousel',
+// Every deck carries the key-word colour of its time unless a test sets one (owner request, 8 November 2026).
+const withEmphasis = (value: ContentRevision): ContentRevision => value.deck && !value.deck.emphasis ? { ...value, deck: { ...value.deck, emphasis: dneskaiEmphasisFor(value.scheduledAt) } } : value;
+const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => withEmphasis(parseContentRevision({ schemaVersion: 'marketing-content/2', brand: 'dneskai', title: 'Titulek', caption: 'Text.', format: 'carousel',
   sources: [{ sourceId: 'a'.repeat(64), sourceRevision: 'b'.repeat(64), contentHash: 'c'.repeat(64) }], knowledgeIds: [],
   assets: [1, 2, 3].map((n) => ({ url: `https://assets.example.invalid/${n}.jpg`, sha256: String(n).repeat(64), mimeType: 'image/jpeg', width: 1080, height: 1350, alt: `Slide ${n}` })),
   account: { id: '17841400000000001', platform: 'instagram', handle: 'dneskai' }, scheduledAt: dneskaiPlanSlotAt(slot()), timeZone: 'Europe/Prague',
-  templateVersion: 'qa/1', promptVersion: 'qa/1', model: 'none', traceId: null, deck: { ...deck(), kit: 'spotlight' }, ...patch } as never);
+  templateVersion: 'qa/1', promptVersion: 'qa/1', model: 'none', traceId: null, deck: { ...deck(), kit: 'spotlight' }, ...patch } as never));
 const head = (patch: Partial<DneskaiPlanHead> = {}, content: Partial<ContentRevision> = {}): DneskaiPlanHead => ({ id: '33333333-3333-4333-8333-333333333333', status: 'review', ready: true, content_hash: 'h', revision: revision(content), render_report: null, ...patch });
 
 describe('dneskaiPlanAction', () => {
@@ -29,12 +32,43 @@ describe('dneskaiPlanAction', () => {
     expect(dneskaiPlanAction(slot(), null, null, true, now)).toMatchObject({ kind: 'wait', status: 'failed', code: 'plan-post-missing' });
   });
 
+  it('puts the series heading on a series post before approving it, and renumbers an approved one while there is time (8 November 2026)', () => {
+    const heading = 'Slovník AI #2';
+    const fresh = revision();
+    expect(fresh.deck!.slides[0]!.type).toBe('cover-photo');
+    expect(dneskaiSeriesOutOfDate(fresh, heading)).toBe(true);
+    const numbered = { caption: `${heading}\nText.`, deck: { ...fresh.deck!, slides: [{ ...fresh.deck!.slides[0]!, series: heading }, ...fresh.deck!.slides.slice(1)] } };
+    expect(dneskaiSeriesOutOfDate(numbered as never, heading)).toBe(false);
+    expect(dneskaiSeriesOutOfDate(numbered as never, 'Slovník AI #3')).toBe(true);
+    expect(dneskaiPlanAction(slot(), head(), null, true, now, null, heading)).toEqual({ kind: 'series', status: 'ready' });
+    expect(dneskaiPlanAction(slot(), head({}, numbered as never), null, true, now, null, heading)).toEqual({ kind: 'approve', status: 'approved' });
+    expect(dneskaiPlanAction(slot(), head(), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
+    expect(dneskaiPlanAction(slot(), head({ status: 'approved' }, numbered as never), null, true, now, null, 'Slovník AI #1')).toEqual({ kind: 'series', status: 'ready' });
+    // Under half an hour before its slot an approved post goes out as it is.
+    const late = new Date(Date.parse(dneskaiPlanSlotAt(slot())) - 20 * 60_000);
+    expect(dneskaiPlanAction(slot(), head({ status: 'approved' }, numbered as never), null, true, late, null, 'Slovník AI #1').kind).not.toBe('series');
+  });
+
   it('moves an older-kit post to Spotlight, then to the slot time, then approves it', () => {
     const { deck: _deck, ...rest } = revision(); void _deck;
     expect(dneskaiPlanAction(slot(), head({}, { deck: { ...deck() } }), null, true, now).kind).toBe('spotlight');
     expect(dneskaiPlanAction(slot(), head({}, { scheduledAt: '2026-10-31T07:00:00.000Z' }), null, true, now).kind).toBe('move');
     expect(dneskaiPlanAction(slot(), head(), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
     expect(rest.title).toBe('Titulek');
+  });
+
+  it('redraws a post whose key words are not in the colour of its slot (8 November 2026)', () => {
+    const other = dneskaiEmphasisFor('2026-11-08T08:00:00.000Z');
+    expect(other).not.toBe(dneskaiEmphasisFor(dneskaiPlanSlotAt(slot())));
+    expect(dneskaiPlanAction(slot(), head({}, { deck: { ...deck(), kit: 'plakat', emphasis: other } }), null, true, now)).toEqual({ kind: 'move', status: 'ready' });
+  });
+
+  it('keeps a Plakát post in its kit instead of redrawing it in Spotlight', () => {
+    expect(dneskaiPlanAction(slot(), head({}, { deck: { ...deck(), kit: 'plakat' } }), null, true, now)).toEqual({ kind: 'approve', status: 'approved' });
+  });
+
+  it('redraws a Video-first post in a rotating style (owner, 8 November 2026: two styles only)', () => {
+    expect(dneskaiPlanAction(slot(), head({}, { deck: { ...deck(), kit: 'videofirst' } }), null, true, now).kind).toBe('spotlight');
   });
 
   it('keeps the kit and time of a revision the owner saved in the Design Lab', () => {
@@ -122,6 +156,9 @@ describe('the night\'s news in the plan (7 November 2026)', () => {
       { topicId: 'b', date: '2026-11-20', time: '20:00', instagram: false },
     ]);
     const morning = new Date('2026-11-20T06:00:00Z'); // 07:00 in Prague: 08:00 is too close
-    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-20', rank: 1 }], [], morning)[0]).toMatchObject({ time: '17:00' });
+    // Friday 17:00 is a series slot from 16 November 2026, so the news takes Threads at 20:00.
+    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-20', rank: 1 }], [], morning)[0]).toMatchObject({ time: '20:00' });
+    // Sunday 17:00 stays with the news.
+    expect(dneskaiNewsPlacement([{ id: 'a', date: '2026-11-22', rank: 1 }], [], new Date('2026-11-22T06:00:00Z'))[0]).toMatchObject({ time: '17:00' });
   });
 });

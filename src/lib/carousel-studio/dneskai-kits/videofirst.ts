@@ -49,13 +49,21 @@ const line = (frame: Frame, options: Parameters<typeof body>[1]): CarouselLayerI
 const label = (frame: Frame): CarouselLayerInput =>
   text("kicker", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 800, minFontSize: 24, maxFontSize: 24, maxChars: 28, maxLines: 1, uppercase: true, tracking: 0.14, align: "middle" });
 
+/**
+ * A series post's label and running number above the cover headline ("Slovník AI #3", owner decision, 8 November
+ * 2026), in the kit's label face. Only series posts set it. Its frame waits at the foot, below every text the fade
+ * or veil is checked against, so a cover without it renders exactly as before; the flow lifts it above the headline.
+ */
+const seriesLine = (frame: Frame): CarouselLayerInput =>
+  text("series", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 800, minFontSize: 24, maxFontSize: 24, maxChars: 48, maxLines: 1, uppercase: true, tracking: 0.1, align: "middle" });
+
 const coverPhoto = template({
   id: "dneskai-videofirst-cover-photo",
   name: "DNESKAi video-first · cover photo",
   description: "A colour photograph to every edge under an even dark veil and one big caption in capitals in the middle, key words in light blue.",
   backgroundToken: "background",
   version: FLOWED,
-  layers: [photo("image-1", 0, W, H), logo, caption(box(LEFT, 330, MEASURE, 640), { minFontSize: 72, maxFontSize: 120, maxChars: 110, maxLines: 5 })]
+  layers: [photo("image-1", 0, W, H), logo, caption(box(LEFT, 330, MEASURE, 640), { minFontSize: 72, maxFontSize: 120, maxChars: 110, maxLines: 5 }), seriesLine(box(LEFT, H - 140, MEASURE, 40))]
 });
 
 const figure = template({
@@ -102,11 +110,12 @@ const statement = template({
   description: "Short words in big capitals on blue, key words in ink, with a quieter line under them; on ink in the INK variant.",
   backgroundToken: "accent",
   version: FLOWED,
-  variants: [{ id: "INK", backgroundToken: "background" }],
+  // On the light blue ground (#6ec1ff since 8 November 2026) the words are ink; the INK variant draws them white.
+  variants: [{ id: "INK", backgroundToken: "background", inkToken: "foreground" }],
   layers: [
     logo,
-    caption(box(LEFT, 240, MEASURE, 620), { minFontSize: 72, maxFontSize: 140, maxChars: 170, maxLines: 7, emphasisColorToken: "background" }),
-    line(box(LEFT, 880, MEASURE, 300), { minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 7 })
+    caption(box(LEFT, 240, MEASURE, 620), { colorToken: "background", minFontSize: 72, maxFontSize: 140, maxChars: 170, maxLines: 7, emphasisColorToken: "background" }),
+    line(box(LEFT, 880, MEASURE, 300), { colorToken: "background", minFontSize: 30, maxFontSize: 36, maxChars: 240, maxLines: 7 })
   ]
 });
 
@@ -170,7 +179,7 @@ const SOURCES = Array.from({ length: DNESKAI_MAX_THUMBNAILS + 1 }, (_, count) =>
 const SPLIT: Item[] = [["kicker", 0], ["headline", "labelToText"], ["body", "headlineToBody"]];
 
 const TEMPLATES: DneskaiKitTemplate[] = [
-  { role: "cover-photo", template: coverPhoto, flow: centre(["headline", 0]) },
+  { role: "cover-photo", template: coverPhoto, flow: centre(["series", 0], ["headline", "headlineToNote"]) },
   { role: "figure", template: figure, flow: centre(["headline", 0], ["body", "headlineToBody"]) },
   { role: "split", template: split, flow: centre(...SPLIT) },
   { role: "split-pair", template: splitPair, flow: centre(...SPLIT) },
