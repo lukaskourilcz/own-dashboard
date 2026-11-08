@@ -65,10 +65,20 @@ export function marketingProviderConfiguration(env: Environment = process.env) {
 }
 /** The DNESKAi daily generation ceiling in USD (#116). */
 export const DEFAULT_DNESKAI_DAILY_GENERATION_USD = 1;
-/** `MARKETING_DNESKAI_DAILY_GENERATION_USD`, default 1.00. A malformed value refuses every paid DNESKAi call. */
-export function dneskaiDailyGenerationCeiling(env: Environment = process.env): number {
+/**
+ * `MARKETING_DNESKAI_DAILY_GENERATION_USD`, default 1.00. A malformed value refuses every paid DNESKAi call.
+ * `MARKETING_DNESKAI_DAILY_GENERATION_USD_UNTIL` (an ISO instant) makes a raised value temporary: from that instant
+ * the default holds again whatever the value says (owner decision, 8 November 2026: $5 until 12 November, then $1).
+ */
+export function dneskaiDailyGenerationCeiling(env: Environment = process.env, now: Date = new Date()): number {
   const raw = env.MARKETING_DNESKAI_DAILY_GENERATION_USD;
   if (unset(raw)) return DEFAULT_DNESKAI_DAILY_GENERATION_USD;
+  const until = env.MARKETING_DNESKAI_DAILY_GENERATION_USD_UNTIL;
+  if (!unset(until)) {
+    const end = Date.parse(until!.trim());
+    // A malformed or passed expiry means the raised value no longer counts.
+    if (!Number.isFinite(end) || now.getTime() >= end) return DEFAULT_DNESKAI_DAILY_GENERATION_USD;
+  }
   const value = /^\d+(?:\.\d+)?$/.test(raw!.trim()) ? Number(raw!.trim()) : Number.NaN;
   if (!Number.isFinite(value) || value <= 0 || value > 50) throw new MarketingGenerationError("dneskai-daily-generation-budget-invalid");
   return value;
