@@ -72,8 +72,26 @@ deklarované nebo skutečně menší než 300 px. Logo nebo ikona se poznají po
 (`openai-logo-GettyImages-1234.jpg`), se stáhne.
 
 Když stránka vrátí přechodnou chybu (timeout, 429, 5xx), zkusí se v dalším běhu,
-celkem nejvýše třikrát. Potom, nebo hned při trvalé chybě (403, 404), zůstane jen
-obrázek z feedu. Pořadí a seznam obrázků se po prvním úspěšném načtení zafixují
+celkem nejvýše třikrát. Potom, nebo hned při trvalé chybě (403, 404), se stránka
+přečte přes Apify (viz níže); když ani to nejde, zůstane jen obrázek z feedu.
+
+### Další zdroje fotek (rozhodnutí vlastníka 8. listopadu 2026)
+
+Každý post DNESKAi musí mít fotku. Vlastník 8. listopadu 2026 zrušil pravidlo z
+reportu 20. října („Nikdy tiše nenahradit generovanou ilustrací“, `docs/reports/dneskai-instagram-2026-10-20.md`
+§5): když vydavatel nedá použitelný obrázek, sáhne kolektor po dalších zdrojích. Kód je v
+`dneskai-media-sources.ts`, každý zdroj má vlastní přepínač a bez klíče nic nedělá.
+Pořadí, každý krok jen dokud má plán méně než dva obrázky:
+
+| Krok | Zdroj | `origin_kind` | Credit (jen v databázi) | Přepínač a klíč | Cena |
+|---|---|---|---|---|---|
+| 1 | Stránka článku přes Apify Cheerio Scraper (build 3.0.24, Apify Proxy, 60 s, 512 MB), stejná pravidla hostů vydavatele | `og-image`, `article-figure` | jako u vydavatele | `MARKETING_DNESKAI_MEDIA_APIFY_ENABLED`, `APIFY_TOKEN` | asi $0.003 za stránku (compute units) |
+| 2 | Newsroom firmy, kterou článek jmenuje (`DNESKAI_PRESS_KITS`: OpenAI, Anthropic, Google/DeepMind, Meta, Microsoft, Nvidia, Apple, xAI, Mistral), jen hosty té firmy | `press-kit` | „Foto: <firma>“ | `MARKETING_DNESKAI_PRESS_KIT_ENABLED` | zdarma |
+| 3 | Licencovaná fotobanka Pexels, pak Unsplash, dotaz z tématu; jen když kroky 1–2 nedaly nic | `stock` | „Foto: <autor> / Pexels“ | `MARKETING_DNESKAI_STOCK_ENABLED`, `PEXELS_API_KEY` nebo `UNSPLASH_ACCESS_KEY` | zdarma |
+| 4 | Jedna ilustrace z Gemini 3.1 Flash Image (2K, 1:1), redakční, ne fotorealistická: žádní skuteční lidé, loga ani text. Jen když nic jiného nebylo, nejvýše `DNESKAI_GENERATED_PER_DAY` (výchozí 6) za 24 h | `generated` | „Ilustrace: AI“ | `MARKETING_DNESKAI_GENERATED_ENABLED`, `GEMINI_API_KEY` | $0.101 za obrázek; nese SynthID |
+
+Credit se podle pravidel pro obsah postu nikdy neukáže na slidu ani v popisku. Obrázky
+z kroků 2–4 mají v plánu pozice od 20, takže se nepletou s pořadím článku. Pořadí a seznam obrázků se po prvním úspěšném načtení zafixují
 (`plan`), takže další běhy pracují se stejnými pozicemi.
 
 Všechny požadavky jdou přes `safeFetch` z `free-feeds/security`: jen HTTPS na portu
