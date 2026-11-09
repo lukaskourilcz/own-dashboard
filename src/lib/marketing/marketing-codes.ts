@@ -39,6 +39,13 @@ type Entry = readonly [Next, string, string];
 const CODES = {
   // Approval (POST /api/marketing/revisions approve) and owner decisions.
   'revision-not-ready': ['edit', 'This version has no finished render yet, so it cannot be approved.', 'Tato verze ještě nemá hotové vykreslení, proto ji nelze schválit.'],
+  'illustrations-disabled': ['wait', 'The illustration library is switched off.', 'Knihovna ilustračních fotek je vypnutá.'],
+  'illustrations-pexels-key-missing': ['wait', 'The illustration library needs the Pexels key.', 'Knihovna ilustračních fotek potřebuje klíč Pexels.'],
+  'illustrations-look-key-missing': ['wait', 'The illustration library needs the Claude key to tag pictures.', 'Knihovna ilustračních fotek potřebuje klíč Claude ke štítkování.'],
+  'illustrations-target-reached': ['wait', 'The illustration library holds its target number of pictures.', 'Knihovna ilustračních fotek má cílový počet fotek.'],
+  'illustrations-daily-cap': ['wait', "The illustration library reached today's tagging budget.", 'Knihovna ilustračních fotek vyčerpala dnešní rozpočet na štítkování.'],
+  'illustrations-topics-full': ['wait', 'Every topic of the illustration library is full.', 'Všechna témata knihovny ilustračních fotek jsou plná.'],
+  'illustrations-pexels-unavailable': ['wait', 'Pexels did not answer; the library tries again on the next tick.', 'Pexels neodpověděl; knihovna to zkusí v dalším ticku.'],
   'render-blocked': ['edit', 'The render found a problem that blocks approval.', 'Vykreslení našlo problém, který brání schválení.'],
   'render-retry-later': ['wait', 'The slides failed to render; the plan tries again in half an hour.', 'Slidy se nepodařilo vykreslit; plán to zkusí znovu za půl hodiny.'],
   // devShark concept generation (7 November 2026).
