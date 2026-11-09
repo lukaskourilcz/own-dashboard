@@ -66,10 +66,10 @@ const BLEED_FADE = {
   stops: [
     { at: 0, opacity: 0.45 },
     { at: 0.14, opacity: 0 },
-    { at: 0.4, opacity: 0 },
-    { at: 0.55, opacity: 0.62 },
-    { at: 0.74, opacity: 0.88 },
-    { at: 1, opacity: 0.96 }
+    { at: 0.32, opacity: 0 },
+    { at: 0.46, opacity: 0.58 },
+    { at: 0.6, opacity: 0.86 },
+    { at: 1, opacity: 0.98 }
   ]
 };
 
