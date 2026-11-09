@@ -98,8 +98,11 @@ describe('native DNESKAi free-feed collection', () => {
   await expect(collectNativeDneskaiFeed({ ...source, url: 'https://127.0.0.1/' }, since, { now, signal })).rejects.toThrow('binding');
   await expect(collectNativeDneskaiFeed(source, '2026-10-15T00:00:00Z', { now, signal })).rejects.toThrow('window');
   await expect(collectDneskaiFeed(source, since, { env: { MARKETING_DNESKAI_FEED_PROVIDER: 'unexpected' }, now, signal })).rejects.toThrow('provider-invalid');
-  expect(dneskaiCollectionBlockers({ MARKETING_DNESKAI_FEED_PROVIDER: 'native' })).not.toContain('collection-bridge-unconfigured');
-  expect(dneskaiCollectionBlockers({})).toContain('collection-bridge-unconfigured');
+  // native is the only provider since the Quorum bridge was removed (9 November 2026); an empty env defaults to it
+  // and no longer needs a bridge connection, while any other provider value is still a configuration blocker.
+  expect(dneskaiCollectionBlockers({ MARKETING_DNESKAI_FEED_PROVIDER: 'native' })).not.toContain('collection-feed-provider-invalid');
+  expect(dneskaiCollectionBlockers({})).not.toContain('collection-feed-provider-invalid');
+  expect(dneskaiCollectionBlockers({ MARKETING_DNESKAI_FEED_PROVIDER: 'bridge' })).toContain('collection-feed-provider-invalid');
  });
  it('dispatches explicit native mode without bridge credentials', async () => {
   const controller = new AbortController(); controller.abort();

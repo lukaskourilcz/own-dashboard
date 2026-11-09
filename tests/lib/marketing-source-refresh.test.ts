@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createHmac } from 'node:crypto';
 import { refreshSource, refreshMarketingSources } from '@/lib/marketing/source-refresh';
 import { parseSourcePacket } from '@/lib/marketing/contracts';
 import { contentHash } from '@/lib/marketing/hashes';
@@ -33,31 +32,24 @@ describe('authoritative source refresh', () => {
     const refreshed = await refreshSource(packet, new AbortController().signal, { now, config, fetcher: async () => Response.json({ packets: [retired] }) });
     expect(refreshed.eligible).toBe(false); expect(refreshed.sourceRevision).toBe('retired-version');
   });
-  it('signs DNESKAi raw-body lookups and holds null or unapproved packets', async () => {
-    const fetcher = vi.fn<typeof fetch>(async (_url, options) => {
-      const body = String(options?.body); const headers = new Headers(options?.headers); const timestamp = headers.get('x-marketing-timestamp');
-      expect(JSON.parse(body)).toEqual({ action: 'sources', sourceIds: ['2026-10-12-qa-only'] });
-      expect(headers.get('x-marketing-signature')).toBe(createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex'));
-      return Response.json({ schemaVersion: 'marketing-source-query/1', brand: 'dneskai', sources: [{ sourceId: '2026-10-12-qa-only', status: 'held', packet: null }], noEditionDates: ['2026-10-11'] });
-    });
-    const refreshed = await refreshMarketingSources({ brand: 'dneskai', sourceIds: ['2026-10-12-qa-only'], now, config: { url: 'https://quorum.example.invalid/admin/api/marketing-source', secret }, fetcher });
-    expect(refreshed.packets).toEqual([]); expect(refreshed.held).toHaveLength(1); expect(refreshed.noEditionDates).toEqual(['2026-10-11']);
+  it('holds a non-brief DNESKAi id locally and makes no Quorum request now that the bridge is gone', async () => {
+    // DNESKAi sources are the owner's own briefs (#115); Quorum's signed source bridge was removed on 9 November 2026.
+    // A sourceId that is not a known brief is held rather than fetched, and nothing leaves the process.
+    const fetcher = vi.fn<typeof fetch>();
+    const refreshed = await refreshMarketingSources({ brand: 'dneskai', sourceIds: ['2026-10-12-qa-only'], now, fetcher });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(refreshed.packets).toEqual([]); expect(refreshed.held).toEqual([{ sourceId: '2026-10-12-qa-only', reason: 'source-unavailable' }]);
   });
   it('rejects content drift and wrong identities', async () => {
     for (const altered of [{ ...packet, content: { ...content, body: 'changed without hash' } }, { ...packet, sourceId: 'question:other' }]) {
       await expect(refreshSource(packet, new AbortController().signal, { now, config, fetcher: async () => Response.json({ packets: [altered] }) })).rejects.toThrow();
     }
   });
-  it('keeps approved-article lookup independent from native social feed selection', async () => {
-    const url = 'https://quorum.example.invalid/admin/api/marketing-source';
-    const fetcher = vi.fn<typeof fetch>(async (requested, options) => {
-      expect(String(requested)).toBe(url);
-      expect(JSON.parse(String(options?.body))).toEqual({action:'sources',sourceIds:['daily-web-article']});
-      return Response.json({schemaVersion:'marketing-source-query/1',brand:'dneskai',sources:[{sourceId:'daily-web-article',status:'held',packet:null}],noEditionDates:[]});
-    });
+  it('holds a daily web-article DNESKAi id without reaching for a Quorum source URL', async () => {
+    const fetcher = vi.fn<typeof fetch>();
     const result = await refreshMarketingSources({brand:'dneskai',sourceIds:['daily-web-article'],now,fetcher,
-      env:{MARKETING_DNESKAI_FEED_PROVIDER:'native',MARKETING_DNESKAI_SOURCE_URL:url,MARKETING_DNESKAI_SOURCE_SECRET:secret}});
-    expect(fetcher).toHaveBeenCalledTimes(1);expect(result.packets).toEqual([]);expect(result.held).toHaveLength(1);
+      env:{MARKETING_DNESKAI_FEED_PROVIDER:'native'}});
+    expect(fetcher).not.toHaveBeenCalled();expect(result.packets).toEqual([]);expect(result.held).toEqual([{sourceId:'daily-web-article',reason:'source-unavailable'}]);
   });
 
 });

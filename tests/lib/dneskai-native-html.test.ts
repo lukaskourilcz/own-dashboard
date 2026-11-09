@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { collectNativeDneskaiFeed, dneskaiNativeSourceConfig } from '@/lib/marketing/dneskai-native-feed';
 import { DNESKAI_SOURCES } from '@/lib/marketing/dneskai-registry';
 import { DneskaiFeedResponseSchema } from '@/lib/marketing/dneskai-contracts';
-import { collectDneskaiFeed } from '@/lib/marketing/dneskai-providers';
 import { ARTICLE_ENRICHMENT_LIMIT, articleMetadata, parseListingDate, projectHtml, publisherArticleUrl } from '@/lib/marketing/free-feeds/sources/adapters/html';
 import { parseRssFeed } from '@/lib/marketing/free-feeds/sources/adapters/rss';
 vi.mock('server-only', () => ({}));
@@ -163,14 +162,6 @@ describe('free image references in the feed contract', () => {
   expect(DneskaiFeedResponseSchema.safeParse(base).success).toBe(true);
   expect(DneskaiFeedResponseSchema.safeParse({ ...base, sources: [{ ...base.sources[0], items: [{ ...base.sources[0].items[0], imageUrl: 'https://example.test/i.jpg', dateEstimated: true }] }] }).success).toBe(true);
   expect(DneskaiFeedResponseSchema.safeParse({ ...base, sources: [{ ...base.sources[0], items: [{ ...base.sources[0].items[0], dateEstimated: false }] }] }).success).toBe(false);
- });
- it('turns a safe image reference into candidate media and drops an unsafe one without failing', async () => {
-  const env = { MARKETING_DNESKAI_SOURCE_URL: 'https://quorum.example/source', MARKETING_DNESKAI_SOURCE_SECRET: 's'.repeat(32) };
-  const item = (id: string, imageUrl?: string) => ({ externalId: id, title: `Offline item ${id}`, url: `https://example.test/${id}`, summary: 'Offline summary', publishedAt: '2026-10-20T08:00:00Z', fetchedAt: now.toISOString(), ...(imageUrl ? { imageUrl } : {}) });
-  const fetcher = vi.fn<typeof fetch>(async () => Response.json({ schemaVersion: 'dneskai-feed/1', sources: [{ sourceId: 'openai-blog', status: 'ok', errorCode: null, items: [item('a', 'https://example.test/a.jpg'), item('b', 'http://example.test/b.jpg'), item('c')] }] }));
-  const result = await collectDneskaiFeed(source('openai-blog'), since, { env, fetcher, signal, now });
-  expect(result.items.map(row => row.mediaUrls)).toEqual([['https://example.test/a.jpg'], [], []]);
-  expect(fetcher).toHaveBeenCalledTimes(1);
  });
  it('treats a full API page that is entirely older than the window as a covered window', async () => {
   const fetcher = vi.fn<typeof fetch>(async () => Response.json({ has_more: true, items: Array.from({ length: 11 }, (_, i) => ({ question_id: i, title: `Offline older question ${i}`, link: `https://example.test/q${i}`, creation_date: 1760000000 - i })) }));

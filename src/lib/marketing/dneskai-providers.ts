@@ -1,10 +1,8 @@
 import 'server-only';
 import { z } from 'zod';
 import { collectNativeDneskaiFeed } from './dneskai-native-feed';
-import { DneskaiFeedRequestSchema,DneskaiFeedResponseSchema,type DneskaiCandidate,type DneskaiSource } from './dneskai-contracts';
-import { signAutomationBody } from './automation-auth';
+import { DneskaiFeedResponseSchema,type DneskaiCandidate,type DneskaiSource } from './dneskai-contracts';
 import { contentHash } from './hashes';
-import { previewPilotRetired } from './preview-pilot';
 export class DneskaiProviderError extends Error {constructor(readonly code:string){super(code);}}
 export type ProviderEnvironment=Record<string,string|undefined>;
 export const JEV_MODEL='jev-1.13.0';
@@ -35,21 +33,11 @@ export async function jsonRequest(url:string,init:RequestInit,fetcher:typeof fet
 }
 export async function collectDneskaiFeed(source:DneskaiSource,since:string,options:{env?:ProviderEnvironment;fetcher?:typeof fetch;signal:AbortSignal;now?:Date}){
  const env=options.env??process.env;
- if(env.MARKETING_DNESKAI_FEED_PROVIDER && !['bridge','native'].includes(env.MARKETING_DNESKAI_FEED_PROVIDER))throw new DneskaiProviderError('collection-feed-provider-invalid');
- let response:z.infer<typeof FeedResponseForUrlValidation>;
- if(env.MARKETING_DNESKAI_FEED_PROVIDER==='native'){response=await collectNativeDneskaiFeed(source,since,options);}
- else {
- const base=env.MARKETING_DNESKAI_SOURCE_URL,secret=env.MARKETING_DNESKAI_SOURCE_SECRET;if(!base||!secret||secret.length<32)throw new DneskaiProviderError('collection-bridge-unconfigured');
- const origin=new URL(safeUrl(base)).origin;const request=DneskaiFeedRequestSchema.parse({action:'collect',sourceIds:[source.id],since,maxItems:source.maxItems});const body=JSON.stringify(request);
- const init={method:'POST',headers:signAutomationBody(body,secret,options.now?.getTime()),body};
- // A retired Preview share outside Preview is ignored, so ordinary collection keeps the direct signed bridge. Inside
- // Preview a configured share needed the retired collection pilot's scope, so collection refuses it.
- const previewConfigured=(env.MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN!==undefined||env.MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN!==undefined)&&!previewPilotRetired('source-preview',env);
- if(previewConfigured)throw new DneskaiProviderError('collection-preview-scope-required');
- const fetcher=options.fetcher??fetch;
- response=FeedResponseForUrlValidation.parse(await jsonRequest(`${origin}/admin/api/marketing-collection`,init,fetcher,options.signal));
- }
- if(response.sources.length!==1||response.sources[0].sourceId!==source.id||response.sources[0].items.length>source.maxItems)throw new DneskaiProviderError('collection-bridge-binding-invalid');
+ // The 32 free feeds are fetched in this app (`native`); Quorum's signed collection bridge was removed on
+ // 9 November 2026 (Quorum is not needed). Any other provider value is still refused rather than silently ignored.
+ if(env.MARKETING_DNESKAI_FEED_PROVIDER && env.MARKETING_DNESKAI_FEED_PROVIDER!=='native')throw new DneskaiProviderError('collection-feed-provider-invalid');
+ const response=FeedResponseForUrlValidation.parse(await collectNativeDneskaiFeed(source,since,options));
+ if(response.sources.length!==1||response.sources[0].sourceId!==source.id||response.sources[0].items.length>source.maxItems)throw new DneskaiProviderError('collection-feed-binding-invalid');
  const result=response.sources[0],items:DneskaiCandidate[]=[];let invalidUrls=0;
  // The stage keeps only the collection code; the provider's own machine code goes to the function log.
  if(result.status!=='ok')console.warn(JSON.stringify({event:'dneskai-feed-incomplete',sourceId:source.id,status:result.status,code:/^[a-z0-9,-]{1,200}$/.test(result.errorCode??'')?result.errorCode:null}));

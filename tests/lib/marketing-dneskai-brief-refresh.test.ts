@@ -52,15 +52,12 @@ describe('refreshSource for a DNESKAi brief (#115)', () => {
     expect(bridge).not.toHaveBeenCalled();
   });
 
-  it('sends only the remaining article ids to the bridge', async () => {
-    const secret = 'synthetic-source-secret-only-at-least-32';
-    const fetcher = vi.fn<typeof fetch>(async (_url, init) => {
-      expect(JSON.parse(String(init?.body))).toEqual({ action: 'sources', sourceIds: ['article:qa-only'] });
-      return Response.json({ schemaVersion: 'marketing-source-query/1', brand: 'dneskai', sources: [] });
-    });
-    const result = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId, 'article:qa-only'], previousPackets: [packet], owner, db: db(row()) as never, now, fetcher,
-      config: { url: 'https://quorum.example.invalid/admin/api/marketing-source', secret } });
-    expect(fetcher).toHaveBeenCalledTimes(1);
+  it('refreshes the brief locally and holds a non-brief id without any bridge request', async () => {
+    // The brief is re-read from the owner's store; the Quorum source bridge was removed on 9 November 2026, so the
+    // leftover 'article:qa-only' id is held rather than fetched and nothing leaves the process.
+    const fetcher = vi.fn<typeof fetch>();
+    const result = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId, 'article:qa-only'], previousPackets: [packet], owner, db: db(row()) as never, now, fetcher });
+    expect(fetcher).not.toHaveBeenCalled();
     expect(result.packets.map((item) => item.sourceId)).toEqual([packet.sourceId]);
     expect(result.held).toEqual([{ sourceId: 'article:qa-only', reason: 'source-unavailable' }]);
   });
