@@ -22,6 +22,7 @@ import { CountedField } from '../counted-field';
 import { DneskaiCodeText } from '../code-text';
 import { DNESKAI_TONE_TINTS, DneskaiStateChip, dneskaiStateText, dneskaiStateTint } from '../state-chip';
 import { DneskaiKitTiles } from './kit-tiles';
+import { DneskaiQueueScroll } from './queue-scroll';
 import { DneskaiEngagementEditor } from './engagement-editor';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
@@ -64,6 +65,16 @@ export function DneskaiLabTab(props: Props) {
     if (dirty && post !== active?.post.id) { setPending(post); return; }
     setChosen({ post, slide: 0 }); remember(post, 0);
   };
+  // The chosen card stays in view inside its day's scroll region (J/K, deep links); only that region scrolls.
+  const activeId = active?.post.id;
+  useEffect(() => {
+    const card = activeId ? document.querySelector<HTMLElement>('[data-testid="dneskai-lab-queue"] [aria-current="true"]') : null;
+    const region = card?.closest<HTMLElement>('[data-testid="dneskai-lab-queue-scroll"]');
+    if (!card || !region) return;
+    const top = card.getBoundingClientRect().top - region.getBoundingClientRect().top + region.scrollTop, bottom = top + card.offsetHeight;
+    if (top < region.scrollTop) region.scrollTop = top;
+    else if (bottom > region.scrollTop + region.clientHeight) region.scrollTop = bottom - region.clientHeight;
+  }, [activeId]);
   useEffect(() => {
     const onPop = () => { if (!dirty) setChosen(selection()); };
     window.addEventListener('popstate', onPop);
@@ -88,6 +99,8 @@ export function DneskaiLabTab(props: Props) {
     <div className="grid min-w-0 gap-4 xl:grid-cols-[13rem_minmax(0,1fr)]">
       <nav onKeyDown={(event) => {
         if (event.altKey || event.ctrlKey || event.metaKey || !active) return;
+        // The focused scroll region of a day scrolls with the arrow keys; J and K still move between posts.
+        if ((event.target as HTMLElement).dataset.testid === 'dneskai-lab-queue-scroll' && event.key.startsWith('Arrow')) return;
         const key = event.key.toLowerCase();
         if (!['j','k','arrowdown','arrowup'].includes(key)) return;
         event.preventDefault();
@@ -96,13 +109,14 @@ export function DneskaiLabTab(props: Props) {
       }} aria-label={t.queue.label} className="min-w-0 space-y-4" data-testid="dneskai-lab-queue">
         {days.map((day, index) => <section key={day.date} className="space-y-2">
           <h3 className="text-xs font-semibold">{index === 0 ? t.queue.today : t.queue.tomorrow}</h3>
-          <ol className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
+          <DneskaiQueueScroll label={t.queue.scrollLabel(index === 0 ? t.queue.today : t.queue.tomorrow)}>
+          <ol className="space-y-1">
             {day.posts.map((item) => {
               // #173: the card's tint carries the state; its words stay in the accessible name and the tooltip.
               const state = dneskaiStateText(item.state, props.lang);
               const note = dneskaiMissedSlot(item) ? t.queue.moved : item.deadline.passed ? t.queue.passed : t.queue.timeLeft(item.deadline.minutesLeft);
               const current = active?.post.id === item.post.id;
-              return <li key={item.post.id} className="w-56 shrink-0 xl:w-auto"><Tooltip content={state} side="right"><button type="button" onClick={() => choose(item.post.id)} aria-current={current ? 'true' : undefined}
+              return <li key={item.post.id}><Tooltip content={state} side="right"><button type="button" onClick={() => choose(item.post.id)} aria-current={current ? 'true' : undefined}
                 aria-label={`${item.deadline.time} ${item.post.title}, ${note}, ${state}`} data-state-tone={item.state.state}
                 className={cn('min-h-11 w-full rounded-md border p-2 text-left focus-ring', dneskaiStateTint(item.state), current ? 'border-primary ring-1 ring-primary' : 'hover:border-border-strong')} data-testid="dneskai-lab-queue-post">
                 <span className="block text-xs tabular">{item.deadline.time}</span>
@@ -112,6 +126,7 @@ export function DneskaiLabTab(props: Props) {
             })}
           </ol>
           {day.jobs.map((item) => <p key={item.job.id} className={cn('rounded-md border p-2 text-xs text-foreground-muted', DNESKAI_TONE_TINTS.neutral)}>{item.deadline?.time} · {t.queue.preparing}</p>)}
+          </DneskaiQueueScroll>
           {day.waiting.length > 0 && <GenerateNow {...props} waiting={day.waiting} />}
           {!day.posts.length && !day.jobs.length && !day.waiting.length && <p className="text-xs text-foreground-muted">{t.queue.empty}</p>}
           <Button type="button" variant="outline" size="sm" className="w-full" disabled={props.guest || dirty || !day.approvable.length} onClick={() => setBatch(structuredClone(day))}>{t.queue.approveDay(day.approvable.length)}</Button>

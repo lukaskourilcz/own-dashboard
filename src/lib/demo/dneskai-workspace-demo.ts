@@ -19,7 +19,9 @@ import { dneskaiNextFreeSlot, dneskaiTakenSlots } from '@/lib/marketing/dneskai-
  * storage or publication endpoint is used; all post changes stay in memory.
  */
 let store: DneskaiWorkspaceRead | null = null;
-const read = () => (store ??= createDneskaiWorkspaceFixture(new Date()));
+/** `/dev-preview?labFixture=busy` fills tomorrow past five posts (see `createDneskaiWorkspaceFixture`). */
+const busy = () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('labFixture') === 'busy';
+const read = () => (store ??= createDneskaiWorkspaceFixture(new Date(), { busy: busy() }));
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const clone = <T>(value: T): T => structuredClone(value);
 
