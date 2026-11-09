@@ -42,6 +42,8 @@ export const qk = {
   importantDates: ["importantDates"] as const,
   backlog: ["backlog"] as const,
   publishingCalendar: ["publishing-calendar"] as const,
+  /** A calendar version drawn on demand by the Design Lab's own preview route (story, unplanned devShark concept). */
+  publishingCalendarLive: ["publishing-calendar-live"] as const,
   invoices: ["invoices"] as const,
   invoiceItems: ["invoiceItems"] as const,
   invoiceSettings: ["invoiceSettings"] as const,
