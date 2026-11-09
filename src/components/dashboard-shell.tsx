@@ -28,6 +28,7 @@ import { AiPanel } from "@/components/panels/ai-panel";
 import { MarketingPanel } from "@/components/panels/marketing-panel";
 import { WorkflowsPanel } from "@/components/panels/workflows-panel";
 import { IgTipsPanel } from "@/components/panels/ig-tips-panel";
+import { IgCollectionPanel } from "@/components/panels/ig-collection-panel";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { RecurringPlans } from "@/components/overview/recurring-plans";
@@ -411,6 +412,7 @@ export function DashboardShell(props: Props) {
           {tab === "marketing" && <MarketingPanel isPreview={props.isPreview} onOpenKnowledge={() => setTab("ig-tips")} />}
           {tab === "workflows" && <WorkflowsPanel onNavigate={setTab} />}
           {tab === "ig-tips" && <IgTipsPanel aiLinks={aiLinks} setAiLinks={setAiLinks} aiLinksStatus={aiLinksStatus} projectLinks={projectLinks} setProjectLinks={setProjectLinks} projects={projects} previewMarketingCalendars={props.previewMarketingCalendars} initialQuery={tipQuery} onDeepLinkHandled={clearTipQuery} />}
+          {tab === "ig-collection" && <IgCollectionPanel isPreview={props.isPreview} />}
           {tab === "references" && <ShortcutsPanel shortcuts={shortcuts} setShortcuts={setShortcuts} referenceRows={referenceRows} setReferenceRows={setReferenceRows} />}
           {tab === "settings" && <SettingsPanel projects={projects} setProjects={setProjects} projectsStatus={projectsStatus} syncPreferences={!props.isPreview} preferencesSyncAvailable={props.initialPreferences.sync_available} />}
         </div>

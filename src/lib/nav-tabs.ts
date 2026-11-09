@@ -29,6 +29,7 @@ export const NAV_TABS = [
   "tools",
   "links",
   "ig-tips",
+  "ig-collection",
   "references",
   "settings",
 ] as const;

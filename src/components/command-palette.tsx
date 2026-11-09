@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  Bookmark,
   BriefcaseBusiness,
   CalendarClock,
   CalendarDays,
@@ -110,6 +111,7 @@ export function CommandPalette({
       { id: "go-tools", label: s.tools, group: "go", icon: Wrench, keywords: "tools services stack nástroje g k", run: go("tools") },
       { id: "go-links", label: s.links, group: "go", icon: FileText, keywords: "links tools sites odkazy", run: go("links") },
       { id: "go-ig-tips", label: s["ig-tips"], group: "go", icon: Lightbulb, keywords: "ig tips instagram reels ideas advice tipy nápady rady", run: go("ig-tips") },
+      { id: "go-ig-collection", label: s["ig-collection"], group: "go", icon: Bookmark, keywords: "ig kolekce instagram saved uložené bookmark collection posts reels", run: go("ig-collection") },
       { id: "go-settings", label: s.settings, group: "go", icon: Settings, keywords: "settings preferences nastavení language currency", run: go("settings") },
       {
         id: "act-theme",
