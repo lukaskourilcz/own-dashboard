@@ -154,8 +154,8 @@ export async function illustrateDneskaiPost(db: Database, owner: string, input: 
   let replaced = 0;
   for (const index of needing) {
     const pick = ranked.shift();
-    const position = freePositions.shift();
-    if (!pick || position === undefined || signal.aborted) break;
+    const position = freePositions.shift() ?? 49;
+    if (!pick || signal.aborted) break;
     const download = await db.storage.from(DNESKAI_ILLUSTRATION_BUCKET).download(`${pick.sha256}.jpg`);
     if (download.error || !download.data) continue;
     const bytes = new Uint8Array(await download.data.arrayBuffer());
@@ -190,8 +190,8 @@ export async function setDneskaiCoverFromLibrary(db: Database, owner: string, in
   const briefRow = briefs?.data?.[0] as { id: string; brief: unknown; lead_candidate_id: string } | undefined;
   const brief = briefRow ? DneskaiBriefSchema.safeParse(briefRow.brief) : null;
   if (!briefRow || !brief?.success) return { code: 'illustrate-brief-missing', deck: null };
-  const position = Array.from({ length: 10 }, (_, index) => 40 + index).find((value) => !brief.data.media.some((item) => item.position === value));
-  if (position === undefined) return { code: 'illustrate-no-fitting-picture', deck: null };
+  // A brief whose added places (40 to 49) are all taken shares the last one: positions need not be unique in a brief.
+  const position = Array.from({ length: 10 }, (_, index) => 40 + index).find((value) => !brief.data.media.some((item) => item.position === value)) ?? 49;
   const download = await db.storage.from(DNESKAI_ILLUSTRATION_BUCKET).download(`${input.sha256}.jpg`);
   if (download.error || !download.data) return { code: 'illustrate-no-fitting-picture', deck: null };
   const bytes = new Uint8Array(await download.data.arrayBuffer());
