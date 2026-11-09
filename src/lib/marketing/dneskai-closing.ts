@@ -22,8 +22,14 @@ export const DNESKAI_CLOSING_FILE = ["templates", "carousel-studio", "brand-kits
 export const DNESKAI_CLOSING_CARD_SHA256 = "51ef2d195d070d2fca87f795e2d549036fe73be9aa52896e8f544f671dca0998";
 export const DNESKAI_CLOSING_CARD_FILE = ["templates", "carousel-studio", "brand-kits", "caught-up", "dneskai-closing-card.png"] as const;
 export const DNESKAI_CLOSING_CARD_TEMPLATE = { id: "dneskai-closing-card", version: "1.0.0" } as const;
-export const DNESKAI_CLOSING_HEADLINE = "Sleduj [[DNESKAi]]";
-export const DNESKAI_CLOSING_BODY = "pro všechny novinky ze světa AI a technologií. @dneskai";
+export type DneskaiClosingWords = { headline: string; body: string; handle: string };
+export const DNESKAI_CLOSING_DEFAULTS: DneskaiClosingWords = {
+  headline: "Sleduj",
+  body: "pro všechny novinky ze světa AI a technologií.",
+  handle: "@dneskai",
+};
+export const DNESKAI_CLOSING_HEADLINE = `${DNESKAI_CLOSING_DEFAULTS.headline} [[DNESKAi]]`;
+export const DNESKAI_CLOSING_BODY = `${DNESKAI_CLOSING_DEFAULTS.body} ${DNESKAI_CLOSING_DEFAULTS.handle}`;
 
 /** The closing slide, with the owner's words from the Design Lab when given (9 November 2026). */
 export function dneskaiClosingSlide(words?: { headline: string; body: string; handle: string }): DneskaiSlide {

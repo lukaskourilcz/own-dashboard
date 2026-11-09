@@ -4,37 +4,37 @@
     "width": 1080,
     "height": 1350
   },
-  "updatedAt": "2026-11-08",
+  "updatedAt": "2026-11-09",
   "entries": [
     {
       "name": "cover-photo",
       "templateId": "dneskai-cover-photo",
       "version": "1.0.0",
-      "pngHash": "90f2c5f628afd6ad87464c5b17d5679de33608d1f0e3a7f8dc8aa815d8bc70e4"
+      "pngHash": "fc162e775df7ff9cd9314005e440b98446960d322692a54c1a4a74993ccdce0e"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-cover-photo",
       "version": "1.0.0",
-      "pngHash": "d30dad537987ad2ce269087383318ea870253a4c84a68889fe54d1ad2345f8ab"
+      "pngHash": "a9ad299b3c95e4e131d821495a53e8b288958adb0a7c71cc1cb4f987d95836d6"
     },
     {
       "name": "figure",
       "templateId": "dneskai-figure",
       "version": "1.1.0",
-      "pngHash": "7392946b70eac3ec177db05ae1a1ffe79809d77aa73c8e50d610798678eb528b"
+      "pngHash": "7250ac2779e0edb7e767355ca0291a9b4ce7f921d701a8da0366469925ebb1fd"
     },
     {
       "name": "split",
       "templateId": "dneskai-split",
       "version": "1.1.0",
-      "pngHash": "fdd3626552a8fa980a770d77fd688f922f30e4b23f3f3048aa0eca3e4184c0dd"
+      "pngHash": "804fd8f311e4bbae2ecc22378278619bf5ede7b44a51480d34d9133dfea636f9"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-split-pair",
       "version": "1.1.0",
-      "pngHash": "ed770c685f20b71cb7c39c7dc4211ef41363fdbceb8092f60ca088dc29fc7f23"
+      "pngHash": "f80503081a7d3751eeb4d8a844a87f73aceb4b03ab78e661b61f05bff6b7837f"
     },
     {
       "name": "statement",
@@ -52,7 +52,7 @@
       "name": "sources",
       "templateId": "dneskai-sources-4",
       "version": "1.1.0",
-      "pngHash": "5ad1d25fb40bc601eb1488b7d2425de895cdbb391910b85dfaf0e5f88800cf33"
+      "pngHash": "90c11f46f124253fd249c9cd9057fa4980318f6804a5888815dd8faca734d849"
     },
     {
       "name": "single-photo",
@@ -70,7 +70,7 @@
       "name": "single-type",
       "templateId": "dneskai-single-type",
       "version": "1.1.0",
-      "pngHash": "9129b5f9cd7ad360f5e459152498a3645db85b3d7897ec8e595c906ded43e16f"
+      "pngHash": "63acfb5c41e410e243ec6146fa75bc21161fe0070b093f038719c0bc51490d64"
     }
   ]
 }

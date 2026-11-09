@@ -32,6 +32,17 @@ test.beforeEach(async ({ page }) => {
 });
 const noOverflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 
+test('Promo slide shows its artwork and editable fields in a project tab', async ({ page }) => {
+  const requests = await openWorkspace(page, 'cs', 'promo');
+  const promo = page.getByTestId('dneskai-closing-panel');
+  await expect(promo.getByRole('heading', { name: 'Promo slide' })).toBeVisible();
+  await expect(promo.getByRole('img', { name: 'Náhled závěrečného slidu' })).toBeVisible();
+  await expect(promo.getByRole('switch')).toBeDisabled();
+  await expect(promo.getByLabel('Výzva')).toHaveValue('Sleduj');
+  expect(requests).toEqual([]);
+  expect(await noOverflow(page)).toBe(true);
+});
+
 for (const lang of ['cs', 'en'] as const) {
   test(`For review today opens the Instagram Lab behind a channel control, read-only and accessible (${lang})`, async ({ page }, info) => {
     const errors = watchConsole(page);

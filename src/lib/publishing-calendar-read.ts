@@ -19,6 +19,7 @@ import {
 } from "@/lib/publishing-calendar";
 import { devsharkCalendarRenders, dneskaiCalendarRenders } from "@/lib/publishing-calendar-renders";
 import { DevsharkDeckSchema } from "@/lib/marketing/devshark-deck";
+import { dneskaiThreadsText, stripThreadsHashtags } from "@/lib/marketing/dneskai-threads";
 import type { DesignLabPicture } from "@/lib/marketing/design-lab-renders";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
@@ -103,6 +104,7 @@ function withSwitches(post: Omit<PublishingPost, "off" | "versions"> & { version
 }
 type Draft = Parameters<typeof withSwitches>[0];
 type DraftVersion = Draft["versions"][number];
+const beforePublication = (status: string) => status === "published" || status === "failed" ? "planned" : status;
 
 async function dneskaiPosts(db: Database, owner: string, now: Date, from: string, switches: Switches): Promise<PublishingPost[]> {
   const plan = await readDneskaiPlan(db, owner, now, { from, days: PUBLISHING_CALENDAR_DAYS, enabled: dneskaiPlanEnabled() });
@@ -117,10 +119,10 @@ async function dneskaiPosts(db: Database, owner: string, now: Date, from: string
     const versions: DraftVersion[] = [];
     if (slot.instagram) {
       const at = later(slot.scheduledAt, STORY_DELAY_MS);
-      versions.push({ channel: "story", time: pragueTime(at), scheduledAt: at, status: slot.story?.publicationStatus ?? slot.status, caption: null, pictures: renders?.story.pictures ?? [], live: renders?.story.live ?? null });
-      versions.push({ channel: "instagram", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.instagram.publicationStatus ?? slot.status, caption: captionOf(head) ?? slot.instagram.caption, pictures: slides });
+      versions.push({ channel: "story", time: pragueTime(at), scheduledAt: at, status: slot.story?.publicationStatus ?? beforePublication(slot.status), caption: null, pictures: renders?.story.pictures ?? [], live: renders?.story.live ?? null });
+      versions.push({ channel: "instagram", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.instagram.publicationStatus ?? beforePublication(slot.status), caption: captionOf(head) ?? slot.instagram.caption, pictures: slides });
     }
-    if (slot.threads) versions.push({ channel: "threads", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.threads.publicationStatus ?? slot.status, caption: slot.threads.caption, pictures: slides });
+    if (slot.threads) versions.push({ channel: "threads", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.threads.publicationStatus ?? beforePublication(slot.status), caption: slot.threads.caption === null ? null : dneskaiThreadsText(slot.threads.caption), pictures: slides });
     return withSwitches({
       id: `dneskai:${slot.id}`, brand: "dneskai", slotId: slot.id, date: slot.date, time: slot.time, scheduledAt: slot.scheduledAt, title: slot.title, status: slot.status,
       headline: head ? coverHeadline((head as { deck?: unknown }).deck) : null,
@@ -138,11 +140,14 @@ async function devsharkPosts(db: Database, owner: string, from: string, until: s
   if (slots.error) throw new Error("devshark-plan-unavailable");
   const rows = ((slots.data ?? []) as DevsharkSlotRow[]).filter((row) => z.iso.date().safeParse(row.date).success);
   const draftIds = [...new Set(rows.map((row) => row.draft_id))];
-  const [drafts, revisions] = await Promise.all([
+  const revisionIds = [...new Set(rows.flatMap((row) => [row.instagram_revision_id, row.threads_revision_id, row.story_revision_id]).filter((id): id is string => !!id))];
+  const [drafts, revisions, publications] = await Promise.all([
     draftIds.length ? db.from("marketing_devshark_drafts").select("id,title,caption,deck").eq("user_id", owner).in("id", draftIds) : Promise.resolve({ data: [], error: null }),
-    revisionsById(db, owner, [...new Set(rows.flatMap((row) => [row.instagram_revision_id, row.threads_revision_id, row.story_revision_id]).filter((id): id is string => !!id))]),
+    revisionsById(db, owner, revisionIds),
+    revisionIds.length ? db.from("marketing_publications").select("revision_id,platform,status").eq("user_id", owner).in("revision_id", revisionIds).neq("status", "cancelled") : Promise.resolve({ data: [], error: null }),
   ]);
-  if (drafts.error) throw new Error("devshark-plan-unavailable");
+  if (drafts.error || publications.error) throw new Error("devshark-plan-unavailable");
+  const outcomes = new Map((publications.data ?? []).map((row) => [`${row.revision_id}:${row.platform}`, row.status]));
   const concepts = new Map(((drafts.data ?? []) as Array<{ id: string; title: string; caption: string; deck: unknown }>).map((row) => [row.id, row]));
   return rows.map((row): PublishingPost => {
     const concept = concepts.get(row.draft_id);
@@ -150,6 +155,9 @@ async function devsharkPosts(db: Database, owner: string, from: string, until: s
     const scheduledAt = new Date(pragueScheduledAt(row.date, row.local_time)).toISOString();
     const post = row.instagram_revision_id ? revisions.get(row.instagram_revision_id) : undefined;
     const threads = row.threads_revision_id ? revisions.get(row.threads_revision_id) : undefined;
+    const statusOf = (revision: string | null, platform: "instagram" | "threads") =>
+      (revision ? outcomes.get(`${revision}:${platform}`) : undefined) ?? beforePublication(row.status);
+    const threadsCaption = captionOf(threads);
     const deck = DevsharkDeckSchema.safeParse(concept?.deck);
     // The Studio's pictures: the stored JPEGs once planned, before then the concept drawn by the Studio's own route.
     const renders = devsharkCalendarRenders(deck.success ? { title, deck: deck.data } : null,
@@ -157,10 +165,10 @@ async function devsharkPosts(db: Database, owner: string, from: string, until: s
     const versions: DraftVersion[] = [];
     if (row.instagram) {
       const at = later(scheduledAt, STORY_DELAY_MS);
-      versions.push({ channel: "story", time: pragueTime(at), scheduledAt: at, status: row.status, caption: null, pictures: renders.story });
-      versions.push({ channel: "instagram", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(post) ?? concept?.caption?.slice(0, 2200) ?? null, pictures: renders.slides, live: renders.live });
+      versions.push({ channel: "story", time: pragueTime(at), scheduledAt: at, status: statusOf(row.story_revision_id, "instagram"), caption: null, pictures: renders.story });
+      versions.push({ channel: "instagram", time: row.local_time, scheduledAt, status: statusOf(row.instagram_revision_id, "instagram"), caption: captionOf(post) ?? concept?.caption?.slice(0, 2200) ?? null, pictures: renders.slides, live: renders.live });
     }
-    if (row.threads) versions.push({ channel: "threads", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(threads), pictures: renders.threads, live: renders.live });
+    if (row.threads) versions.push({ channel: "threads", time: row.local_time, scheduledAt, status: statusOf(row.threads_revision_id, "threads"), caption: threadsCaption === null ? null : stripThreadsHashtags(threadsCaption), pictures: renders.threads, live: renders.live });
     return withSwitches({
       id: `devshark:${row.id}`, brand: "devshark", slotId: row.id, date: row.date, time: row.local_time, scheduledAt, title, status: row.status, headline: coverHeadline(concept?.deck),
       thumbnail: renders.thumbnail, target: { kind: "devshark-studio", draftId: row.draft_id }, versions,

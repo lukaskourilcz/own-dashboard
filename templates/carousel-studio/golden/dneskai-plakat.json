@@ -4,37 +4,37 @@
     "width": 1080,
     "height": 1350
   },
-  "updatedAt": "2026-11-08",
+  "updatedAt": "2026-11-09",
   "entries": [
     {
       "name": "cover-photo",
       "templateId": "dneskai-plakat-cover-photo",
       "version": "1.1.0",
-      "pngHash": "b343837543fb2fd40bdc7a6eb7df05edaebe0ca34578538aa3fdff693b5ab798"
+      "pngHash": "46c7929da4001d3553390f0794588ba00300fddff8ec287d97f98eacb71a2dbb"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-plakat-cover-photo",
       "version": "1.1.0",
-      "pngHash": "b37b1c8de9f76e04b1c2a2fe63bf7dcc3b932768fd5445b3bc9df7949240cc81"
+      "pngHash": "3dce2eec488b220d5507afaabaaa1db0ec7894c1272d5b986d4e00471abeb3da"
     },
     {
       "name": "figure",
       "templateId": "dneskai-plakat-figure",
       "version": "1.1.0",
-      "pngHash": "1f5231f5a8b5e9eb128f86ff8803747a7acfa014e0e968b71ed7e7389a12eb02"
+      "pngHash": "9a5eff9497776341e073e1bf70f6f30bf3b02aaa046d7266a02dfcb5055d289a"
     },
     {
       "name": "split",
       "templateId": "dneskai-plakat-split",
       "version": "1.1.0",
-      "pngHash": "150988e8f707c1154c8c5010b3c47c385fc6926176e70983d1a233bd8004a252"
+      "pngHash": "3aed7b85a1d7fa3bdd449c10fc4fcf189e76e436c19509d94be94f0d8ab2c4be"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-plakat-split-pair",
       "version": "1.1.0",
-      "pngHash": "04b98dfe2363551017067eb23d52f888d04859c6012e6acb44965dfd1d8b3085"
+      "pngHash": "6362e86f0e01e643f44bd4768644aafe9694621f569b0bc10977ebb0ca751d51"
     },
     {
       "name": "statement",
@@ -52,7 +52,7 @@
       "name": "sources",
       "templateId": "dneskai-plakat-sources-4",
       "version": "1.1.0",
-      "pngHash": "6aaf6439111f798b4c1860e426ccfe09d572084fb3a638d61f869a07fb03cb45"
+      "pngHash": "16383aca315505ae4998605b7ca183875f07eda2da5b8d72f25761a05fdebce6"
     },
     {
       "name": "single-photo",

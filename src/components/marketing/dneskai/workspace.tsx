@@ -7,6 +7,7 @@ import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys } from '@/lib/marketing/dneskai-workspace-client';
 import { dneskaiAwaitingRender, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { DneskaiLabTab } from './lab/lab-tab';
+import { DneskaiPromoSlide } from './lab/closing-panel';
 import { dneskaiLab } from '@/lib/i18n/sections/dneskai-lab';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -52,6 +53,7 @@ function useRenderFailed(projectId: string) {
  */
 export function DneskaiWorkspaceTab({ tab, projectId, lang, preview = false }: { tab: DneskaiWorkspaceTabId; projectId: string; lang: Lang; preview?: boolean }) {
   return tab === 'dneskai-costs' ? <CostsTab projectId={projectId} lang={lang} preview={preview} />
+    : tab === 'dneskai-promo' ? <DneskaiPromoSlide lang={lang} preview={preview} />
     : tab === 'dneskai-today' ? <TodayTab lang={lang} preview={preview} />
     : <ReviewRead tab={tab} projectId={projectId} lang={lang} preview={preview} />;
 }
@@ -74,7 +76,7 @@ function TodayTab({ lang, preview }: { lang: Lang; preview: boolean }) {
     refreshing={twoDays.isFetching || month.isFetching} onRefresh={() => { void twoDays.refetch(); void month.refetch(); }} />;
 }
 
-function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs' | 'dneskai-today'>; projectId: string; lang: Lang; preview: boolean }) {
+function ReviewRead({ tab, projectId, lang, preview }: { tab: Exclude<DneskaiWorkspaceTabId, 'dneskai-costs' | 'dneskai-today' | 'dneskai-promo'>; projectId: string; lang: Lang; preview: boolean }) {
   const t = dneskaiWorkspace[lang];
   const pathname = usePathname();
   const guest = preview && pathname === '/guest';

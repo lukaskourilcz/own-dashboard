@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseContentRevision, revisionReadiness, type ContentRevision } from '@/lib/marketing/contracts';
 import { DNESKAI_AI_DISCLOSURE, dneskaiKeywordLine } from '@/lib/marketing/dneskai-caption';
-import { THREADS_TEXT_MAX, dneskaiThreadsText, dneskaiThreadsTwin } from '@/lib/marketing/dneskai-threads';
+import { THREADS_TEXT_MAX, dneskaiThreadsText, dneskaiThreadsTwin, stripThreadsHashtags } from '@/lib/marketing/dneskai-threads';
 import { deck } from './marketing-dneskai-revision-fixture';
 
 const caption = (body: string) => `${body}\n\n${dneskaiKeywordLine('NAVOD')}\n\n${DNESKAI_AI_DISCLOSURE}\n\n#dneskai #ai #novinky`;
@@ -15,32 +15,33 @@ function instagram(overrides: Partial<ContentRevision> = {}): ContentRevision {
 }
 
 describe('dneskaiThreadsText', () => {
-  it('drops hashtags, the keyword line and the disclosure, and ends with the article\'s topic', () => {
+  it('drops tag lists, the keyword line and the disclosure, keeping inline words', () => {
     const text = dneskaiThreadsText(caption('Krátký text o #AI nástroji.'));
-    expect(text).toBe('Krátký text o nástroji.\n\n#AI');
-    expect(text).not.toContain(DNESKAI_AI_DISCLOSURE);
-    expect(text).not.toContain('Napište do komentáře');
+    expect(text).toBe('Krátký text o AI nástroji.');
   });
 
-  it('shortens a long caption to 500 characters and keeps the topic', () => {
+  it('removes hashtag markers after punctuation while preserving URL anchors', () => {
+    expect(stripThreadsHashtags('Pozor: #AI—#čipy. https://example.test/zdroj#sekce\n#přehled #novinky'))
+      .toBe('Pozor: AI—čipy. https://example.test/zdroj#sekce');
+  });
+
+  it('shortens a long caption to 500 characters', () => {
     const long = Array.from({ length: 30 }, (_, index) => `Věta číslo ${index + 1} vysvětluje další krok.`).join(' ');
     const text = dneskaiThreadsText(caption(long));
     expect(text.length).toBeLessThanOrEqual(THREADS_TEXT_MAX);
-    expect(text).toMatch(/\n\n#[\p{L}\p{N}_]+$/u);
+    expect(text).not.toContain('#');
     expect(text.startsWith('Věta číslo 1 vysvětluje')).toBe(true);
   });
 
-  it('keeps only the first paragraph and ends with the deck topic as people write it (owner, 8 November 2026)', () => {
-    const text = dneskaiThreadsText(caption('První odstavec o Fio bance.\n\nDruhý odstavec s podrobnostmi.'), 'FioBanka');
-    expect(text).toBe('První odstavec o Fio bance.\n\n#FioBanka');
-    // Without a deck topic the caption's first hashtag after #dneskai takes a capital letter.
-    expect(dneskaiThreadsText('Text.\n\n#dneskai #alexa #amazon')).toBe('Text.\n\n#Alexa');
+  it('keeps the first paragraph and removes tags on the same line', () => {
+    const text = dneskaiThreadsText(caption('První odstavec o Fio bance. #FioBanka\n\nDruhý odstavec s podrobnostmi.'));
+    expect(text).toBe('První odstavec o Fio bance.');
   });
 
   it('cuts a single run-on paragraph at a word with an ellipsis', () => {
     const text = dneskaiThreadsText(caption('slovo '.repeat(200).trim()));
     expect(text.length).toBeLessThanOrEqual(THREADS_TEXT_MAX);
-    expect(text).toMatch(/slovo…\n\n/);
+    expect(text).toMatch(/slovo…$/);
   });
 });
 

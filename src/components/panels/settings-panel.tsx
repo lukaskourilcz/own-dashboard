@@ -309,6 +309,7 @@ export function SettingsPanel({
       "dneskai-published": dneskaiLabels.published,
       "dneskai-costs": dneskaiLabels.costs,
       "dneskai-today": dneskaiLabels.today,
+      "dneskai-promo": dneskaiLabels.promo,
       "devshark-studio": devsharkStudio[lang].title,
     } satisfies Record<ProjectTabId, string>;
     return labels[tab];

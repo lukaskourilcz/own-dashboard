@@ -139,7 +139,7 @@ const coverPhoto = template({
     photo("image-1", 0, W, H, BLEED_FADE),
     inset,
     logo,
-    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7, align: "middle" }),
+    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 54, maxFontSize: 88, maxChars: 110, maxLines: 7, align: "middle" }),
     seriesLine(box(LEFT, H - 140, MEASURE, 40))
   ]
 });
@@ -236,7 +236,7 @@ const singlePhoto = template({
   layers: [
     photo("image-1", 0, W, H, BLEED_FADE),
     logo,
-    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7, align: "middle" })
+    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 54, maxFontSize: 88, maxChars: 110, maxLines: 7, align: "middle" })
   ]
 });
 
@@ -248,7 +248,7 @@ const singleType = template({
   version: FLOWED,
   layers: [
     logo,
-    headline(box(LEFT, 196, MEASURE, 1_054), { minFontSize: 60, maxFontSize: 104, maxChars: 120, maxLines: 10, align: "middle" })
+    headline(box(LEFT, 196, MEASURE, 1_054), { minFontSize: 51, maxFontSize: 88, maxChars: 120, maxLines: 10, align: "middle" })
   ]
 });
 

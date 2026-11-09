@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { DneskaiImageInput, DneskaiLaidBlock, DneskaiSlideInput, DneskaiSlideProblem } from "@/lib/carousel-studio/dneskai-slide";
-import { AssetSchema, canonicalJson } from "./contracts";
+import { AssetSchema, DNESKAI_RENDER_POLICY, canonicalJson } from "./contracts";
 import { DneskaiDeckSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiKitId, type DneskaiSlide } from "./dneskai-slides";
 import { DNESKAI_PLACED_FIELDS, type DneskaiTextField } from "./dneskai-slide-layout";
 import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsset, LoadDneskaiMediaBytes, RenderDneskaiDeck } from "./dneskai-ports";
@@ -59,10 +59,6 @@ export const DNESKAI_STUDIO = {
   commit: "893a4953a91ce878f5b8736a83bc0357374dc461",
   treeSha256: "fdacdb3ff9f6b909b6ca3712279efb63c6b3390385aaa1c7e17532dab688faa1",
 } as const;
-/** OwnDashboard's own rules on top of the studio's: the clip, glyph and placement gates and the JPEG below. Bump on any change. */
-// 3 (8 November 2026): the icy blue #6ec1ff and the new logo; slides drawn before are drawn again.
-// 4 (8 November 2026): text-pretty — no text block ends on a lone word; a planned slide is drawn again.
-export const DNESKAI_RENDER_POLICY = "dneskai-render/7";
 export const DNESKAI_RENDERER_VERSION = `carousel-studio/${DNESKAI_STUDIO.version}+${DNESKAI_STUDIO.commit.slice(0, 7)}`;
 /** Instagram portrait: exactly 1080 × 1350, baseline JPEG at quality 92 without chroma subsampling, sRGB, at most 8 MiB. */
 export const DNESKAI_SLIDE_JPEG = { width: 1080, height: 1350, quality: 92, chromaSubsampling: "4:4:4", maxBytes: 8 * 1024 * 1024 } as const;

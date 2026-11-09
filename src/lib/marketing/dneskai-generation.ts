@@ -102,7 +102,7 @@ export const DneskaiCopySchema = z.strictObject({
   title: z.string().min(1).max(160),
   caption: z.string().min(1).max(1500),
   hashtags: z.array(z.string().min(1).max(40)).max(DNESKAI_HASHTAG_LIMIT),
-  /** The Threads topic (8 November 2026): the main name as people write it, normalised by `dneskaiTopicName`. */
+  /** The main name as people write it, stored as deck metadata. */
   topic: z.string().min(1).max(60).optional(),
   format: z.enum(["carousel", "single-image"]),
   slides: z.array(DneskaiCopySlideSchema).min(1).max(DNESKAI_MAX_CONTENT_SLIDES),
@@ -590,7 +590,7 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): D
   const topic = dneskaiTopicName(copy.topic ?? "");
   // Owner decisions of 8 November 2026: a style picked at random among the generation kits (stable for the same copy).
   // The closing slide is no longer added here (owner, 9 November 2026): the plan adds it to planned posts only while
-  // its switch in the Design Lab is on (`marketing_dneskai_closing`).
+  // its switch in the Promo slide tab is on (`marketing_dneskai_closing`).
   const kit = dneskaiGenerationKit([copy.title, ...copy.slides.map((slide) => slide.headline)].join("\n"));
   const closed = slides;
   // The key words take the colour of the post's place in the plan (owner request, 8 November 2026).

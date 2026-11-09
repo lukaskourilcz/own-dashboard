@@ -1,3 +1,4 @@
+import { DNESKAI_RENDER_POLICY } from '@/lib/marketing/contracts';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { parseContentRevision, type ContentRevision } from '@/lib/marketing/contracts';
@@ -46,9 +47,9 @@ describe('dneskaiPlanAction', () => {
     expect(dneskaiPlanAction(slot(), head({}, { caption: old }), null, true, new Date('2026-11-08T08:00:00Z')).kind).not.toBe('retag');
   });
 
-  it('draws again a post rendered before the icy blue and new logo, approved or not, while its slot is ahead (8 November 2026)', () => {
+  it('redraws a post with old layout pixels while its slot is ahead', () => {
     const stale = { schemaVersion: 'dneskai-render-report/1', status: 'rendered', problems: [], renderKeys: [], renderedAt: '2026-11-08T15:55:00.000Z' };
-    const fresh = { ...stale, renderedAt: '2026-11-09T03:00:00.000Z' };
+    const fresh = { ...stale, policy: DNESKAI_RENDER_POLICY };
     expect(dneskaiRenderStale(stale)).toBe(true);
     expect(dneskaiRenderStale(fresh)).toBe(false);
     expect(dneskaiRenderStale(null)).toBe(false);

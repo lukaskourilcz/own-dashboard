@@ -23,10 +23,9 @@ enforce them; a change that lets any of them through is a bug.
 - **No picture credits on any slide.** "Obrázek: …" and "Foto: …" never appear in the graphics.
 - **No sources slide.** A deck is the written slides and, on a carousel, code's closing slide; nothing else is
   appended.
-- **The closing slide** (owner, 8 November 2026) ends every carousel and is the same on every post: the
-  Higgsfield picture `dneskai-closing.jpg` with „Sleduj DNESKAi“ and „pro všechny novinky ze světa AI a
-  technologií. @dneskai“. Code writes it (`dneskai-closing.ts`), never the model. It is the owner's one exception to
-  the rule that nothing asks readers to follow; the model still writes no call to follow anywhere.
+- **Promo slide** ends a planned carousel when the owner enables it on the project's Promo slide tab.
+  The owner edits its headline, body and handle. The renderer uses the existing artwork and the saved words.
+  The model writes no call to follow.
 - **Slide order** (owner, 8 November 2026): slides 1 and 2 carry a picture, slide 3 may be text alone, slide 4
   carries a picture, then the closing slide. Fewer than three usable pictures: at most three written slides. One
   usable picture: slide 2 shows it again, cropped closer.
@@ -44,10 +43,8 @@ enforce them; a change that lets any of them through is a bug.
 - No source list, no links, no picture credits.
 - It ends with the hashtags. **No AI disclosure line** ("Text připravil jazykový model…"): the owner removed it
   from every post on 8 November 2026; the publisher drops it from captions stored before that.
-- On Threads the post's topic tag is always the article's topic, written the way people write the name with a
-  capital (`FioBanka`, `Alexa`, `OpenAI`): the deck's `topic`, else the caption's first hashtag after `#dneskai`.
-  It goes out as `topic_tag`, never `dneskai` and never a hashtag line in the text. The Threads text is only the
-  caption's first paragraph; the rest of the story is on the slides.
+- Threads uses the caption's first written paragraph without hashtags or a topic tag.
+  The Instagram caption retains its hashtags.
 - **Only carousels and classic single-photo posts, never Reels** (owner, 8 November 2026).
 - **No call to comment or follow in model text.** The one allowed call is the keyword line, and code writes it
   from the approved keyword, in its own paragraph before the hashtags: „Napište do komentáře „SKILL“ a pošleme

@@ -25,7 +25,7 @@ const jpeg = (name: string) => ({ url: `https://cdn.example.com/${name}.jpg`, sh
 const dneskaiDeck = (count: number) => ({ kit: "spotlight", slides: Array.from({ length: count }, (_, index) => ({ type: index ? "statement" : "cover-photo", headline: `[[Slide]] ${index + 1}`, images: [] })) });
 
 type Row = Record<string, unknown>;
-/** Just enough of the Supabase query builder: eq, in, gte, lte, not, order and limit over in-memory rows. */
+/** The Supabase query operators used by the calendar, over in-memory rows. */
 function fakeDb(tables: Record<string, Row[]>) {
   return {
     from(table: string) {
@@ -33,6 +33,7 @@ function fakeDb(tables: Record<string, Row[]>) {
       const builder = {
         select: () => builder,
         eq: (key: string, value: unknown) => { rows = rows.filter((row) => row[key] === value); return builder; },
+        neq: (key: string, value: unknown) => { rows = rows.filter((row) => row[key] !== value); return builder; },
         in: (key: string, values: unknown[]) => { rows = rows.filter((row) => values.includes(row[key])); return builder; },
         gte: (key: string, value: string) => { rows = rows.filter((row) => String(row[key]) >= value); return builder; },
         lte: (key: string, value: string) => { rows = rows.filter((row) => String(row[key]) <= value); return builder; },
@@ -83,6 +84,11 @@ describe("calendar previews are the Design Lab's previews", () => {
       ({ id, user_id: OWNER, replaces_id: replaces, created_at: created, revision: { title: "Post", caption: `Caption ${id}`, deck, assets } });
     const tables: Record<string, Row[]> = {
       marketing_publishing_switches: [],
+      marketing_publications: [
+        { user_id: OWNER, revision_id: uuid(31), platform: "instagram", status: "published" },
+        { user_id: OWNER, revision_id: uuid(31), platform: "threads", status: "failed" },
+        { user_id: OWNER, revision_id: uuid(32), platform: "instagram", status: "failed" },
+      ],
       marketing_revisions: [
         revision(old, null, "2026-11-08T10:00:00Z", dneskaiDeck(3), [jpeg("old-1"), jpeg("old-2"), jpeg("old-3")]),
         revision(edited, old, "2026-11-08T11:00:00Z", dneskaiDeck(3), [jpeg("mid-1"), jpeg("mid-2"), jpeg("mid-3")]),
@@ -117,6 +123,9 @@ describe("calendar previews are the Design Lab's previews", () => {
     expect(incomplete.versions.find((version) => version.channel === "instagram")!.pictures).toEqual([]);
 
     const devshark = calendar.posts.find((post) => post.brand === "devshark")!;
+    expect(devshark.versions.map(({ channel, status }) => ({ channel, status }))).toEqual([
+      { channel: "story", status: "failed" }, { channel: "instagram", status: "published" },
+    ]);
     expect(devshark.versions.find((version) => version.channel === "instagram")!.pictures.map((picture) => picture.url)).toEqual([jpeg("ds-1").url, jpeg("ds-2").url]);
     expect(devshark.versions.find((version) => version.channel === "story")!.pictures.map((picture) => picture.url)).toEqual([jpeg("ds-story").url]);
   });

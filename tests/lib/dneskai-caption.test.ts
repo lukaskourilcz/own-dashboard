@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DNESKAI_AI_DISCLOSURE, dneskaiCaptionWithKeyword, dneskaiKeywordLine, dneskaiPublicText, dneskaiTopic, dneskaiTopicName } from '@/lib/marketing/dneskai-caption';
+import { DNESKAI_AI_DISCLOSURE, dneskaiCaptionWithKeyword, dneskaiKeywordLine, dneskaiPublicText, dneskaiTopicName } from '@/lib/marketing/dneskai-caption';
 
 describe('dneskaiTopicName (owner, 8 November 2026)', () => {
   it('writes the name with a capital and without spaces, dots or ampersands', () => {
@@ -43,17 +43,9 @@ describe('the caption keyword line (#158)', () => {
   });
 });
 
-describe('dneskaiPublicText (owner, 8 November 2026)', () => {
-  const stored = 'Tým zveřejnil nástroj.\n\nText připravil jazykový model. Výběr a schválení: redakce DNESKAi.\n\n#dneskai #overtone #ai';
-  it('drops the AI disclosure on Instagram and keeps the hashtags', () => {
-    expect(dneskaiPublicText(stored, 'instagram')).toEqual({ text: 'Tým zveřejnil nástroj.\n\n#dneskai #overtone #ai', topicTag: null });
-  });
-  it('sends the article\'s topic as the Threads topic tag, not as text', () => {
-    expect(dneskaiPublicText(stored, 'threads')).toEqual({ text: 'Tým zveřejnil nástroj.', topicTag: 'overtone' });
-    expect(dneskaiPublicText('Text.\n\n#dneskai', 'threads')).toEqual({ text: 'Text.', topicTag: null });
-  });
-  it('takes the first hashtag after the brand as the topic', () => {
-    expect(dneskaiTopic('#dneskai #fio #api')).toBe('fio');
-    expect(dneskaiTopic('bez štítků')).toBeNull();
+describe('dneskaiPublicText', () => {
+  it('preserves the Instagram hashtags and omits the retired disclosure', () => {
+    const stored = `Tým zveřejnil nástroj.\n\n${DNESKAI_AI_DISCLOSURE}\n\n#dneskai #overtone #ai`;
+    expect(dneskaiPublicText(stored)).toBe('Tým zveřejnil nástroj.\n\n#dneskai #overtone #ai');
   });
 });

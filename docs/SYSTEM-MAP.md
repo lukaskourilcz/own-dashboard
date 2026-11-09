@@ -174,10 +174,8 @@ The owner approved every education topic and the last week's news into a rolling
 times plus 21:00, so three Instagram posts and four Threads posts a day. The tick's `plan` step (`dneskai-plan.ts`)
 fills empty slots with approved education topics and prepares the slots of today and the next two days: it renders
 the post in its style (Spotlight or Plakát), moves it to its slot, approves the exact version for the owner and derives a Threads twin
-(`dneskai-threads.ts`: the same slides, only the caption's first paragraph without hashtags or keyword line,
-shortened to 500 characters, then the article's topic as one hashtag, which the publisher sends as the Threads
-`topic_tag`, so the post shows "dneskai › <topic>"; the topic is the deck's `topic`, the name as people write it,
-such as `FioBanka`; no AI disclosure since 8 November 2026). DNESKAi publishes only carousels and single-photo posts:
+(`dneskai-threads.ts`: the same slides and the caption's first written paragraph, at most 500 characters.
+The Threads publisher sends no hashtags, topic tag, keyword line or AI disclosure). DNESKAi publishes only carousels and single-photo posts:
 since 8 November 2026 generation never starts a post as a Reel, whatever `MARKETING_DNESKAI_REELS_ENABLED` says. The topic bridge briefs a planned topic for exactly its slot. A news post's
 brief stays current until a day after its slot. The owner sees today and tomorrow in the tab **Dnes a zítra** and the
 30 days below it (`GET /api/marketing/dneskai/plan`); every post opens in the Design Lab with one click. An edit saved

@@ -1109,3 +1109,8 @@ adds the closing slide to planned posts (off by default) and its headline, body 
 `20261109160000_dneskai_codex_illustrations.sql` accepts Codex-generated JPEGs in the private DNESKAi illustration
 library with the `generated` licence alongside existing Pexels photos. The service-role restyle function can link
 either stock or generated pictures to briefs and keeps the existing owner checks and storage deduplication.
+
+## DNESKAi Promo slide tab, 9 November 2026
+
+`20261109204711_dneskai_promo_tab.sql` adds `dneskai-promo` to the allowed values of
+`user_preferences.hidden_project_tabs`. It leaves existing preferences and access policies intact.

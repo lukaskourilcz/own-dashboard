@@ -21,6 +21,7 @@ export const DNESKAI_PROJECT_TABS = [
   "dneskai-published",
   "dneskai-costs",
   "dneskai-today",
+  "dneskai-promo",
 ] as const;
 
 export type DneskaiProjectTab = (typeof DNESKAI_PROJECT_TABS)[number];
@@ -54,6 +55,7 @@ export const DNESKAI_WORKSPACE_TAB_ORDER = [
   "dneskai-review",
   "dneskai-calendar",
   "dneskai-published",
+  "dneskai-promo",
   "sources",
 ] as const satisfies readonly ProjectTabId[];
 
