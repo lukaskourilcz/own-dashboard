@@ -44,6 +44,7 @@ type Database = ReturnType<typeof createAdminClient>;
 export const DNESKAI_PLAN_HORIZON_DAYS = 2;
 /** A render starts only with this much of the tick left; the renderer stops at the tick's hard budget. */
 const RENDER_MINIMUM_MS = 18_000;
+const RERENDER_BACKOFF_MS = 30 * 60_000;
 /** A post is approved only while its slot is at least this far away. */
 const APPROVAL_LEAD_MS = 2 * 60_000;
 /** A news brief stays current until this long after its planned slot. */
@@ -133,7 +134,11 @@ export function dneskaiPlanAction(slot: DneskaiPlanRow, head: DneskaiPlanHead | 
   if (head.status === 'review') {
     if (!head.ready || renderReportBlocks(head.render_report)) {
       // The plan's own render that was cut off or failed is drawn again; a render that refused the text waits for the owner.
-      const report = head.render_report as { status?: unknown } | null;
+      const report = head.render_report as { status?: unknown; renderedAt?: unknown } | null;
+      // A render that failed waits half an hour before the next try, so one failing post never takes every tick's
+      // single render from the posts behind it (9 November 2026).
+      const failedAt = report?.status === 'failed' && typeof report.renderedAt === 'string' ? Date.parse(report.renderedAt) : Number.NaN;
+      if (Number.isFinite(failedAt) && now.getTime() - failedAt < RERENDER_BACKOFF_MS) return { kind: 'wait', status: 'failed', code: 'render-retry-later' };
       if (slot.written_revision_id === head.id && report?.status !== 'refused' && head.revision.deck && !head.revision.assets.length) return { kind: 'rerender', status: 'ready' };
       return { kind: 'wait', status: 'failed', code: 'render-blocked' };
     }
