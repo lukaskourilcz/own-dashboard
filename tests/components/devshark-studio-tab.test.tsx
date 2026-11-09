@@ -39,12 +39,14 @@ describe('devShark studio in the preview', () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!;
       setter.call(headline, 'typeof null, edited');
       headline.dispatchEvent(new Event('input', { bubbles: true }));
+      host.querySelector<HTMLInputElement>('input[type=checkbox]')!.click();
     });
     const save = [...host.querySelectorAll('button')].find((button) => button.textContent === t.save)!;
     expect(save.disabled).toBe(false);
     await act(async () => { save.click(); });
     await settle();
     expect((await demoDevsharkStudio.load()).drafts[0]!.deck.slides[0]!.headline).toBe('typeof null, edited');
+    expect((await demoDevsharkStudio.load()).drafts[0]!.deck.strong).toBe(true);
     expect(fetch).not.toHaveBeenCalled();
   });
 });

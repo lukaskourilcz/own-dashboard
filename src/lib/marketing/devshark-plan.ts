@@ -9,7 +9,8 @@ import { pragueDayAfter } from './dneskai-workspace';
  * Prague (15:00 UTC in winter; 12:00 until 8 November 2026, moved after the Apify research), which also goes to
  * Threads, and a second Threads post at 19:00: one Instagram and two Threads posts a day.
  * Only concepts the owner approved (`marketing_devshark_drafts.status = 'approved'`) enter the plan, oldest decision
- * first; the step runs only with DEVSHARK_PLAN_ENABLED=true and never publishes anything itself.
+ * first. The Wednesday and Friday Instagram slots prefer marked concepts. A marked concept waits for one of those
+ * slots. The step runs only with DEVSHARK_PLAN_ENABLED=true and never publishes anything itself.
  */
 type Database = ReturnType<typeof createAdminClient>;
 
@@ -47,23 +48,39 @@ export function devsharkPlanDailyCounts(slots: ReadonlyArray<Pick<DevsharkPlanSl
 
 const read = <T>(result: { data: T | null; error: unknown }, code: string): T => { if (result.error) throw new Error(code); return result.data as T; };
 
+type ApprovedDraft = { id: string };
+
+export function devsharkPlanAssignments(slots: readonly DevsharkPlanSlot[], regular: readonly ApprovedDraft[], strong: readonly ApprovedDraft[]) {
+  const normalQueue = [...regular], strongQueue = [...strong];
+  return slots.flatMap((slot) => {
+    const weekday = new Date(`${slot.date}T00:00:00Z`).getUTCDay();
+    const preferred = slot.instagram && (weekday === 3 || weekday === 5);
+    const draft = (preferred ? strongQueue.shift() : undefined) ?? normalQueue.shift();
+    return draft ? [{ slot, draft }] : [];
+  });
+}
+
 /** Places approved, unplanned concepts into the empty slots from tomorrow on; returns how many it placed. */
 export async function fillDevsharkPlan(db: Database, owner: string, project: string, now: Date): Promise<{ placed: number; waiting: number }> {
   z.uuid().parse(owner); z.uuid().parse(project);
   const from = pragueDayAfter(pragueMarketingDate(now), 1), until = pragueDayAfter(from, DEVSHARK_PLAN_DAYS - 1);
   const taken = read(await db.from('marketing_devshark_plan').select('date,local_time').eq('user_id', owner).eq('project_id', project).gte('date', from).lte('date', until).limit(200), 'devshark-plan-unavailable') as Array<{ date: string; local_time: string }>;
   const empty = devsharkPlanEmptySlots(taken, from, until);
-  const drafts = read(await db.from('marketing_devshark_drafts').select('id').eq('user_id', owner).eq('project_id', project).eq('status', 'approved')
-    .order('decided_at', { ascending: true }).limit(Math.max(1, empty.length)), 'devshark-drafts-unavailable') as Array<{ id: string }>;
+  const approved = () => db.from('marketing_devshark_drafts').select('id').eq('user_id', owner).eq('project_id', project).eq('status', 'approved')
+    .order('decided_at', { ascending: true }).order('id').limit(Math.max(1, empty.length));
+  const [regularResult, strongResult] = await Promise.all([
+    approved().not('deck', 'cs', '{"strong":true}'),
+    approved().contains('deck', { strong: true }),
+  ]);
+  const regular = read(regularResult, 'devshark-drafts-unavailable');
+  const strong = read(strongResult, 'devshark-drafts-unavailable');
   let placed = 0;
-  for (const [index, draft] of drafts.entries()) {
-    const slot = empty[index];
-    if (!slot) break;
+  for (const { slot, draft } of devsharkPlanAssignments(empty, regular, strong)) {
     const inserted = await db.from('marketing_devshark_plan').insert({ user_id: owner, project_id: project, date: slot.date, local_time: slot.time, instagram: slot.instagram, threads: slot.threads, draft_id: draft.id }).select('id');
     if (inserted.error) continue;
     const { error } = await db.from('marketing_devshark_drafts').update({ status: 'planned', updated_at: new Date().toISOString() }).eq('user_id', owner).eq('id', draft.id).eq('status', 'approved');
     if (error) throw new Error('devshark-draft-write-failed');
     placed++;
   }
-  return { placed, waiting: Math.max(0, drafts.length - placed) };
+  return { placed, waiting: regular.length + strong.length - placed };
 }
