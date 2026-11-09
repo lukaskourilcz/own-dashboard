@@ -687,6 +687,11 @@ export const MARKETING_KNOWN_CODES = Object.keys(CODES) as MarketingCode[];
 const PATTERNS: Array<{ test: RegExp; text: (match: RegExpExecArray) => Entry }> = [
   { test: /^research-apify-refused-(400|401|402|403|404|413|422)$/, text: (m) => ['investigate', `Apify refused the research start (HTTP ${m[1]}); no run was created.`, `Apify odmítlo spuštění výzkumu (HTTP ${m[1]}); žádný běh nevznikl.`] },
   { test: /^meta-http-(\d{3})$/, text: (m) => ['token', `Instagram rejected the request (HTTP ${m[1]}).`, `Instagram požadavek odmítl (HTTP ${m[1]}).`] },
+  { test: /^threads-(?:profile|quota|carousel-item|container|status|publish)-http-(\d{3})(?:-(\d{1,9})(?:-(\d{1,9}))?)?$/, text: (m) => {
+    const detail = [m[2], m[3]].filter(Boolean).join('/');
+    return ['investigate', `Threads rejected the request (HTTP ${m[1]}${detail ? `, Meta ${detail}` : ''}).`,
+      `Threads požadavek odmítl (HTTP ${m[1]}${detail ? `, Meta ${detail}` : ''}).`];
+  } },
   { test: /^media-(?:page-)?http-(\d{3})$/, text: (m) => ['media', `The source site refused the picture (HTTP ${m[1]}).`, `Zdrojový web obrázek odmítl (HTTP ${m[1]}).`] },
   { test: /^remote-container-([a-z_]+)$/, text: (m) => ['verify', `Instagram reports the post as ${m[1]!.replace(/_/g, ' ')}.`, `Instagram hlásí stav příspěvku ${m[1]!.replace(/_/g, ' ')}.`] },
   { test: /^container-(error|expired|failed)$/, text: () => ['investigate', 'Instagram could not process the images; nothing was published.', 'Instagram obrázky nezpracoval; nic se nepublikovalo.'] },

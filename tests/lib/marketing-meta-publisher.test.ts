@@ -53,9 +53,16 @@ function fixture(options: { format?: 'carousel' | 'post'; assets?: Asset[]; coll
         const asset = assets[Number(url.pathname.match(/slide-(\d+)/)![1]) - 1]!;
         return new Response(new Uint8Array(asset.bytes), { headers: { 'Content-Type': asset.mime ?? 'image/jpeg' } });
       }
-      expect(url.hostname).toBe('graph.instagram.com');
+      const threads = input.account.platform === 'threads';
+      expect(url.hostname).toBe(threads ? 'graph.threads.net' : 'graph.instagram.com');
       expect(url.href).not.toContain(token);
       const custom = options.graph?.(call); if (custom) return custom;
+      if (threads) {
+        if (url.pathname.endsWith('/17841400000000001') && method === 'GET') return Response.json({ id: input.account.remote_account_id, username: 'dneskai' });
+        if (url.pathname.endsWith('/threads_publishing_limit')) return Response.json({ data: [{ quota_usage: 3, config: { quota_total: 50 } }] });
+        if (url.pathname.endsWith('/threads') && method === 'POST') return Response.json({ id: body.has('is_carousel_item') ? String(++nextChild) : '300' });
+        if (url.pathname.endsWith('/300')) return Response.json({ id: '300', status: 'FINISHED' });
+      }
       if (url.pathname.endsWith('/17841400000000001') && method === 'GET') return Response.json({ id: '1234567', user_id: '17841400000000001', username: 'dneskai' });
       if (url.pathname.endsWith('/content_publishing_limit')) return Response.json({ data: [{ quota_usage: 3, config: { quota_total: 50, quota_duration: 86400 } }] });
       if (url.pathname.endsWith('/media_publish') && method === 'POST') { expect(checkpoints.at(-1)).toMatchObject({ stage: 'publish-intent' }); return Response.json({ id: '90001' }); }
@@ -67,6 +74,44 @@ function fixture(options: { format?: 'carousel' | 'post'; assets?: Asset[]; coll
   const reapprove = () => { const h = revisionHash(input.revisionRow.revision); input.revisionRow.content_hash = h; input.revisionRow.approved_hash = h; };
   return { input, calls, checkpoints, reapprove, posts: () => calls.filter(call => call.method === 'POST') };
 }
+
+describe('DNESKAi Threads failure receipts', () => {
+  function threadsFixture(graph: NonNullable<Parameters<typeof fixture>[0]>['graph']) {
+    const state = fixture({ graph });
+    const { input } = state;
+    input.account.platform = 'threads';
+    input.publication.platform = 'threads';
+    input.revisionRow.revision.account.platform = 'threads';
+    input.revisionRow.revision.caption += '\n\n#ThreadsAPI';
+    input.config.loginMode = 'threads';
+    input.config.scopes = ['threads_basic', 'threads_content_publish'];
+    state.reapprove();
+    return state;
+  }
+
+  it('records the stage and numeric Meta codes for a rejected carousel item', async () => {
+    const state = threadsFixture(({ body }) => body.has('is_carousel_item') ? Response.json({
+      error: { code: 100, error_subcode: 123456, message: 'test-only private error data' },
+    }, { status: 400 }) : undefined);
+    expect(await publishMarketingRevision(state.input)).toMatchObject({ status: 'failed', errorCode: 'threads-carousel-item-http-400-100-123456' });
+    expect(state.checkpoints).toMatchObject([{ stage: 'outcome', status: 'failed', errorCode: 'threads-carousel-item-http-400-100-123456' }]);
+    expect(state.posts()).toHaveLength(1);
+  });
+
+  it('retries a transient parent failure on the next tick without changing the topic', async () => {
+    const state = threadsFixture(({ body }) => body.has('children') ? Response.json({ error: { code: 2, is_transient: true } }, { status: 400 }) : undefined);
+    expect(await publishMarketingRevision(state.input)).toMatchObject({ status: 'pending', errorCode: 'container-retry', retryCause: 'threads-container-http-400-2' });
+    expect(state.posts().map(({ body }) => body.get('topic_tag'))).toEqual([null, null, null, 'ThreadsAPI']);
+    expect(state.checkpoints).toMatchObject([{ stage: 'container-retry' }]);
+  });
+
+  it('reconciles even a transient error after sending the publish request', async () => {
+    const state = threadsFixture(({ url }) => url.pathname.endsWith('/threads_publish') ? Response.json({ error: { code: 2, is_transient: true } }, { status: 400 }) : undefined);
+    expect(await publishMarketingRevision(state.input)).toMatchObject({ status: 'reconciliation', errorCode: 'threads-publish-http-400-2' });
+    expect(state.checkpoints.map(({ stage }) => stage)).toEqual(['container-created', 'publish-intent', 'outcome']);
+    expect(state.posts().filter(({ url }) => url.pathname.endsWith('/threads_publish'))).toHaveLength(1);
+  });
+});
 
 describe('DNESKAi Instagram publisher against a mocked Graph API', () => {
   it('publishes a carousel with alt text per child, a parent without children alt and exactly one media_publish', async () => {
