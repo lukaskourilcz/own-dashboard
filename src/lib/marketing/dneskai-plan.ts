@@ -8,7 +8,7 @@ import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
 import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
 import { dneskaiEmphasisFor } from './dneskai-palette';
-import { isDneskaiClosingSlide } from './dneskai-closing';
+import { dneskaiClosingSlide, isDneskaiClosingSlide } from './dneskai-closing';
 import { DNESKAI_RESTYLE_ATTEMPTS, DNESKAI_RESTYLE_FAILED, DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, dneskaiRestyleJobKey, restyleDneskaiPost } from './dneskai-restyle';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
@@ -445,6 +445,9 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
   const account = await threadsAccountOf(db, owner);
   const headings = await seriesHeadings(db, owner, project);
   let wiring: Wiring | null = null;
+  // The closing slide's switch, read once a pass; off when the row is missing or unreadable.
+  let closing: Promise<boolean> | null = null;
+  const closingEnabled = () => (closing ??= Promise.resolve(db.from('marketing_dneskai_closing').select('enabled').eq('user_id', owner).maybeSingle()).then((row) => !row.error && row.data?.enabled === true, () => false));
   const wired = () => (wiring ??= { render: getRenderDneskaiDeck(db), loadMedia: getDneskaiMediaLoader(db, owner), listBriefAssetHashes: getBriefAssetHashLister(db, owner), loadBriefPool: getBriefPoolLoader(db, owner) });
   const record = async (slot: DneskaiPlanRow, patch: Partial<DneskaiPlanRow>) => {
     const changed = Object.entries(patch).some(([key, value]) => slot[key as keyof DneskaiPlanRow] !== value);
@@ -518,6 +521,28 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           await markIllustrationChecked(db, head.id, code);
           result.codes[code] = (result.codes[code] ?? 0) + 1;
           continue;
+        }
+        // The closing slide follows its switch in the Design Lab (owner, 9 November 2026; off until the owner turns it
+        // on): a planned carousel gets it or loses it while its slot is ahead, drawn again at once.
+        if (head && (head.status === 'review' || head.status === 'approved') && head.ready && head.revision.deck?.format === 'carousel'
+          && head.revision.account.platform === 'instagram' && Date.parse(dneskaiPlanSlotAt(slot)) > input.now.getTime() + 10 * 60_000) {
+          const closingOn = await closingEnabled();
+          const slides = head.revision.deck.slides;
+          const has = slides.some((item) => isDneskaiClosingSlide(item));
+          const next = closingOn ? [...slides, dneskaiClosingSlide()] : slides.filter((item) => !isDneskaiClosingSlide(item));
+          if (has !== closingOn && next.length >= 2 && next.length <= 10) {
+            if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) { await record(slot, { code: 'plan-render-waiting' }); break; }
+            const revision = parseContentRevision({ ...head.revision, deck: { ...head.revision.deck, slides: next }, assets: [] });
+            const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
+            const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: saved.id, revision }, { render: wired().render, loadMedia: wired().loadMedia, signal: input.signal });
+            result.rendered++;
+            const ownerEdit = !!slot.written_revision_id && head.id !== slot.written_revision_id;
+            const patch: Partial<DneskaiPlanRow> = { head_revision_id: saved.id, written_revision_id: ownerEdit ? slot.written_revision_id : saved.id, status: rendered.ready ? 'ready' : 'failed', code: rendered.ready ? null : 'render-blocked' };
+            await record(slot, patch); Object.assign(slot, patch);
+            const code = closingOn ? 'plan-closing-added' : 'plan-closing-removed';
+            result.codes[code] = (result.codes[code] ?? 0) + 1;
+            break;
+          }
         }
         const twin = slot.threads_revision_id ? await revisionRow(db, owner, slot.threads_revision_id) : null;
         const story = slot.story_revision_id ? await revisionRow(db, owner, slot.story_revision_id) : null;
