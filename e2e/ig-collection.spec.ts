@@ -17,7 +17,7 @@ for (const lang of ["en", "cs"] as const) {
     await expect(panel.getByTestId("ig-collection-header")).toContainText(lang === "cs" ? "5 příspěvků" : "5 posts");
     await expect(panel.getByTestId("ig-collection-post")).toHaveCount(5);
     await expect(panel.getByText("reelcraft.studio")).toBeVisible();
-    await expect(panel.getByText(lang === "cs" ? "Už v IG TIPS" : "Already in IG TIPS").first()).toBeVisible();
+    await expect(panel.getByText(lang === "cs" ? "Už v IG TIPS" : "Already in IG TIPS", { exact: true }).first()).toBeVisible();
 
     // Search and the status filter narrow the list.
     await panel.getByRole("searchbox").fill("hook");
