@@ -10,9 +10,10 @@ import type { DevsharkDeck } from './devshark-deck';
  * none, never a partial or older set); the cover is the first. The 9:16 story is drawn on demand from the cover through
  * the Lab's preview route (`POST /api/marketing/dneskai/preview`, `format: instagram-story`), so the request is shared.
  *
- * devShark: the Studio draws a concept through `POST /api/marketing/devshark/preview` from the concept's deck; once
- * the plan has stored the post and story revisions (rendered from the same deck, which can no longer be edited), those
- * JPEGs are the version that goes out.
+ * devShark: the Studio draws each slide of a concept in the browser as the exact SVG the renderer publishes
+ * (`devsharkStudioSlideSvg` in `src/lib/design-studio/devshark-studio-slide.ts`, kept apart so the DNESKAi Lab does not
+ * load the devShark layout); once the plan has stored the post and story revisions (rendered from the same deck, which
+ * the Studio no longer edits), those JPEGs are the version that goes out.
  */
 export type DesignLabPicture = { url: string; width: number; height: number; alt: string };
 
@@ -39,5 +40,5 @@ export function dneskaiStoryPreviewRequest(revision: { id: string; deck: Dneskai
   return deck ? { id: revision.id, deck, slide: 0, format: 'instagram-story' } : null;
 }
 
-/** The Studio's render request for a devShark concept. */
+/** The Studio's server render request for a devShark concept (its Render button). */
 export const devsharkStudioRenderRequest = (concept: { deck: DevsharkDeck }) => ({ deck: concept.deck });
