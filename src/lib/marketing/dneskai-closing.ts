@@ -15,10 +15,11 @@ export const DNESKAI_CLOSING_FILE = ["templates", "carousel-studio", "brand-kits
 /**
  * The finished closing slide (owner, evening of 8 November 2026: the kit-drawn closing slide looked poor). One
  * 1080 × 1350 card, the same in every kit: the city from the Higgsfield picture without its window frame, in black and white, "SLEDUJ"
- * and "DNESKAi" in tall capitals, the follow line and the handle in a white outlined pill. The render draws this file instead of laying the
+ * in Poppins Black (the logotype's face) and the DNESKAi logotype itself under it (white DNESK, icy blue Ai, the K never
+ * tinted; owner, 9 November 2026), the follow line and the handle in a white outlined pill. The render draws this file instead of laying the
  * slide out in the deck's kit; its source is `closing-card-source/card.html` next to it.
  */
-export const DNESKAI_CLOSING_CARD_SHA256 = "5bca322771542592965a3c5ff0c0ceb1193a07774f6f56274027873984a77ac9";
+export const DNESKAI_CLOSING_CARD_SHA256 = "51ef2d195d070d2fca87f795e2d549036fe73be9aa52896e8f544f671dca0998";
 export const DNESKAI_CLOSING_CARD_FILE = ["templates", "carousel-studio", "brand-kits", "caught-up", "dneskai-closing-card.png"] as const;
 export const DNESKAI_CLOSING_CARD_TEMPLATE = { id: "dneskai-closing-card", version: "1.0.0" } as const;
 export const DNESKAI_CLOSING_HEADLINE = "Sleduj [[DNESKAi]]";

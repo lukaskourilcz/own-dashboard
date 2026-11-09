@@ -18,10 +18,12 @@ finished 1080 × 1350 card instead, the same in Spotlight and Plakát:
 
 - Picture: the same Higgsfield original, cropped inside the window frame (left 208, top 380, 1320 × 1173 of the
   1728 × 2304 PNG) so only the city shows, in black and white (owner, 8 November 2026), fading into ink.
-- Words: "SLEDUJ" in white and "DNESKAi" in the brand's icy blue (#6EC1FF), Anton at 212 px; "pro všechny novinky ze světa AI
+- Words (owner, 9 November 2026): "SLEDUJ" in white Poppins Black, the logotype's own face (OFL,
+  `closing-card-source/poppins-900.ttf` with `Poppins-OFL.txt`), and under it the DNESKAi logotype itself from
+  `DNESKAi-logo-dark.svg`: white DNESK, "Ai" in #6EC1FF drawn underneath so the K stays fully white; "pro všechny novinky ze světa AI
   a technologií." in Inter; "@dneskai" in white inside a white outlined pill with no fill, bottom right (owner, 8 November 2026: no "Instagram · Threads").
 - Source: `closing-card-source/card.html` with `photo.jpg`, screenshot at 1080 × 1350 in Playwright Chromium.
   A new screenshot is not byte-identical, so a redraw changes the pinned hash.
-- sha256 `109468ded4f3c10525b46e734f93865ae905b310c633772ccb43548aa15c5369`, pinned in
+- sha256 `51ef2d195d070d2fca87f795e2d549036fe73be9aa52896e8f544f671dca0998`, pinned in
   `src/lib/marketing/dneskai-closing.ts` (`DNESKAI_CLOSING_CARD_SHA256`). The deck still names the closing slide by
   the picture's hash above; the render sees that hash and draws the card.
