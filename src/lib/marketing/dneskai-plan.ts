@@ -306,6 +306,11 @@ async function keepNewsCurrent(db: Database, owner: string, slot: DneskaiPlanRow
 }
 
 /** Saves the plan's own edit of the head (Spotlight and/or the slot's time) and renders it, reusing the JPEGs when the deck is unchanged. */
+function renderRefusedForResolution(report: unknown): boolean {
+  const problems = (report as { problems?: Array<{ code?: unknown; blocking?: unknown }> } | null)?.problems ?? [];
+  return problems.some((problem) => problem.code === 'image-low-resolution' && problem.blocking === true);
+}
+
 async function illustrationChecked(db: Database, revisionId: string): Promise<boolean> {
   const { data, error } = await db.from('dneskai_illustration_checks').select('revision_id').eq('revision_id', revisionId).maybeSingle();
   if (error) return true;
@@ -488,8 +493,10 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
         // DNESKAI_ILLUSTRATE_ENABLED, a ready Instagram post whose slot is ahead is checked and its photo-less or
         // off-topic slides take library pictures; the new version is drawn at once and approved on the next pass.
         const env = input.env ?? process.env;
-        if (head && env.DNESKAI_ILLUSTRATE_ENABLED === 'true' && (head.status === 'review' || head.status === 'approved') && head.ready && head.revision.deck
-          && head.revision.account.platform === 'instagram' && Date.parse(dneskaiPlanSlotAt(slot)) > input.now.getTime() + 10 * 60_000 && !(await illustrationChecked(db, head.id))) {
+        // A version the render refused for a too-small picture is checked again, so the picture is replaced.
+        const lowResolution = !!head && head.status === 'review' && !head.ready && renderRefusedForResolution(head.render_report);
+        if (head && env.DNESKAI_ILLUSTRATE_ENABLED === 'true' && (head.status === 'review' || head.status === 'approved') && (head.ready || lowResolution) && head.revision.deck
+          && head.revision.account.platform === 'instagram' && Date.parse(dneskaiPlanSlotAt(slot)) > input.now.getTime() + 10 * 60_000 && (lowResolution || !(await illustrationChecked(db, head.id)))) {
           if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS + 15_000) { await record(slot, { code: 'plan-render-waiting' }); break; }
           let code = 'illustrate-error';
           try {
