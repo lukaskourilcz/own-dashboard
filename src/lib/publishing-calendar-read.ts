@@ -14,10 +14,12 @@ import {
   coverHeadline,
   type PublishingBrand,
   type PublishingCalendar,
-  type PublishingPicture,
   type PublishingPost,
   type PublishingVersion,
 } from "@/lib/publishing-calendar";
+import { devsharkCalendarRenders, dneskaiCalendarRenders } from "@/lib/publishing-calendar-renders";
+import { DevsharkDeckSchema } from "@/lib/marketing/devshark-deck";
+import type { DesignLabPicture } from "@/lib/marketing/design-lab-renders";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the generated database types do not cover marketing tables
 type Database = SupabaseClient<any>;
@@ -31,17 +33,24 @@ const pragueTime = (iso: string) => new Intl.DateTimeFormat("en-GB", { timeZone:
 const later = (iso: string, ms: number) => new Date(Date.parse(iso) + ms).toISOString();
 const https = (value: unknown) => { try { return typeof value === "string" && new URL(value).protocol === "https:" ? value : null; } catch { return null; } };
 
-/** The rendered JPEGs of a stored revision, read defensively: an asset that does not parse is left out. */
-function pictures(revision: unknown, fallbackAlt: string): PublishingPicture[] {
+/**
+ * The stored assets of a revision, read defensively as the Lab reads them (every asset in order, https only, no
+ * mime filter, so the count still lines up with the deck's slides); an asset that does not parse is left out.
+ */
+function storedAssets(revision: unknown): DesignLabPicture[] {
   const assets = (revision as { assets?: unknown } | null)?.assets;
   if (!Array.isArray(assets)) return [];
-  return assets.flatMap((raw): PublishingPicture[] => {
-    const asset = raw as { url?: unknown; alt?: unknown; width?: unknown; height?: unknown; mimeType?: unknown };
+  return assets.flatMap((raw): DesignLabPicture[] => {
+    const asset = raw as { url?: unknown; alt?: unknown; width?: unknown; height?: unknown };
     const url = https(asset?.url);
-    if (asset?.mimeType !== "image/jpeg" || !url || !Number.isInteger(asset.width) || !Number.isInteger(asset.height)) return [];
-    return [{ url, alt: (typeof asset.alt === "string" && asset.alt ? asset.alt : fallbackAlt).slice(0, 500), width: asset.width as number, height: asset.height as number }];
-  }).slice(0, 10);
+    if (!url || !Number.isInteger(asset.width) || !Number.isInteger(asset.height) || (asset.width as number) <= 0 || (asset.height as number) <= 0) return [];
+    return [{ url, alt: typeof asset.alt === "string" ? asset.alt : "", width: asset.width as number, height: asset.height as number }];
+  });
 }
+const deckOf = (revision: unknown) => {
+  const deck = (revision as { deck?: unknown } | null)?.deck as { kit?: unknown; slides?: unknown } | undefined;
+  return deck && Array.isArray(deck.slides) ? { ...(typeof deck.kit === "string" ? { kit: deck.kit } : {}), slides: deck.slides as unknown[] } : null;
+};
 const captionOf = (revision: unknown) => {
   const caption = (revision as { caption?: unknown } | null)?.caption;
   return typeof caption === "string" ? caption.slice(0, 2200) : null;
@@ -52,6 +61,32 @@ async function revisionsById(db: Database, owner: string, ids: string[]) {
   const { data, error } = await db.from("marketing_revisions").select("id,revision").eq("user_id", owner).in("id", ids);
   if (error) throw new Error("revisions-unavailable");
   return new Map(((data ?? []) as Array<{ id: string; revision: unknown }>).map((row) => [row.id, row.revision]));
+}
+
+/** How many saved versions in a row the calendar follows from the plan's head to the newest one. */
+const SUCCESSOR_STEPS = 10;
+/**
+ * The newest saved version of each revision, as the Design Lab shows it: the plan names its head, but an edit saved in
+ * the Lab is a successor (`replaces_id`) the plan picks up only on its next tick. Follows the newest successor, as the
+ * plan's own `resolveHead` does, a bounded number of steps.
+ */
+async function newestVersions(db: Database, owner: string, ids: string[]): Promise<Map<string, string>> {
+  const newest = new Map(ids.map((id) => [id, id]));
+  let frontier = new Map(ids.map((id) => [id, [id]]));
+  for (let step = 0; step < SUCCESSOR_STEPS && frontier.size; step++) {
+    const { data, error } = await db.from("marketing_revisions").select("id,replaces_id,created_at").eq("user_id", owner).in("replaces_id", [...frontier.keys()]).order("created_at", { ascending: false }).limit(200);
+    if (error) throw new Error("revisions-unavailable");
+    const next = new Map<string, string[]>();
+    for (const row of (data ?? []) as Array<{ id: string; replaces_id: string }>) {
+      const origins = frontier.get(row.replaces_id);
+      // Newest first: the first successor of a version wins.
+      if (!origins || [...next.values()].some((list) => list === origins)) continue;
+      for (const origin of origins) newest.set(origin, row.id);
+      next.set(row.id, origins);
+    }
+    frontier = next;
+  }
+  return newest;
 }
 
 type Switches = ReadonlySet<string>;
@@ -71,21 +106,25 @@ type DraftVersion = Draft["versions"][number];
 
 async function dneskaiPosts(db: Database, owner: string, now: Date, from: string, switches: Switches): Promise<PublishingPost[]> {
   const plan = await readDneskaiPlan(db, owner, now, { from, days: PUBLISHING_CALENDAR_DAYS, enabled: dneskaiPlanEnabled() });
-  const stories = await revisionsById(db, owner, plan.slots.flatMap((slot) => [slot.story?.revisionId, slot.labPostId].filter((id): id is string => !!id)));
+  const heads = await newestVersions(db, owner, [...new Set(plan.slots.flatMap((slot) => slot.labPostId ? [slot.labPostId] : []))]);
+  const revisions = await revisionsById(db, owner, [...new Set(heads.values())]);
   return plan.slots.map((slot): PublishingPost => {
-    const slides = slot.slides.filter((slide) => https(slide.url)).map((slide) => ({ url: slide.url, alt: (slide.alt || slot.title).slice(0, 500), width: slide.width, height: slide.height }));
+    const headId = slot.labPostId ? heads.get(slot.labPostId) ?? slot.labPostId : null;
+    const head = headId ? revisions.get(headId) : undefined;
+    // The pictures of the version the Design Lab shows, through the Lab's own resolver.
+    const renders = headId && head ? dneskaiCalendarRenders({ id: headId, deck: deckOf(head), assets: storedAssets(head) }, slot.title) : null;
+    const slides = renders?.slides ?? [];
     const versions: DraftVersion[] = [];
     if (slot.instagram) {
       const at = later(slot.scheduledAt, STORY_DELAY_MS);
-      const story = slot.story?.revisionId ? pictures(stories.get(slot.story.revisionId), slot.title).slice(0, 1) : [];
-      versions.push({ channel: "story", time: pragueTime(at), scheduledAt: at, status: slot.story?.publicationStatus ?? slot.status, caption: null, pictures: story.length ? story : slides.slice(0, 1) });
-      versions.push({ channel: "instagram", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.instagram.publicationStatus ?? slot.status, caption: slot.instagram.caption, pictures: slides });
+      versions.push({ channel: "story", time: pragueTime(at), scheduledAt: at, status: slot.story?.publicationStatus ?? slot.status, caption: null, pictures: renders?.story.pictures ?? [], live: renders?.story.live ?? null });
+      versions.push({ channel: "instagram", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.instagram.publicationStatus ?? slot.status, caption: captionOf(head) ?? slot.instagram.caption, pictures: slides });
     }
     if (slot.threads) versions.push({ channel: "threads", time: slot.time, scheduledAt: slot.scheduledAt, status: slot.threads.publicationStatus ?? slot.status, caption: slot.threads.caption, pictures: slides });
     return withSwitches({
       id: `dneskai:${slot.id}`, brand: "dneskai", slotId: slot.id, date: slot.date, time: slot.time, scheduledAt: slot.scheduledAt, title: slot.title, status: slot.status,
-      headline: slot.labPostId ? coverHeadline((stories.get(slot.labPostId) as { deck?: unknown } | undefined)?.deck) : null,
-      thumbnail: slides[0] ?? null, target: slot.labPostId ? { kind: "dneskai-lab", postId: slot.labPostId } : null, versions,
+      headline: head ? coverHeadline((head as { deck?: unknown }).deck) : null,
+      thumbnail: renders?.thumbnail ?? null, target: headId ? { kind: "dneskai-lab", postId: headId } : null, versions,
     }, switches);
   }).filter((post) => post.versions.length > 0);
 }
@@ -111,18 +150,20 @@ async function devsharkPosts(db: Database, owner: string, from: string, until: s
     const scheduledAt = new Date(pragueScheduledAt(row.date, row.local_time)).toISOString();
     const post = row.instagram_revision_id ? revisions.get(row.instagram_revision_id) : undefined;
     const threads = row.threads_revision_id ? revisions.get(row.threads_revision_id) : undefined;
-    const slides = pictures(post ?? threads ?? null, title);
+    const deck = DevsharkDeckSchema.safeParse(concept?.deck);
+    // The Studio's pictures: the stored JPEGs once planned, before then the concept drawn by the Studio's own route.
+    const renders = devsharkCalendarRenders(deck.success ? { title, deck: deck.data } : null,
+      { post: storedAssets(post ?? null), threads: storedAssets(threads ?? null), story: storedAssets(row.story_revision_id ? revisions.get(row.story_revision_id) : null) });
     const versions: DraftVersion[] = [];
     if (row.instagram) {
       const at = later(scheduledAt, STORY_DELAY_MS);
-      const story = pictures(row.story_revision_id ? revisions.get(row.story_revision_id) : null, title).slice(0, 1);
-      versions.push({ channel: "story", time: pragueTime(at), scheduledAt: at, status: row.status, caption: null, pictures: story.length ? story : slides.slice(0, 1) });
-      versions.push({ channel: "instagram", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(post) ?? concept?.caption?.slice(0, 2200) ?? null, pictures: slides });
+      versions.push({ channel: "story", time: pragueTime(at), scheduledAt: at, status: row.status, caption: null, pictures: renders.story });
+      versions.push({ channel: "instagram", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(post) ?? concept?.caption?.slice(0, 2200) ?? null, pictures: renders.slides, live: renders.live });
     }
-    if (row.threads) versions.push({ channel: "threads", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(threads), pictures: pictures(threads ?? post ?? null, title) });
+    if (row.threads) versions.push({ channel: "threads", time: row.local_time, scheduledAt, status: row.status, caption: captionOf(threads), pictures: renders.threads, live: renders.live });
     return withSwitches({
       id: `devshark:${row.id}`, brand: "devshark", slotId: row.id, date: row.date, time: row.local_time, scheduledAt, title, status: row.status, headline: coverHeadline(concept?.deck),
-      thumbnail: slides[0] ?? null, target: { kind: "devshark-studio", draftId: row.draft_id }, versions,
+      thumbnail: renders.thumbnail, target: { kind: "devshark-studio", draftId: row.draft_id }, versions,
     }, switches);
   }).filter((post) => post.versions.length > 0);
 }
