@@ -25,7 +25,8 @@ export const DNESKAI_EDITORIAL_KIT: DneskaiKitId = "editorial";
  * The kits the slide engine (src/lib/carousel-studio) registers and so can draw and fit. Browser-safe, so the Lab can
  * offer exactly these; `tests/lib/carousel-studio-vendor.test.ts` holds it to the vendored registry.
  */
-export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight", "plakat", "videofirst"];
+// `videofirst` stays a known id so published history still parses; it is no longer drawn (owner, 9 November 2026).
+export const DNESKAI_RENDERABLE_KIT_IDS: readonly DneskaiKitId[] = ["editorial", "bold", "explainer", "magazine", "ticker", "spotlight", "plakat"];
 /**
  * Owner decision, 8 November 2026 (replacing Spotlight-only of 6 November; Video-first dropped the same evening, so
  * only two styles remain): every generated DNESKAi post is drawn in one of these styles, picked at random with equal odds and stored in the deck's `kit`, so a re-render keeps it. The
