@@ -20,7 +20,7 @@ export function DneskaiTopicsPanel({ projects, projectsStatus, isPreview = false
   const t = dneskaiLab[lang].topics;
   const project = useMemo(() => projects.find((item) => isDneskaiProject(item)) ?? null, [projects]);
   return <section className="min-w-0 space-y-4" data-testid="dneskai-topics-panel">
-    <PageHeader title={nav[lang].sections.topics} description={t.intro} />
+    <PageHeader title={nav[lang].sections.topics} />
     {project ? <DneskaiTopicsList projectId={project.id} lang={lang} preview={isPreview} standalone />
       : projectsStatus?.failed ? <p role="alert" className="text-sm text-risk">{t.unavailable}</p>
       : projectsStatus && !projectsStatus.ready ? null
