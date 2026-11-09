@@ -29,6 +29,7 @@ import { MarketingPanel } from "@/components/panels/marketing-panel";
 import { WorkflowsPanel } from "@/components/panels/workflows-panel";
 import { IgTipsPanel } from "@/components/panels/ig-tips-panel";
 import { IgCollectionPanel } from "@/components/panels/ig-collection-panel";
+import { DneskaiTopicsPanel } from "@/components/panels/dneskai-topics-panel";
 import { CustomizableOverview } from "@/components/overview/customizable-overview";
 import { KpiCards } from "@/components/overview/kpi-cards";
 import { RecurringPlans } from "@/components/overview/recurring-plans";
@@ -403,6 +404,7 @@ export function DashboardShell(props: Props) {
           {tab === "calendar" && <div className="grid gap-4 lg:grid-cols-2"><CalendarPanel /><WeekView calendar={weekCalendar} selectedCalendarIds={props.selectedCalendarIds} /></div>}
           {tab === "backlog" && <BacklogPanel isPreview={props.isPreview} />}
           {tab === "schedule" && <PublishingCalendarPanel isPreview={props.isPreview} />}
+          {tab === "topics" && <DneskaiTopicsPanel projects={projects} projectsStatus={projectsStatus} isPreview={props.isPreview} />}
           {tab === "goals" && <PlansPanel plans={plans} setPlans={setPlans} />}
           {tab === "dates" && <ImportantDatesPanel dates={importantDates} setDates={setImportantDates} userId={user.id} projects={activeProjects} organizations={organizations} />}
           {tab === "notes" && <NotesPanel notes={notes} setNotes={setNotes} projects={activeProjects} />}
