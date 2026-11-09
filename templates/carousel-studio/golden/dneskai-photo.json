@@ -10,13 +10,13 @@
       "name": "cover-photo",
       "templateId": "dneskai-cover-photo",
       "version": "1.0.0",
-      "pngHash": "2edc4328cea25cccab5611730e54f3760d89c0c290504a5f63860546d4c67c79"
+      "pngHash": "90f2c5f628afd6ad87464c5b17d5679de33608d1f0e3a7f8dc8aa815d8bc70e4"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-cover-photo",
       "version": "1.0.0",
-      "pngHash": "e41dbd616c51aae1f014f2552670009b9e821be653a684742902cc19963b5bee"
+      "pngHash": "d30dad537987ad2ce269087383318ea870253a4c84a68889fe54d1ad2345f8ab"
     },
     {
       "name": "figure",
@@ -58,7 +58,7 @@
       "name": "single-photo",
       "templateId": "dneskai-single-photo",
       "version": "1.1.0",
-      "pngHash": "cfd1c54ea68097e358364d86637ff66781c029be73c59e33ac62894facfe7e59"
+      "pngHash": "29b6d4d3bf35b6ba1859b2455387569fdc847c8eb9294738402dce2e05224c59"
     },
     {
       "name": "single-photo-focal",

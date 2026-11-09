@@ -10,13 +10,13 @@
       "name": "cover-photo",
       "templateId": "dneskai-spotlight-cover-photo",
       "version": "1.1.0",
-      "pngHash": "7604a68ab2503efcccdd2cfefd2693bc2d9e474b1d84145fff72dd1041fc7255"
+      "pngHash": "845d6d6a7871e52f896d0788e68ed77ff26d4d04d8aff51c23425a4734f7d59f"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-spotlight-cover-photo",
       "version": "1.1.0",
-      "pngHash": "7c99b184b974738aeaf5f43071cf7c40717591a8d881ffa76271fe3c584ff0ed"
+      "pngHash": "2eeacbe790a941dc21a8e52b793334585d457156c7730091a5b0691d4f2d9314"
     },
     {
       "name": "figure",
@@ -58,13 +58,13 @@
       "name": "single-photo",
       "templateId": "dneskai-spotlight-single-photo",
       "version": "1.1.0",
-      "pngHash": "e6b2c7fc456fdd9d9efd1d56d09dcb2a97cf75761a4c3bc906b74aec9a7c85c8"
+      "pngHash": "2311fccc881c0e67b1a7af1401d07c6ab77ebefb96782fb36a29229700496b8f"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-spotlight-single-photo",
       "version": "1.1.0",
-      "pngHash": "714abd863c8f7c0b3ca1ed4dab1214a52a0b95e4d3b7b0d2c220673a2e1b2926"
+      "pngHash": "330a646f601647371e1b6049c92f3c7dc26db37f5e06f9d14be89e381b3594be"
     },
     {
       "name": "single-type",
