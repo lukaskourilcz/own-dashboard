@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fontFiles, measureEm, resolveFace } from '@/lib/carousel-studio/fonts';
+import { fitText } from '@/lib/carousel-studio/text';
 import { DNESKAI_CLOSING_DEFAULTS, type DneskaiClosingWords } from './dneskai-closing';
 
 /**
@@ -14,7 +15,7 @@ const SOURCE = path.join(process.cwd(), 'templates', 'carousel-studio', 'brand-k
 const BASE = path.join(SOURCE, 'closing-card-source', 'card-base.png');
 const POPPINS = path.join(SOURCE, 'closing-card-source', 'poppins-900.ttf');
 const LOGO = path.join(SOURCE, 'DNESKAi-logo-dark.svg');
-export const DNESKAI_CLOSING_CARD_VERSION = 'dneskai-closing-card/2';
+export const DNESKAI_CLOSING_CARD_VERSION = 'dneskai-closing-card/3';
 
 export { DNESKAI_CLOSING_DEFAULTS } from './dneskai-closing';
 
@@ -33,18 +34,6 @@ export function dneskaiClosingWords(slide: { headline?: string; body?: string })
 /** The closing slide's text for given words, as the deck stores it. */
 export const dneskaiClosingText = (words: DneskaiClosingWords) => ({ headline: `${words.headline} [[DNESKAi]]`, body: `${words.body} ${words.handle}` });
 
-function wrap(text: string, size: number, width: number): string[] {
-  const face = resolveFace('Inter', 400);
-  const lines: string[] = [];
-  let line = '';
-  for (const word of text.split(/\s+/).filter(Boolean)) {
-    const next = line ? `${line} ${word}` : word;
-    if (line && measureEm(face, next) * size > width) { lines.push(line); line = word; } else line = next;
-  }
-  if (line) lines.push(line);
-  return lines.slice(0, 4);
-}
-
 let assets: Promise<{ base: string; logo: string }> | null = null;
 function loadAssets() {
   assets ??= Promise.all([readFile(BASE), readFile(LOGO, 'utf8')]).then(([base, logo]) => ({
@@ -56,22 +45,36 @@ function loadAssets() {
 
 export async function renderDneskaiClosingCard(words: DneskaiClosingWords): Promise<Buffer> {
   const [{ base, logo }, { Resvg }] = await Promise.all([loadAssets(), import('@resvg/resvg-js')]);
-  const bodyLines = wrap(words.body, 32, 880);
-  const pillText = 38, pillPadX = 31, pillPadY = 19, pillStroke = 3;
-  const pillWidth = measureEm(resolveFace('Inter', 700), words.handle) * pillText + 2 * pillPadX + 2 * pillStroke;
-  const pillHeight = pillText + 2 * pillPadY + 2 * pillStroke;
+  const body = fitText({
+    value: words.body, locale: 'cs', widthPx: 880, heightPx: 166.4,
+    minFontSize: 20, maxFontSize: 32, maxLines: 4, maxChars: 160,
+    fontFamily: 'Inter', fontWeight: 400, leading: 1.3, keepWithNext: 'cs', balance: true,
+  });
+  const headline = `<text font-family="Poppins" font-weight="900" font-size="206" letter-spacing="-2" fill="#FFFFFF">${escape(words.headline.toUpperCase())}</text>`;
+  // Measure the glyphs in the card font before applying the viewport or the headline position.
+  const headlineBounds = new Resvg(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${headline}</svg>`, {
+    font: { fontFiles: [POPPINS], loadSystemFonts: false, defaultFontFamily: 'Poppins' },
+  }).getBBox();
+  const headlineRight = headlineBounds ? headlineBounds.x + headlineBounds.width : 0;
+  const headlineScale = headlineRight > MEASURE ? MEASURE / headlineRight : 1;
+  const pillPadX = 31, pillPadY = 19, pillStroke = 3;
+  const pillPadding = 2 * (pillPadX + pillStroke);
+  const handleWidth = measureEm(resolveFace('Inter', 700), words.handle);
+  const pillText = Math.min(38, Math.floor((MEASURE - pillPadding) / handleWidth));
+  const pillWidth = handleWidth * pillText + pillPadding;
+  const pillHeight = 38 + 2 * pillPadY + 2 * pillStroke;
   // Stacked from the floor up, as the page sets it: pill, 64 px, the line, 18 px, the logotype, 22 px, the word.
   const pillTop = H - BOTTOM - pillHeight;
-  const bodyTop = pillTop - 64 - bodyLines.length * 41.6;
+  const bodyLineHeight = body.fontSize * 1.3;
+  const bodyTop = pillTop - 64 - body.lines.length * bodyLineHeight;
   const logoHeight = MEASURE * 708 / 4217.817852834741;
   const logoTop = bodyTop - 18 - logoHeight;
-  const headlineTop = logoTop - 22 - 206;
   const scale = MEASURE / 4217.817852834741;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
 <image href="${base}" x="0" y="0" width="${W}" height="${H}"/>
-<text x="${LEFT - 6}" y="${(headlineTop + 175).toFixed(1)}" font-family="Poppins" font-weight="900" font-size="206" letter-spacing="-2" fill="#FFFFFF">${escape(words.headline.toUpperCase())}</text>
+<g transform="translate(${LEFT - 6} ${(logoTop - 53).toFixed(1)}) scale(${headlineScale})">${headline}</g>
 <g transform="translate(${LEFT} ${logoTop.toFixed(2)}) scale(${scale.toFixed(6)}) translate(-50 708)">${logo}</g>
-${bodyLines.map((line, index) => `<text x="${LEFT + 2}" y="${(bodyTop + index * 41.6 + 32.5).toFixed(1)}" font-family="Inter" font-weight="400" font-size="32" fill="#E6E7EA">${escape(line)}</text>`).join('')}
+${body.lines.map((line, index) => `<text x="${LEFT + 2}" y="${(bodyTop + index * bodyLineHeight + body.fontSize * (32.5 / 32)).toFixed(1)}" font-family="Inter" font-weight="400" font-size="${body.fontSize}" fill="#E6E7EA">${escape(line)}</text>`).join('')}
 <rect x="${(W - LEFT - pillWidth + pillStroke / 2).toFixed(1)}" y="${(pillTop + pillStroke / 2).toFixed(1)}" width="${(pillWidth - pillStroke).toFixed(1)}" height="${pillHeight - pillStroke}" rx="${(pillHeight / 2).toFixed(1)}" fill="none" stroke="#FFFFFF" stroke-width="${pillStroke}"/>
 <text x="${(W - LEFT - pillWidth / 2).toFixed(1)}" y="${(pillTop + pillHeight / 2 + 13.5).toFixed(1)}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="${pillText}" fill="#FFFFFF">${escape(words.handle)}</text>
 </svg>`;

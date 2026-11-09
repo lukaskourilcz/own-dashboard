@@ -268,7 +268,7 @@ export const DneskaiRenderProblemSchema = z.strictObject({
   field: z.string().max(80).regex(/^[a-z][a-z0-9-]*(?:\[\d\])?$/).nullable().optional(),
 });
 /** Bump when the DNESKAi pixels or the clip, glyph and placement rules change. */
-export const DNESKAI_RENDER_POLICY = "dneskai-render/8";
+export const DNESKAI_RENDER_POLICY = "dneskai-render/9";
 export const DNESKAI_RENDER_REPORT_VERSION = "dneskai-render-report/1";
 export const DneskaiRenderReportSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_RENDER_REPORT_VERSION),
