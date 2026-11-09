@@ -44,11 +44,12 @@ function applyKeyword(read: DneskaiTopicsRead, id: string, keyword: string | nul
 }
 
 /**
- * Topics (náměty, #154) at the top of the Design Lab: proposed titles grouped News and Education, each approved or
- * rejected by the owner before anything is researched or generated. Keyboard: arrow keys move between rows, A
- * approves and Z rejects the focused row. Renders nothing while the server has topics off (the read is null).
+ * Topics (náměty, #154): proposed titles grouped News and Education, each approved or rejected by the owner before
+ * anything is researched or generated. Keyboard: arrow keys move between rows, A approves and Z rejects the focused
+ * row. Since 9 November 2026 (owner request) it lives in its own Náměty section, whose page header carries the title
+ * and intro; `standalone` hides the list's own and says so when the server has topics off (the read is null).
  */
-export function DneskaiTopicsList({ projectId, lang, preview }: { projectId: string; lang: Lang; preview: boolean }) {
+export function DneskaiTopicsList({ projectId, lang, preview, standalone = false }: { projectId: string; lang: Lang; preview: boolean; standalone?: boolean }) {
   const t = dneskaiLab[lang].topics;
   const queryClient = useQueryClient();
   const key = dneskaiTopicsKey(projectId);
@@ -87,7 +88,8 @@ export function DneskaiTopicsList({ projectId, lang, preview }: { projectId: str
   const rows = open.flatMap((group) => group.topics);
   const proposedIds = new Set(rows.filter((topic) => topic.status === 'proposed').map((topic) => topic.id));
   const chosen = [...selected].filter((id) => proposedIds.has(id));
-  if (query.isPending || read === null) return null;
+  if (query.isPending) return null;
+  if (read === null) return standalone ? <p className="text-sm text-foreground-muted" data-testid="dneskai-topics-off">{t.off}</p> : null;
   if (query.isError || !read) return <p role="alert" className="text-sm text-risk">{t.unavailable}</p>;
 
   const decide = (action: Decision, ids: string[]) => {
@@ -123,7 +125,8 @@ export function DneskaiTopicsList({ projectId, lang, preview }: { projectId: str
 
   return <section aria-labelledby={`${projectId}-topics-title`} className="space-y-3 rounded-md border border-border bg-surface p-3" data-testid="dneskai-topics" aria-busy={mutation.isPending}>
     <div className="flex flex-wrap items-start justify-between gap-2">
-      <div className="min-w-0"><h3 id={`${projectId}-topics-title`} className="text-sm font-semibold">{t.title}</h3><p className="text-xs text-foreground-muted">{t.intro}</p></div>
+      {standalone ? <h2 id={`${projectId}-topics-title`} className="sr-only">{t.title}</h2>
+        : <div className="min-w-0"><h3 id={`${projectId}-topics-title`} className="text-sm font-semibold">{t.title}</h3><p className="text-xs text-foreground-muted">{t.intro}</p></div>}
       {chosen.length > 0 && <Button size="sm" disabled={mutation.isPending} onClick={() => decide('approve', chosen)} data-testid="dneskai-topics-approve-selected">{t.approveSelected(chosen.length)}</Button>}
     </div>
     {read.newTopicsPaused && <p className="rounded-md border border-border bg-surface-inset p-2 text-xs text-foreground-muted" data-testid="dneskai-topics-paused">{t.paused}</p>}
