@@ -1,6 +1,6 @@
 /** The DNESKAi closing slide section of the Design Lab (owner, 9 November 2026). English and Czech say the same. */
 const en = {
-  title: 'Closing slide',
+  title: 'Promo slide',
   help: 'The last slide that invites readers to follow DNESKAi. While the switch is off, no post gets it and the plan takes it off planned posts.',
   auto: 'Add it automatically as the last slide of every planned carousel',
   headline: 'Follow word',
@@ -13,9 +13,11 @@ const en = {
   saved: 'Saved. The plan applies it to planned posts within a few minutes.',
   failed: 'Could not save. Check the words and try again.',
   loading: 'Loading the closing slide…',
+  unavailable: 'Could not load the promo slide settings.',
+  retry: 'Try again',
 };
 const cs: typeof en = {
-  title: 'Závěrečný slide',
+  title: 'Promo slide',
   help: 'Poslední slide, který zve ke sledování DNESKAi. Dokud je přepínač vypnutý, žádný příspěvek ho nedostane a plán ho z naplánovaných příspěvků odebere.',
   auto: 'Automaticky přidávat jako poslední slide každého naplánovaného carouselu',
   headline: 'Výzva',
@@ -28,5 +30,7 @@ const cs: typeof en = {
   saved: 'Uloženo. Plán to během pár minut promítne do naplánovaných příspěvků.',
   failed: 'Nepodařilo se uložit. Zkontrolujte texty a zkuste to znovu.',
   loading: 'Načítám závěrečný slide…',
+  unavailable: 'Nastavení promo slidu se nepodařilo načíst.',
+  retry: 'Zkusit znovu',
 };
 export const dneskaiClosing = { en, cs };

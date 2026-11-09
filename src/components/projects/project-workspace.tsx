@@ -215,10 +215,10 @@ export function ProjectWorkspace(props: Props) {
     "dneskai-published": dneskaiLabels.published,
     "dneskai-costs": dneskaiLabels.costs,
     "dneskai-today": dneskaiLabels.today,
+    "dneskai-promo": dneskaiLabels.promo,
   };
   const dneskaiTab = (id: DneskaiProjectTab) => isProjectTabHidden(id) ? [] : [{ id, label: dneskaiTabLabels[id] }];
-  // DNESKAi shows five tabs: today and tomorrow (the default), review, calendar, posts and sources (#169). Settings lists them in the same
-  // order and can hide each. The general project sections sit in the overflow menu; the one that is open joins the strip.
+  // Settings lists the DNESKAi tabs in the same order. The open general project section joins them from the overflow menu.
   const dneskaiStrip = DNESKAI_WORKSPACE_TAB_ORDER.flatMap((id) => id === "sources" ? projectTabs.filter((item) => item.id === "sources") : dneskaiTab(id));
   const dneskaiSections = projectTabs.filter((item) => item.id !== "sources");
   const openSection = dneskai ? dneskaiSections.find((item) => item.id === selectedTab) : undefined;

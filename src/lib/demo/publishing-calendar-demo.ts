@@ -1,6 +1,7 @@
 import { demoDneskaiWorkspaceApi, DEMO_DNESKAI_PROJECT_ID } from "@/lib/demo/dneskai-workspace-demo";
 import { demoDevsharkStudio } from "@/lib/demo/devshark-studio-demo";
 import { devsharkCalendarRenders, dneskaiCalendarRenders } from "@/lib/publishing-calendar-renders";
+import { dneskaiThreadsText, stripThreadsHashtags } from "@/lib/marketing/dneskai-threads";
 import {
   PUBLISHING_CONNECTED,
   coverHeadline,
@@ -50,7 +51,7 @@ export async function previewPublishingCalendar(now = new Date()): Promise<Publi
     posts.push(withSwitches({
       id: `dneskai:${SLOTS[index]}`, brand: "dneskai", slotId: SLOTS[index]!, date, time, scheduledAt: at(date, time), title: post.title, headline: coverHeadline(post.deck),
       status: post.status, thumbnail: renders.thumbnail, target: { kind: "dneskai-lab", postId: post.id },
-      versions: [version("story", date, plus(time, 10), post.status, null, renders.story.pictures, renders.story.live), version("instagram", date, time, post.status, post.caption, renders.slides), version("threads", date, time, post.status, post.caption.split("\n\n")[0] ?? post.caption, renders.slides)],
+      versions: [version("story", date, plus(time, 10), post.status, null, renders.story.pictures, renders.story.live), version("instagram", date, time, index === 1 ? "published" : post.status, post.caption, renders.slides), version("threads", date, time, index === 1 ? "failed" : post.status, dneskaiThreadsText(post.caption), renders.slides)],
     }));
   });
   devshark.drafts.slice(0, 2).forEach((draft, index) => {
@@ -58,8 +59,8 @@ export async function previewPublishingCalendar(now = new Date()): Promise<Publi
     // Nothing is stored in the preview, so the post is the Studio's render request, as the Studio draws it.
     const renders = devsharkCalendarRenders(draft, { post: [], threads: [], story: [] });
     const versions = index === 0
-      ? [version("story", date, plus(time, 10), draft.status, null, renders.story), version("instagram", date, time, draft.status, draft.caption, renders.slides, renders.live), version("threads", date, time, draft.status, draft.caption.split("\n\n")[0] ?? draft.caption, renders.threads, renders.live)]
-      : [version("threads", date, time, draft.status, draft.caption.split("\n\n")[0] ?? draft.caption, renders.threads, renders.live)];
+      ? [version("story", date, plus(time, 10), draft.status, null, renders.story), version("instagram", date, time, draft.status, draft.caption, renders.slides, renders.live), version("threads", date, time, draft.status, stripThreadsHashtags(draft.caption.split("\n\n")[0] ?? draft.caption), renders.threads, renders.live)]
+      : [version("threads", date, time, draft.status, stripThreadsHashtags(draft.caption.split("\n\n")[0] ?? draft.caption), renders.threads, renders.live)];
     posts.push(withSwitches({
       id: `devshark:${slot}`, brand: "devshark", slotId: slot, date, time, scheduledAt: at(date, time), title: draft.title, headline: coverHeadline(draft.deck),
       status: draft.status, thumbnail: renders.thumbnail, target: { kind: "devshark-studio", draftId: draft.id }, versions,

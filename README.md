@@ -212,6 +212,7 @@ The migrations, in the order they run:
 114. `20261109140000_dneskai_illustration_checks.sql` — the DNESKAi post versions whose photographs the plan has checked.
 115. `20261109150000_dneskai_closing_settings.sql` — the DNESKAi closing slide's switch and words, edited by the owner in the Design Lab.
 116. `20261109160000_dneskai_codex_illustrations.sql` — generated Codex illustrations can share the DNESKAi library and supply pictures for briefs.
+117. `20261109204711_dneskai_promo_tab.sql` — allows the Promo slide tab to be hidden in workspace settings.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.

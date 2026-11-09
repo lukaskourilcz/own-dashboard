@@ -35,9 +35,19 @@ test("DNESKAi slides and cover in the calendar are the Design Lab's renders of t
   await gotoPreview(page);
   const dialog = await openDneskaiPost(page);
   await dialog.getByRole("tab", { name: "Post", exact: true }).click();
+  const [whole, media] = await Promise.all([dialog.boundingBox(), dialog.getByTestId("publishing-post-media").boundingBox()]);
+  expect(media!.width / whole!.width).toBeCloseTo(1 / 3, 2);
+  expect(media!.x).toBeLessThan(whole!.x + 2);
+  await expect(page.locator('[data-status="published"]')).toHaveClass(/text-success/);
+  await expect(page.locator('[data-status="failed"]')).toHaveClass(/text-risk/);
   const slides = dialog.getByTestId("version-slides").locator("img");
   await expect(slides.first()).toBeVisible();
   const calendarSources = await sources(slides);
+  if (calendarSources.length > 1) {
+    await dialog.getByRole("button", { name: "Next slide" }).click();
+    await expect(slides.nth(1)).toBeVisible();
+    await dialog.getByRole("button", { name: "Previous slide" }).click();
+  }
   const calendarShot = await dialog.screenshot();
   await dialog.getByRole("button", { name: "Edit in Design Lab" }).click();
   await expect(page).toHaveURL(/labPost=/);

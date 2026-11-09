@@ -2,7 +2,7 @@ import { dneskaiShownDeck } from "./dneskai-slide-layout";
 import "server-only";
 import { z } from "zod";
 import type { createAdminClient } from "@/lib/supabase/admin";
-import { AssetSchema, DNESKAI_RENDER_REPORT_VERSION, DneskaiRenderReportSchema, canonicalJson, parseContentRevision, renderReportBlocks, revisionReadiness, storedRenderKeys,
+import { AssetSchema, DNESKAI_RENDER_POLICY, DNESKAI_RENDER_REPORT_VERSION, DneskaiRenderReportSchema, canonicalJson, parseContentRevision, renderReportBlocks, revisionReadiness, storedRenderKeys,
   storedRenderProblems, type ContentEngagement, type ContentRevision, type DneskaiRenderReport } from "./contracts";
 import { dneskaiDeckAssetHashes, type DneskaiDeck } from "./dneskai-slides";
 import { DneskaiRevisionEditError, applyDneskaiDeckEdit, dneskaiDeckEditNeedsPool, type DneskaiDeckEdit } from "./dneskai-deck-edit";
@@ -90,6 +90,7 @@ export async function renderAndAttachDneskaiRevision(db: Database, owner: string
   if (!revision.deck || revision.assets.length) return fail("revision-not-renderable");
   const reuse = dependencies.reuse ?? null;
   const renderedAt = reuse ? reuse.report.renderedAt : (dependencies.now ?? (() => new Date()))().toISOString();
+  const policy = reuse ? reuse.report.policy : DNESKAI_RENDER_POLICY;
   let content = revision; let ready = false;
   let report: DneskaiRenderReport;
   let result: Awaited<ReturnType<RenderDneskaiDeck>> | null = null;
@@ -118,7 +119,7 @@ export async function renderAndAttachDneskaiRevision(db: Database, owner: string
       else problems.push(...issues.map((code) => ({ slide: -1, code, blocking: true, message: "The rendered assets do not satisfy the revision." })));
     }
     const renderKeys = ready ? storedRenderKeys(result.renderKeys) : [];
-    report = { schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: ready ? "rendered" : "refused", problems: problems.slice(0, 100), renderKeys, renderedAt };
+    report = { schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: ready ? "rendered" : "refused", problems: problems.slice(0, 100), renderKeys, renderedAt, ...(policy ? { policy } : {}) };
   }
   report = DneskaiRenderReportSchema.parse(report);
   const contentHash = revisionContentHash(content);

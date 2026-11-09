@@ -3,7 +3,7 @@
 import { useMemo, useState, type KeyboardEvent } from "react";
 import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AtSign, CircleDashed, ExternalLink, ImageIcon, Link2, Users } from "lucide-react";
+import { AtSign, Check, ChevronLeft, ChevronRight, CircleAlert, CircleDashed, ExternalLink, ImageIcon, Link2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -69,7 +69,7 @@ export const PREVIEW_PUBLISHING: PublishingCalendar = {
       versions: [
         version("story", "2026-11-08", "08:10", "approved", null),
         version("instagram", "2026-11-08", "08:00", "approved", "Nový model přečte tabulku z fotky a spočítá ji za tebe.\n\n#dneskai #ai #tabulky"),
-        version("threads", "2026-11-08", "08:00", "approved", "Nový model přečte tabulku z fotky a spočítá ji za tebe. #AI"),
+        version("threads", "2026-11-08", "08:00", "approved", "Nový model přečte tabulku z fotky a spočítá ji za tebe."),
       ] },
     { id: "p2", slotId: "00000000-0000-4000-8000-0000000000d2", off: false, brand: "devshark", date: "2026-11-08", time: "12:00", scheduledAt: at("2026-11-08", "12:00"), title: "typeof null", headline: "typeof null", status: "ready", thumbnail: null,
       target: { kind: "devshark-studio", draftId: "00000000-0000-4000-8000-000000000001" },
@@ -97,6 +97,7 @@ function dayLabel(date: string, from: string, lang: Lang): string {
 }
 
 const CHANNEL_ICON = { story: CircleDashed, instagram: ImageIcon, threads: AtSign, linkedin: Link2, facebook: Users } as const;
+const publicationTone = (status: string | undefined) => status === "published" ? "success" : status === "failed" ? "risk" : undefined;
 
 /** Opens the post's editor in its project workspace without leaving the shell. */
 function openTarget(target: NonNullable<PublishingPost["target"]>, channel?: PublishingChannel) {
@@ -113,10 +114,16 @@ function ChannelMarks({ post, connected, lang }: { post: PublishingPost; connect
       const Icon = CHANNEL_ICON[channel];
       const version = post.versions.find((v) => v.channel === channel);
       const live = !!version && connected[networkOfChannel(channel)] && versionLive(post, version);
-      return <span key={channel} title={connected[networkOfChannel(channel)] ? t.channel[channel] : `${t.channel[channel]} · ${t.notConnected}`}
+      const tone = publicationTone(version?.status);
+      const label = tone ? t.statuses[version!.status] : !connected[networkOfChannel(channel)] ? t.notConnected : null;
+      return <span key={channel} title={label ? `${t.channel[channel]} · ${label}` : t.channel[channel]} data-status={version?.status}
         className={cn("inline-flex min-h-6 items-center gap-1 rounded-sm border px-1.5 text-[11px] font-medium",
-          live ? "border-border-strong bg-surface-inset text-foreground" : "border-dashed border-border text-foreground-muted line-through decoration-foreground-muted/60")}>
+          tone === "success" ? "border-success/25 bg-success-soft text-success"
+            : tone === "risk" ? "border-risk/25 bg-risk-soft text-risk"
+            : live ? "border-border-strong bg-surface-inset text-foreground" : "border-dashed border-border text-foreground-muted line-through decoration-foreground-muted/60")}>
         <Icon className="h-3 w-3" />{t.channelShort[channel]}
+        {tone === "success" && <Check className="size-3" />}
+        {tone === "risk" && <CircleAlert className="size-3" />}
       </span>;
     })}
   </span>;
@@ -126,9 +133,11 @@ function PostCard({ post, connected, lang, onOpen }: { post: PublishingPost; con
   const t = strings[lang];
   const live = orderedVersions(post).filter((v) => versionLive(post, v) && connected[networkOfChannel(v.channel)]);
   const list = live.length ? live.map((v) => t.channel[v.channel]).join(", ") : t.nothingShared;
+  const outcomes = orderedVersions(post).filter((v) => publicationTone(v.status))
+    .map((v) => `${t.channel[v.channel]} · ${t.statuses[v.status]}`).join(", ");
   // A devShark concept the plan has not rendered yet: its cover as the Studio draws it.
   const cardDeck = post.thumbnail ? null : post.versions.map((v) => studioDeck(v.live)).find(Boolean) ?? null;
-  return <button type="button" onClick={onOpen} aria-label={`${t.open(post.title, post.time)}. ${t.versionsOf(list)}`}
+  return <button type="button" onClick={onOpen} aria-label={`${t.open(post.title, post.time)}. ${t.versionsOf(list)}${outcomes ? `. ${outcomes}` : ""}`}
     className="flex w-full min-w-0 items-start gap-3 rounded-md border border-border bg-surface p-2.5 text-left hover:bg-surface-hover focus-ring">
     <span className="relative block h-[60px] w-12 shrink-0 overflow-hidden rounded border border-border bg-surface-inset">
       {post.thumbnail
@@ -167,43 +176,58 @@ function useLiveStory(live: PublishingLive | null | undefined, isPreview: boolea
 /** The deck the devShark Studio would draw for a version the plan has not rendered yet. */
 const studioDeck = (live: PublishingLive | null | undefined) => live?.kind === "devshark-deck" ? live.deck : null;
 
-/** How one version will look: the 9:16 story frame, the slides as a carousel, the Threads text with its picture. */
-function VersionPreview({ version, title, lang, isPreview }: { version: PublishingVersion; title: string; lang: Lang; isPreview: boolean }) {
+/** The selected channel's actual render, with one whole slide visible at a time. */
+function VersionMedia({ version, title, lang, isPreview }: { version: PublishingVersion; title: string; lang: Lang; isPreview: boolean }) {
   const t = strings[lang];
   const pictures = version.pictures;
   const story = useLiveStory(pictures.length ? null : version.live, isPreview);
   const deck = pictures.length ? null : studioDeck(version.live);
-  const missing = <p className="flex h-full items-center justify-center p-3 text-center text-xs text-foreground-muted" role={story.isFetching ? "status" : undefined}>
+  const count = Math.min(pictures.length || deck?.slides.length || 0, version.channel === "threads" ? 1 : 10);
+  const [slide, setSlide] = useState(0);
+  const current = Math.min(slide, Math.max(count - 1, 0));
+  const missing = <p className="m-auto p-3 text-center text-xs text-foreground-muted" role={story.isFetching ? "status" : undefined}>
     {story.isFetching ? t.rendering : story.isError ? t.renderFailed : t.notRendered}</p>;
-  const shown = version.channel === "threads" ? 1 : 10;
+  if (version.channel === "story") return <div className="relative flex min-h-0 flex-1 items-center justify-center" data-testid="story-frame">
+    {pictures[0]
+      ? <Image unoptimized src={pictures[0].url} alt={pictures[0].alt} width={pictures[0].width} height={pictures[0].height} className="absolute inset-0 size-full object-contain" data-testid="story-image" />
+      : story.data
+        // eslint-disable-next-line @next/next/no-img-element -- the Design Lab's rendered data URL
+        ? <img src={story.data} alt={t.storyAlt(title)} className="absolute inset-0 size-full object-contain" data-testid="story-image" />
+        : missing}
+  </div>;
+  if (!count) return missing;
+  return <>
+    <ul aria-label={t.channel[version.channel]} className="relative min-h-0 flex-1" data-testid="version-slides">
+      {Array.from({ length: count }, (_, index) => {
+        const picture = pictures[index];
+        return <li key={index} hidden={index !== current} className="absolute inset-0">
+          {picture
+            ? <Image unoptimized src={picture.url} alt={picture.alt || t.slideOf(index + 1, count)} width={picture.width} height={picture.height}
+                loading={index === 0 ? "eager" : "lazy"} sizes="(min-width: 768px) 33vw, 100vw" className="size-full object-contain" />
+            : <DevsharkStudioSlide deck={deck!} index={index} label={t.slideOf(index + 1, count)} className="mx-auto h-full max-w-full [&_svg]:max-h-full [&_svg]:w-full" />}
+        </li>;
+      })}
+    </ul>
+    {count > 1 && <div className="flex items-center justify-between border-t border-border px-3 py-1 text-xs">
+      <Button type="button" variant="ghost" size="sm" aria-label={t.previousSlide} disabled={current === 0} onClick={() => setSlide(current - 1)}>
+        <ChevronLeft className="size-4" aria-hidden />
+      </Button>
+      <span aria-live="polite" className="tabular-nums">{t.slideOf(current + 1, count)}</span>
+      <Button type="button" variant="ghost" size="sm" aria-label={t.nextSlide} disabled={current + 1 === count} onClick={() => setSlide(current + 1)}>
+        <ChevronRight className="size-4" aria-hidden />
+      </Button>
+    </div>}
+  </>;
+}
+
+function VersionDetails({ version, lang }: { version: PublishingVersion; lang: Lang }) {
+  const t = strings[lang];
   return <div className="space-y-3">
     <p className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
       <span className="font-semibold tabular-nums text-foreground">{t.channel[version.channel]} {t.at(version.time)}</span>
-      <StatusBadge value={`publishing-${version.status}`} label={t.statuses[version.status] ?? version.status} />
+      <StatusBadge value={version.status} tone={publicationTone(version.status)} label={t.statuses[version.status] ?? version.status} />
     </p>
-    {version.channel === "story"
-      ? <div className="mx-auto aspect-[9/16] w-44 overflow-hidden rounded-lg border border-border bg-surface-inset sm:w-52" data-testid="story-frame">
-          {pictures[0]
-            ? <Image unoptimized src={pictures[0].url} alt={pictures[0].alt} width={pictures[0].width} height={pictures[0].height} className="h-full w-full object-cover" data-testid="story-image" />
-            : story.data
-              // eslint-disable-next-line @next/next/no-img-element -- the Design Lab's own render, a data URL; nothing to optimise
-              ? <img src={story.data} alt={t.storyAlt(title)} className="h-full w-full object-cover" data-testid="story-image" />
-              : missing}
-        </div>
-      : pictures.length === 0 && !deck
-        ? <div className="rounded-md border border-dashed border-border-strong px-3 py-4">{missing}</div>
-        : <ul role="list" tabIndex={0} aria-label={t.channel[version.channel]} data-testid="version-slides"
-            className={cn("flex w-0 min-w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain rounded-md pb-2 focus-ring", version.channel === "threads" && "max-w-xs")}>
-            {pictures.length
-              ? pictures.slice(0, shown).map((picture, index) => <li key={`${picture.url}-${index}`} className="w-52 shrink-0 snap-start sm:w-60">
-                <Image unoptimized src={picture.url} alt={picture.alt || t.slideOf(index + 1, pictures.length)} width={picture.width} height={picture.height} loading="lazy" sizes="15rem"
-                  className="h-auto w-full rounded border border-border bg-surface-inset" />
-              </li>)
-              : deck!.slides.slice(0, shown).map((_, index) => <li key={index} className="w-52 shrink-0 snap-start sm:w-60">
-                <DevsharkStudioSlide deck={deck!} index={index} label={t.slideOf(index + 1, deck!.slides.length)} className="rounded border border-border" />
-              </li>)}
-          </ul>}
-    {version.channel !== "story" && <p className="whitespace-pre-line rounded-md border border-border bg-surface-inset p-3 text-sm break-words" data-testid="version-caption">
+    {version.channel !== "story" && <p className="whitespace-pre-line break-words rounded-md border border-border bg-surface-inset p-3 text-sm" data-testid="version-caption">
       {version.caption?.trim() || <span className="text-foreground-muted">{t.noCaption}</span>}
     </p>}
   </div>;
@@ -213,7 +237,7 @@ function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed, 
   onSwitch: (input: PublishingSwitch) => void; saving: boolean; failed: boolean }) {
   const t = strings[lang];
   const versions = useMemo(() => new Map(post.versions.map((v) => [v.channel, v])), [post]);
-  const [selected, setSelected] = useState<PublishingChannel>(() => orderedVersions(post)[0]!.channel);
+  const [selected, setSelected] = useState<PublishingChannel>(() => versions.has("instagram") ? "instagram" : orderedVersions(post)[0]!.channel);
   const current = versions.get(selected);
   const enabled = PUBLISHING_CHANNELS.filter((channel) => versions.has(channel));
   const onKey = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -225,9 +249,16 @@ function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed, 
     event.currentTarget.querySelector<HTMLButtonElement>(`[data-channel="${enabled[next]}"]`)?.focus();
   };
   return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-    <DialogContent className="max-w-2xl" data-testid="publishing-post-dialog">
-      <DialogTitle className="pr-10 text-base font-semibold">{t.dialogTitle(post.title)}</DialogTitle>
-      <DialogDescription className="mt-1 text-xs text-foreground-muted">{t.brand[post.brand]} · {t.versionsOf(orderedVersions(post).map((v) => t.channel[v.channel]).join(", "))}</DialogDescription>
+    <DialogContent className="grid max-w-7xl gap-0 overflow-x-hidden p-0 md:h-[min(calc(100dvh-3rem),60rem)] md:max-h-[calc(100dvh-3rem)] md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:grid-rows-[minmax(0,1fr)] md:overflow-hidden" data-testid="publishing-post-dialog">
+      <div className="flex h-[38dvh] min-w-0 flex-col border-b border-border bg-surface-inset md:h-full md:min-h-0 md:border-b-0 md:border-r" data-testid="publishing-post-media">
+        {current && <VersionMedia key={current.channel} version={current} title={post.title} lang={lang} isPreview={isPreview} />}
+      </div>
+      <div className="flex min-w-0 flex-col md:min-h-0">
+        <header className="shrink-0 border-b border-border px-4 py-3 pr-14 md:px-5 md:pr-14">
+          <DialogTitle className="break-words text-base font-semibold">{t.dialogTitle(post.title)}</DialogTitle>
+          <DialogDescription className="mt-1">{t.brand[post.brand]} · {t.versionsOf(orderedVersions(post).map((v) => t.channel[v.channel]).join(", "))}</DialogDescription>
+        </header>
+        <div className="min-h-0 flex-1 px-4 pb-4 md:overflow-y-auto md:overscroll-contain md:px-5 md:pb-5">
       {post.headline && <p className="mt-2 text-sm" data-testid="post-headline"><span className="text-xs text-foreground-muted">{t.headline}: </span>{post.headline}</p>}
       <label className="mt-4 flex min-h-11 items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium">
         <span>{t.sharePost}<span className="block text-xs font-normal text-foreground-muted">{post.off ? t.postOffHint : t.postOnHint}</span></span>
@@ -258,13 +289,15 @@ function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed, 
           <Switch checked={!current.off} disabled={saving || !connected[networkOfChannel(current.channel)]} aria-label={t.shareVersion(t.channel[current.channel])} data-testid="version-switch"
             onCheckedChange={(on) => onSwitch({ brand: post.brand, slotId: post.slotId, channel: current.channel, off: !on })} />
         </label>}
-        {current ? <VersionPreview version={current} title={post.title} lang={lang} isPreview={isPreview} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
+        {current ? <VersionDetails version={current} lang={lang} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
       </div>
       {post.target && <div className="mt-4 flex justify-end">
         <Button type="button" variant="outline" onClick={() => { const target = post.target!; onClose(); openTarget(target, selected); }}>
           <ExternalLink className="h-4 w-4" aria-hidden />{t.editInLab}
         </Button>
       </div>}
+        </div>
+      </div>
     </DialogContent>
   </Dialog>;
 }

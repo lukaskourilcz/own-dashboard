@@ -2,7 +2,7 @@ import { dneskaiRetagCaption } from './dneskai-generation';
 import 'server-only';
 import { z } from 'zod';
 import type { createAdminClient } from '@/lib/supabase/admin';
-import { parseContentRevision, renderReportBlocks, type ContentRevision } from './contracts';
+import { DNESKAI_RENDER_POLICY, parseContentRevision, renderReportBlocks, type ContentRevision } from './contracts';
 import { pragueScheduledAt } from './clock';
 import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
@@ -74,14 +74,10 @@ export type DneskaiPlanAction =
 
 /** A drafted DNESKAi deck whose first slide shows no picture. A revision without a deck (rendered assets) passes. */
 export const dneskaiDeckLacksPhoto = (revision: Pick<ContentRevision, 'deck'>) => !!revision.deck && !(revision.deck.slides[0]?.images.length);
-/**
- * Slides drawn before this instant predate the icy blue, the new logo and the two remaining styles (owner, 8 November
- * 2026). The plan draws an unpublished post rendered earlier again, under `DNESKAI_RENDER_POLICY` (dneskai-render/5: the strong cover vignette of 9 November 2026).
- */
-export const DNESKAI_RENDERS_CURRENT_SINCE = '2026-11-09T02:20:00.000Z';
+/** Redraw planned posts whose stored pixels predate the current text layout. */
 export function dneskaiRenderStale(report: unknown): boolean {
-  const at = report && typeof report === 'object' ? (report as { renderedAt?: unknown }).renderedAt : undefined;
-  return typeof at === 'string' && Date.parse(at) < Date.parse(DNESKAI_RENDERS_CURRENT_SINCE);
+  const stored = report && typeof report === 'object' ? report as { status?: unknown; policy?: unknown } : null;
+  return stored?.status === 'rendered' && stored.policy !== DNESKAI_RENDER_POLICY;
 }
 /** The owner's slide rule (photo, photo, optional text, photo, closing): a carousel needs this many photo slides. */
 export const DNESKAI_MIN_PHOTO_SLIDES = 3;
@@ -542,7 +538,7 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           result.codes[code] = (result.codes[code] ?? 0) + 1;
           continue;
         }
-        // The closing slide follows its switch in the Design Lab (owner, 9 November 2026; off until the owner turns it
+        // The closing slide follows its switch in the Promo slide tab (off until the owner turns it
         // on): a planned carousel gets it or loses it while its slot is ahead, drawn again at once.
         if (head && (head.status === 'review' || head.status === 'approved') && head.ready && head.revision.deck?.format === 'carousel'
           && head.revision.account.platform === 'instagram' && Date.parse(dneskaiPlanSlotAt(slot)) > input.now.getTime() + 10 * 60_000) {
@@ -550,7 +546,7 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           const closingOn = setting.enabled;
           const slides = head.revision.deck.slides;
           const has = slides.some((item) => isDneskaiClosingSlide(item));
-          // The owner's words from the Design Lab; a closing slide with other words is written again.
+          // A closing slide with other words is written again.
           const wanted = dneskaiClosingSlide(setting.words ?? undefined);
           const stale = closingOn && slides.some((item) => isDneskaiClosingSlide(item) && (item.headline !== wanted.headline || item.body !== wanted.body));
           const kept = slides.filter((item) => !isDneskaiClosingSlide(item));

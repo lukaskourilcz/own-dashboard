@@ -4,31 +4,31 @@
     "width": 1080,
     "height": 1350
   },
-  "updatedAt": "2026-11-08",
+  "updatedAt": "2026-11-09",
   "entries": [
     {
       "name": "cover-photo",
       "templateId": "dneskai-spotlight-cover-photo",
       "version": "1.1.0",
-      "pngHash": "845d6d6a7871e52f896d0788e68ed77ff26d4d04d8aff51c23425a4734f7d59f"
+      "pngHash": "faaf3665a6fd8c92e24e3419d9b3488ccabbc77538b7ddd0ecbe4c373b2bd7fc"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-spotlight-cover-photo",
       "version": "1.1.0",
-      "pngHash": "2eeacbe790a941dc21a8e52b793334585d457156c7730091a5b0691d4f2d9314"
+      "pngHash": "8db8d39726042bd4c6427bafcd99bffae1bbfd70884d5853bf24245ea525384c"
     },
     {
       "name": "figure",
       "templateId": "dneskai-spotlight-figure",
       "version": "1.1.0",
-      "pngHash": "d0d2d59983507475276eaeaac6cebfd5cc83820825a990279d82f34061976fad"
+      "pngHash": "ae8f00a3311a8799089cb201108db3898383802275875d89d9f7694ce93eb4a0"
     },
     {
       "name": "split",
       "templateId": "dneskai-spotlight-split",
       "version": "1.1.0",
-      "pngHash": "f879acabf412e03cc0e813e57e5d2299dc1a3ecf7fb17a72832fdb116d56eeff"
+      "pngHash": "3e0e80b00ff92d5c199d1a90c8ce0c7ea57ad67f113dcc8a75a5af5f557bff69"
     },
     {
       "name": "split-pair",
@@ -40,7 +40,7 @@
       "name": "statement",
       "templateId": "dneskai-spotlight-statement",
       "version": "1.1.0",
-      "pngHash": "50dac2406c15cd2d6279c35e602a29c6180bbef2f0ede466d59ba1ddee3f627b"
+      "pngHash": "0cf05f84d6339b45a2f4efeacf04e6592177c618a2f46757dfb5304fc674df1b"
     },
     {
       "name": "statement-ink",
@@ -52,25 +52,25 @@
       "name": "sources",
       "templateId": "dneskai-spotlight-sources-4",
       "version": "1.1.0",
-      "pngHash": "ab5af0c0ff01ea0762de24754691b3ae7e38803ef8f82ae54ec1b3cfdd4e0def"
+      "pngHash": "2d142e73e335a8bb86c5a0963f8947669c99b83e7e6d21cd59e9e3eb82be7d6c"
     },
     {
       "name": "single-photo",
       "templateId": "dneskai-spotlight-single-photo",
       "version": "1.1.0",
-      "pngHash": "2311fccc881c0e67b1a7af1401d07c6ab77ebefb96782fb36a29229700496b8f"
+      "pngHash": "31571a8b8d4f201860e38c7baf4bc68d4b99741e1b3f7dfb38e8a9ee60fb8cb4"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-spotlight-single-photo",
       "version": "1.1.0",
-      "pngHash": "330a646f601647371e1b6049c92f3c7dc26db37f5e06f9d14be89e381b3594be"
+      "pngHash": "2fcba9b7fd95e1bf3b34c0ea5db5bd894a944f0e8ed581d35ca4ecae6d6deaa6"
     },
     {
       "name": "single-type",
       "templateId": "dneskai-spotlight-single-type",
       "version": "1.1.0",
-      "pngHash": "cec843c8eee17028597a7ae8871cddcf55da65401ca8685c72e60ab209a73725"
+      "pngHash": "7666d4d033c44b1a6a041bfd9db2df6e2cf86bfb02e204029496ae88cc28a987"
     }
   ]
 }

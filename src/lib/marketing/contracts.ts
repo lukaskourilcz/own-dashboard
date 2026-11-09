@@ -267,12 +267,15 @@ export const DneskaiRenderProblemSchema = z.strictObject({
   /** The slide field or image slot it is about (`headline`, `sources[1]`, `image-1`), when the renderer named one (#119). */
   field: z.string().max(80).regex(/^[a-z][a-z0-9-]*(?:\[\d\])?$/).nullable().optional(),
 });
+/** Bump when the DNESKAi pixels or the clip, glyph and placement rules change. */
+export const DNESKAI_RENDER_POLICY = "dneskai-render/8";
 export const DNESKAI_RENDER_REPORT_VERSION = "dneskai-render-report/1";
 export const DneskaiRenderReportSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_RENDER_REPORT_VERSION),
   status: z.enum(["rendered", "refused", "failed"]),
   problems: z.array(DneskaiRenderProblemSchema).max(100),
   renderKeys: z.array(z.string().min(1).max(200)).max(10),
+  policy: z.string().regex(/^dneskai-render\/\d+$/).optional(),
   renderedAt: timestamp,
 });
 export type DneskaiRenderReport = z.infer<typeof DneskaiRenderReportSchema>;

@@ -71,7 +71,7 @@ Používej:
   1. háček;
   2. fakt s číslem;
   3. proč na tom záleží.
-- Bez hashtagů v textu. Téma jde jako `topic_tag` (FioBanka, OpenAI).
+- Bez hashtagů a bez štítku tématu.
 - Tón je stejný jako v popisku, jen sevřenější.
 
 ## Příklad (parafráze, smyšlené zadání)

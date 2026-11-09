@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { Resvg } from '@resvg/resvg-js';
 import { fontFiles, measureEm, resolveFace } from '@/lib/carousel-studio/fonts';
+import { DNESKAI_CLOSING_DEFAULTS, type DneskaiClosingWords } from './dneskai-closing';
 
 /**
  * The DNESKAi closing card drawn from its words (owner, 9 November 2026: the owner edits it in the Design Lab). The
@@ -16,8 +16,7 @@ const POPPINS = path.join(SOURCE, 'closing-card-source', 'poppins-900.ttf');
 const LOGO = path.join(SOURCE, 'DNESKAi-logo-dark.svg');
 export const DNESKAI_CLOSING_CARD_VERSION = 'dneskai-closing-card/2';
 
-export type DneskaiClosingWords = { headline: string; body: string; handle: string };
-export const DNESKAI_CLOSING_DEFAULTS: DneskaiClosingWords = { headline: 'Sleduj', body: 'pro všechny novinky ze světa AI a technologií.', handle: '@dneskai' };
+export { DNESKAI_CLOSING_DEFAULTS } from './dneskai-closing';
 
 const W = 1080, H = 1350, LEFT = 72, MEASURE = 936, BOTTOM = 84;
 const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -56,7 +55,7 @@ function loadAssets() {
 }
 
 export async function renderDneskaiClosingCard(words: DneskaiClosingWords): Promise<Buffer> {
-  const { base, logo } = await loadAssets();
+  const [{ base, logo }, { Resvg }] = await Promise.all([loadAssets(), import('@resvg/resvg-js')]);
   const bodyLines = wrap(words.body, 32, 880);
   const pillText = 38, pillPadX = 31, pillPadY = 19, pillStroke = 3;
   const pillWidth = measureEm(resolveFace('Inter', 700), words.handle) * pillText + 2 * pillPadX + 2 * pillStroke;

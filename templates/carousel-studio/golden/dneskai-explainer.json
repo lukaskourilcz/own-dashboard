@@ -4,7 +4,7 @@
     "width": 1080,
     "height": 1350
   },
-  "updatedAt": "2026-11-08",
+  "updatedAt": "2026-11-09",
   "entries": [
     {
       "name": "acceptance-01",
@@ -52,31 +52,31 @@
       "name": "cover-photo",
       "templateId": "dneskai-explainer-cover-photo",
       "version": "1.1.0",
-      "pngHash": "ff12d608d345f8586147860bc1843fa18f335a31ce501bcb7018a43aa5f7da6f"
+      "pngHash": "b4ae3db1e23ee4e03557daa0df6e81b910d91eb7d1f92984ff8d9c224f21d097"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-explainer-cover-photo",
       "version": "1.1.0",
-      "pngHash": "b8b2da96a9c449f0a49f8861b6679d418a07d550e4ede1e944f0d9352bc11bc7"
+      "pngHash": "1683f94e13dc5072cc19e8a8d9372fda5f089d6c755beb20bcfddc81a0050a1b"
     },
     {
       "name": "figure",
       "templateId": "dneskai-explainer-figure",
       "version": "1.1.0",
-      "pngHash": "4986cbcad1c34f7ae6ea94aa06b57f53619f66326cd660999b6ee26079123bfe"
+      "pngHash": "454b387887cd3d88fc7c0defba95d0cbfdf804490df3bea4b28a6ad8446c5195"
     },
     {
       "name": "split",
       "templateId": "dneskai-explainer-split",
       "version": "1.1.0",
-      "pngHash": "c411fabd8b1737c46553d0c74bceac2079b02f1d354c89c77d5315f65860b492"
+      "pngHash": "a28c602e5798dd0c91597f7386633f1f3cadeac9a513679e8d0f5a9a5d17a4bb"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-explainer-split-pair",
       "version": "1.1.0",
-      "pngHash": "721dc90874150f25f224b214a9e9c24b0c2d6d6373e55d75d7d3d77b47f8b178"
+      "pngHash": "a1afda9602219ccfd53a2954225235a1d447e164a2af8728c45fa40649b826c7"
     },
     {
       "name": "statement",
@@ -94,7 +94,7 @@
       "name": "sources",
       "templateId": "dneskai-explainer-sources-4",
       "version": "1.1.0",
-      "pngHash": "b2e257b2b92c936fe6636e90fd12e49be36a97a9cc1d82a6b83bb6c2a776ec06"
+      "pngHash": "f3bcafec5f1c4dbce2d594d4cc6810f6c582931c0bd96dd41eb28824fd2fbb0f"
     },
     {
       "name": "single-photo",
@@ -112,7 +112,7 @@
       "name": "single-type",
       "templateId": "dneskai-explainer-single-type",
       "version": "1.1.0",
-      "pngHash": "61a09a3da0759e462747f5651fe0c13cfe0dbf23c948ad92b57cbfb0d8b99c3d"
+      "pngHash": "a00ddfd86b37f51f2cd77b35912160fe4a18c7594d6df6669b8cc4df0d4a8ef9"
     }
   ]
 }

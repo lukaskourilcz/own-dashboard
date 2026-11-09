@@ -63,6 +63,12 @@ The pg_cron tick, every 5 minutes, publishes the queued publication, usually wit
 
 The preview harness answers all three paid or approving actions in memory: approve-at checks the fixture's free slot, regenerate and generate now become drafting jobs, and the second paid action of a page is refused by a $1 stand-in ceiling. Design Lab stays inside the review tab (decision 10).
 
+## Promo slide and typography
+
+Open **Promo slide** in the DNESKAi project to preview the closing card, change its headline, line or handle, and choose whether the plan adds it to carousels. Save the setting to apply it to upcoming planned carousels. Existing published posts keep their recorded renders.
+
+Spotlight uses a smaller headline on the cover and single-image opener. The renderer balances the full text block, preserves Czech non-breaking groups and reduces the font size when a line would otherwise hold one isolated word or two short words.
+
 ## Keyword colour
 
 Choose a colour for the words marked with `[[…]]` in the post. The draft preview uses the selected colour on all slides and in the story. Choose **Kit default** to use the kit’s own colour. Saving creates a new revision with its own approval.

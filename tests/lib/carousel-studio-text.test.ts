@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fitText } from '@/lib/carousel-studio/text';
+import { measureEm, resolveFace } from '@/lib/carousel-studio/fonts';
 
 // A fixed size isolates the rebalance (no shrink); a large height keeps height out of it. No keepWithNext, so every
 // piece is one word and "a lone last word" is a last line with no space.
@@ -14,6 +15,27 @@ const base = {
 const lastLineIsLoneWord = (lines: string[]) => lines.length >= 2 && !lines.at(-1)!.includes(' ');
 
 describe('carousel-studio text balance (DNESKAi no-orphan, text-pretty)', () => {
+  it.each([
+    'Tržby 16,3 miliardy dolarů za půl roku. Anthropic podal návrh na IPO.',
+    'Alexa teď spravuje nákupní seznamy a předplatné',
+    'Grok 4.7 doporučil republikána v 92 % odpovědí.',
+    'OpenAI: aplikace ChatGPT na takovou otázku neodpovídá.',
+    'Z 83 ŠKODLIVÝCH POLOŽEK JICH 77 VZNIKLO ZA 43 MINUT 1. ZÁŘÍ.',
+  ])('fills every line of %s', (value) => {
+    const fontFamily = 'Archivo';
+    const fontWeight = 800;
+    const widthPx = 936;
+    const fitted = fitText({ ...base, value, fontFamily, fontWeight, widthPx, minFontSize: 46, maxFontSize: 104, keepWithNext: 'cs', balance: true });
+    const face = resolveFace(fontFamily, fontWeight);
+    expect(fitted.truncated).toBe(false);
+    expect(fitted.lines.join(' ')).toBe(value);
+    for (const line of fitted.lines) {
+      const words = line.split(' ').length;
+      expect(words).toBeGreaterThan(1);
+      if (words === 2) expect(measureEm(face, line) * fitted.fontSize).toBeGreaterThanOrEqual(widthPx * 0.55 - 0.001);
+    }
+  });
+
   it('leaves wrapping identical when balance is off, and clears lone last words when on', () => {
     const value = 'Novela zákona o dani z příjmů prošla prvním čtením sněmovny ještě dnes večer';
     let orphanScenarios = 0;

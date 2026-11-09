@@ -98,10 +98,11 @@ describe('DNESKAi Threads failure receipts', () => {
     expect(state.posts()).toHaveLength(1);
   });
 
-  it('retries a transient parent failure on the next tick without changing the topic', async () => {
+  it('retries a transient parent failure without sending a Threads topic tag', async () => {
     const state = threadsFixture(({ body }) => body.has('children') ? Response.json({ error: { code: 2, is_transient: true } }, { status: 400 }) : undefined);
     expect(await publishMarketingRevision(state.input)).toMatchObject({ status: 'pending', errorCode: 'container-retry', retryCause: 'threads-container-http-400-2' });
-    expect(state.posts().map(({ body }) => body.get('topic_tag'))).toEqual([null, null, null, 'ThreadsAPI']);
+    expect(state.posts().map(({ body }) => body.get('topic_tag'))).toEqual([null, null, null, null]);
+    expect(state.posts().at(-1)!.body.get('text')).not.toContain('#');
     expect(state.checkpoints).toMatchObject([{ stage: 'container-retry' }]);
   });
 

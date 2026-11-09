@@ -52,22 +52,47 @@ function breakLongWord(word: string, face: FaceMetrics, widthPx: number, fontSiz
 
 interface Wrapped { lines: string[]; truncated: boolean; brokenWords: string[]; overflowed: boolean; orphaned: boolean }
 
-/**
- * Moves the last piece of the penultimate line down onto the last line, so a wrapped block does not end on a lone
- * word (`text-wrap: pretty`). A "piece" is a word or a tie group, so a tie like "10 000" counts as one. The move is
- * taken only when the two then still fit the measure, and never when it would empty the penultimate line. Returns
- * whether a lone last piece remains, so the fitter can step the size down to clear it.
- */
-function balanceLastLine(linePieces: string[][], face: FaceMetrics, widthPx: number, fontSize: number, tracking: number): boolean {
-  const last = linePieces.at(-1)!;
-  if (last.length !== 1) return false; // two or more pieces on the last line is not an orphan
-  const prev = linePieces.at(-2)!;
-  if (prev.length < 2) return true; // the penultimate line is a single piece; moving it would empty the line
-  const moved = [prev.at(-1)!, ...last];
-  if (widthOf(face, moved.join(" "), fontSize, tracking) > widthPx) return true; // the two pieces would not fit one line
-  linePieces[linePieces.length - 2] = prev.slice(0, -1);
-  linePieces[linePieces.length - 1] = moved;
-  return false;
+/** Find the best breaks for the shortest complete layout. Czech ties remain indivisible pieces. */
+function balanceLines(pieces: string[], lineCount: number, face: FaceMetrics, widthPx: number, fontSize: number, tracking: number) {
+  const wordCounts = pieces.map((piece) => piece.split(" ").length);
+  const widths = pieces.map((piece) => widthOf(face, piece, fontSize, tracking));
+  const space = widthOf(face, " ", fontSize, tracking);
+  const end = pieces.length;
+  const orphanPenalty = 100;
+  type Break = { cost: number; next: number };
+  const best: Array<Array<Break | undefined>> = Array.from({ length: lineCount + 1 }, () => []);
+  best[0]![end] = { cost: 0, next: end };
+  for (let remaining = 1; remaining <= lineCount; remaining += 1) {
+    const table = best[remaining]!;
+    const suffix = best[remaining - 1]!;
+    for (let start = end - remaining; start >= 0; start -= 1) {
+      let width = 0;
+      let words = 0;
+      for (let index = start; index <= end - remaining; index += 1) {
+        width += widths[index]! + (index === start ? 0 : space);
+        if (width > widthPx + 1e-7) break;
+        words += wordCounts[index]!;
+        const next = index + 1;
+        const rest = suffix[next];
+        if (!rest) continue;
+        const fill = width / widthPx;
+        const short = words === 1 ? 3 : words === 2 && fill < 0.55 ? 1 : 0;
+        const penalty = short * orphanPenalty * (next === end ? 1.25 : 1);
+        const cost = rest.cost + penalty + (1 - fill) ** 2;
+        if (!table[start] || cost < table[start]!.cost) table[start] = { cost, next };
+      }
+    }
+  }
+  const first = best[lineCount]![0];
+  if (!first) return null;
+  const lines: string[] = [];
+  let start = 0;
+  for (let remaining = lineCount; remaining > 0; remaining -= 1) {
+    const next = best[remaining]![start]!.next;
+    lines.push(pieces.slice(start, next).join(" "));
+    start = next;
+  }
+  return { lines, orphaned: first.cost >= orphanPenalty };
 }
 
 /**
@@ -145,7 +170,7 @@ function wrap(
   locale: string,
   breakWords: boolean,
   keepWithNext?: KeepWithNext,
-  // `balance` rebalances the last line so a block does not end on a lone word (DNESKAi text-pretty, 8 November 2026).
+  // DNESKAi checks the fit and density of every line.
   // Absent (every v1 layer and devShark's slide text), the lines are the ones the fitter has always set.
   balance = false
 ): Wrapped {
@@ -162,8 +187,7 @@ function wrap(
       return breakLongWord(word, face, widthPx, fontSize, tracking, locale);
     });
   });
-  // Lines are built as lists of pieces and joined at the end, so the drawn string is exactly what the old fitter set;
-  // the piece lists let the balancer see whether the last line is a lone piece.
+  // Greedy wrapping establishes the minimum number of lines. Legacy layers keep those breaks.
   const linePieces: string[][] = [];
   let truncated = false;
   let overflowed = false;
@@ -184,9 +208,10 @@ function wrap(
     }
     linePieces.push([piece]);
   }
-  let orphaned = false;
-  if (balance && !truncated && linePieces.length >= 2) orphaned = balanceLastLine(linePieces, face, widthPx, fontSize, tracking);
-  const lines = linePieces.map((pieceList) => pieceList.join(" "));
+  const balanced = balance && !truncated && !overflowed && linePieces.length >= 2
+    ? balanceLines(pieces, linePieces.length, face, widthPx, fontSize, tracking)
+    : null;
+  const lines = balanced?.lines ?? linePieces.map((pieceList) => pieceList.join(" "));
   if (truncated && lines.length) {
     const last = lines.at(-1)!;
     const parts = graphemes(last, locale);
@@ -197,7 +222,7 @@ function wrap(
     }
     lines[lines.length - 1] = `${trimmed.replace(/…$/u, "")}…`;
   }
-  return { lines, truncated, brokenWords, overflowed, orphaned };
+  return { lines, truncated, brokenWords, overflowed, orphaned: balanced?.orphaned ?? false };
 }
 
 /**
@@ -228,8 +253,8 @@ export function fitText(input: {
   /** Baseline distance in em; absent means 1.12. */
   leading?: number;
   /**
-   * Rebalance so the block does not end on a lone word, and step the size down when rebalancing alone cannot
-   * (`text-wrap: pretty`, DNESKAi, 8 November 2026). Absent, the block breaks as it always has.
+   * Balance the whole block. Shrink within the allowed range to avoid an isolated word or two short words.
+   * Absent, the block uses greedy wrapping.
    */
   balance?: boolean;
 }): FittedText {
@@ -242,7 +267,7 @@ export function fitText(input: {
   for (let fontSize = input.maxFontSize; fontSize >= input.minFontSize; fontSize -= 1) {
     const wrapped = wrap(normalized, face, input.widthPx, fontSize, tracking, input.maxLines, input.locale, false, input.keepWithNext, balance);
     const fitsHeight = wrapped.lines.length * fontSize * (input.leading ?? 1.12) <= input.heightPx;
-    // A lone last word keeps the fitter stepping down (never below minFontSize), exactly as an overflow does.
+    // A sparse line keeps the fitter stepping down, just like overflow.
     if (fitsHeight && !wrapped.truncated && !wrapped.overflowed && !wrapped.orphaned) {
       return { lines: wrapped.lines, fontSize, truncated: clippedByContract, normalized, brokenWords: [] };
     }
