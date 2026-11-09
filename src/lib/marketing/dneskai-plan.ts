@@ -21,6 +21,7 @@ import { createDneskaiSlideStorage } from './worker-runtime';
 import { STORY_HEIGHT, STORY_WIDTH, composeStoryFromCover, storyRenderKey } from './story-image';
 import { renderDneskaiStoryJpeg } from './dneskai-render';
 import { synchronizeMarketingSources } from './orchestrator';
+import { illustrateDneskaiPost } from './dneskai-illustrate';
 import { DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesCaption, dneskaiSeriesDeck, dneskaiSeriesHeading, dneskaiSeriesNumbers, dneskaiSeriesOf, dneskaiSeriesSlot, type DneskaiSeries } from './dneskai-series';
 
 /**
@@ -305,6 +306,15 @@ async function keepNewsCurrent(db: Database, owner: string, slot: DneskaiPlanRow
 }
 
 /** Saves the plan's own edit of the head (Spotlight and/or the slot's time) and renders it, reusing the JPEGs when the deck is unchanged. */
+async function illustrationChecked(db: Database, revisionId: string): Promise<boolean> {
+  const { data, error } = await db.from('dneskai_illustration_checks').select('revision_id').eq('revision_id', revisionId).maybeSingle();
+  if (error) return true;
+  return !!data;
+}
+async function markIllustrationChecked(db: Database, revisionId: string, code: string): Promise<void> {
+  await db.from('dneskai_illustration_checks').upsert({ revision_id: revisionId, code: code.slice(0, 60) }, { onConflict: 'revision_id' });
+}
+
 async function saveEdit(db: Database, owner: string, head: DneskaiPlanHead, edit: { kit: boolean; scheduledAt: string; fresh?: boolean; caption?: string }, wiring: Wiring, signal: AbortSignal) {
   const deck = head.revision.deck;
   const kit = deck ? dneskaiGenerationKit([head.revision.title, ...deck.slides.map((slide) => slide.headline ?? '')].join('\n')) : null;
@@ -473,6 +483,34 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
             continue;
           }
           await record(slot, { status: 'generating' }); break;
+        }
+        // Fitting photographs on every slide (owner request, 9 November 2026): once per post version, behind
+        // DNESKAI_ILLUSTRATE_ENABLED, a ready Instagram post whose slot is ahead is checked and its photo-less or
+        // off-topic slides take library pictures; the new version is drawn at once and approved on the next pass.
+        const env = input.env ?? process.env;
+        if (head && env.DNESKAI_ILLUSTRATE_ENABLED === 'true' && (head.status === 'review' || head.status === 'approved') && head.ready && head.revision.deck
+          && head.revision.account.platform === 'instagram' && Date.parse(dneskaiPlanSlotAt(slot)) > input.now.getTime() + 10 * 60_000 && !(await illustrationChecked(db, head.id))) {
+          if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS + 15_000) { await record(slot, { code: 'plan-render-waiting' }); break; }
+          let code = 'illustrate-error';
+          try {
+            const outcome = await illustrateDneskaiPost(db, owner, { revision: head.revision, revisionKey: head.id, loadMedia: wired().loadMedia, env, signal: input.signal });
+            code = outcome.code;
+            if (outcome.deck) {
+              const revision = parseContentRevision({ ...head.revision, deck: outcome.deck, assets: [] });
+              const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
+              await markIllustrationChecked(db, saved.id, 'illustrate-result');
+              const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: saved.id, revision }, { render: wired().render, loadMedia: wired().loadMedia, signal: input.signal });
+              result.rendered++;
+              const patch: Partial<DneskaiPlanRow> = { head_revision_id: saved.id, written_revision_id: saved.id, status: rendered.ready ? 'ready' : 'failed', code: rendered.ready ? null : 'render-blocked' };
+              await markIllustrationChecked(db, head.id, code);
+              await record(slot, patch); Object.assign(slot, patch);
+              result.codes[code] = (result.codes[code] ?? 0) + 1;
+              break;
+            }
+          } catch { code = 'illustrate-error'; }
+          await markIllustrationChecked(db, head.id, code);
+          result.codes[code] = (result.codes[code] ?? 0) + 1;
+          continue;
         }
         const twin = slot.threads_revision_id ? await revisionRow(db, owner, slot.threads_revision_id) : null;
         const story = slot.story_revision_id ? await revisionRow(db, owner, slot.story_revision_id) : null;
