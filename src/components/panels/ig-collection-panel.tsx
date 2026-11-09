@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, ExternalLink, FileJson, KeyRound, Link2, Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export const PREVIEW_COLLECTION: { overview: CollectionOverview; posts: Collecti
   ],
 };
 
+const noSubscribe = () => () => {};
 const TONE: Record<CollectionStatus, StatusTone> = { queued: "neutral", scraping: "information", summarizing: "information", done: "success", restricted: "warning", failed: "risk" };
 type Load = { overview: CollectionOverview; posts: CollectionPost[] };
 async function fetchCollection(): Promise<Load> {
@@ -130,7 +131,9 @@ export function IgCollectionPanel({ isPreview = false }: { isPreview?: boolean }
 
   const queued = overview?.queued ?? posts.filter((p) => p.status === "queued").length;
   const runCount = Math.min(queued, COLLECTION_PROCESS_LIMIT);
-  const endpoint = typeof window === "undefined" ? "/api/marketing/knowledge/share" : `${window.location.origin}/api/marketing/knowledge/share`;
+  // The origin is known only in the browser; the server render shows the path, so hydration matches.
+  const origin = useSyncExternalStore(noSubscribe, () => window.location.origin, () => "");
+  const endpoint = `${origin}/api/marketing/knowledge/share`;
   const statusOptions = [{ value: "all", label: t.all }, ...COLLECTION_STATUSES.map((s) => ({ value: s, label: t.statuses[s] }))];
   const projectOptions = [{ value: "all", label: t.all }, ...COLLECTION_PROJECTS.map((p) => ({ value: p, label: t.projects[p] }))];
   const tagOptions = [{ value: "all", label: t.all }, ...tags.map((tag) => ({ value: tag, label: tag }))];
