@@ -22,31 +22,31 @@
       "name": "figure",
       "templateId": "dneskai-spotlight-figure",
       "version": "1.1.0",
-      "pngHash": "c054fa15a48f417b7561e7fb38a3c16ed9949c0082a1f0459fdaca86850eced5"
+      "pngHash": "d0d2d59983507475276eaeaac6cebfd5cc83820825a990279d82f34061976fad"
     },
     {
       "name": "split",
       "templateId": "dneskai-spotlight-split",
       "version": "1.1.0",
-      "pngHash": "7bb79188af542a6d72fa0d83e4293f76237e2a8c6bba3396a8718d684638378d"
+      "pngHash": "f879acabf412e03cc0e813e57e5d2299dc1a3ecf7fb17a72832fdb116d56eeff"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-spotlight-split-pair",
       "version": "1.1.0",
-      "pngHash": "d05e50d7396b15bc9996760ca730b35b7af18fdaad07f4e524c5ae524979c20a"
+      "pngHash": "b56a192e302839058c4bbe6ee6e9d77ae973a9f6b4d846c06ef3d4aabb773e46"
     },
     {
       "name": "statement",
       "templateId": "dneskai-spotlight-statement",
       "version": "1.1.0",
-      "pngHash": "a05931d9760ef143920ca76c60d54ab14cb3596c67543b95bc38827b31d3eba4"
+      "pngHash": "50dac2406c15cd2d6279c35e602a29c6180bbef2f0ede466d59ba1ddee3f627b"
     },
     {
       "name": "statement-ink",
       "templateId": "dneskai-spotlight-statement",
       "version": "1.1.0",
-      "pngHash": "d5ea824c90611a0aa9be55d634f16ff41c459472b035aeec693f4e36857a5458"
+      "pngHash": "b91bc6563ac40a697d79b4e2f25ded8f7dac9a574e26e01be2bd30ab4e03380d"
     },
     {
       "name": "sources",
