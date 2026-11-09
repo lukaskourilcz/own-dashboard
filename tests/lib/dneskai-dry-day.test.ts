@@ -285,7 +285,6 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
         { from: 1, headline: 'Paměť projektu teď vidí a upravuje celý tým' },
         { from: 2 },
         { from: 3, images: [{ slot: 'image-1', assetSha256: spare.assetSha256 }] },
-        { from: 4 },
       ] },
     });
     const body = await response.json() as { id: string; ready: boolean; contentHash: string; render: { status: string; problems: unknown[] } };
@@ -299,10 +298,10 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(edited.revision.scheduledAt).toBe('2026-10-27T11:40:00.000Z');
     expect(rows.find((row) => row.id === noon.id)!.status).toBe('superseded');
     expect(body.contentHash).not.toBe(noon.content_hash);
-    // Only the three changed slides were rendered; the statement and the closing slide came from the render cache.
+    // Only the three changed slides were rendered; the statement came from the render cache (no closing slide since 9 November 2026).
     const after = await snapshot();
     expect(after.assetUploads - before.assetUploads).toBe(3);
-    expect(edited.revision.assets.map((asset, index) => asset.sha256 === noon.revision.assets[index]!.sha256)).toEqual([false, false, true, false, true]);
+    expect(edited.revision.assets.map((asset, index) => asset.sha256 === noon.revision.assets[index]!.sha256)).toEqual([false, false, true, false]);
     expect(edited.revision.deck!.slides.every((slide) => slide.credit === undefined && slide.type !== 'sources')).toBe(true);
     expect(after.imageDownloads).toBe(before.imageDownloads);
     for (const [index, asset] of edited.revision.assets.entries()) {
@@ -334,7 +333,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const [published] = await sql<{ status: string; remote_media_id: string; remote_url: string; error_code: string | null }>(
       "select p.status,p.remote_media_id,p.remote_url,p.error_code from public.marketing_publications p where p.revision_id=$1", [morning.id]);
     expect(published).toMatchObject({ status: 'published', error_code: null, remote_media_id: graph.media[0]!.id, remote_url: graph.media[0]!.permalink });
-    expect(graph.fetchedImages).toHaveLength(5);
+    expect(graph.fetchedImages).toHaveLength(4);
     expect(graph.fetchedImages.every((image) => image.format === 'jpeg' && image.width === 1080 && image.height === 1350)).toBe(true);
     // The bytes Meta fetched are the approved ones: the approval binds content_hash, which binds every asset sha256.
     const [approvedRow] = await sql<{ approved_hash: string; content_hash: string; status: string }>('select approved_hash,content_hash,status from public.marketing_revisions where id=$1', [morning.id]);
@@ -435,7 +434,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     const sheet = await sharp({ create: { width: gap + 5 * (width + gap), height: gap + rows.length * (height + gap), channels: 3, background: '#d9d9d9' } }).composite(tiles).jpeg({ quality: 90 }).toBuffer();
     writeFileSync(`${OUT}/contact-sheet.jpg`, sheet);
     writeFileSync(`${OUT}/ticks.json`, JSON.stringify(ticks.map((entry) => ({ at: entry.at, ms: entry.ms, did: entry.result.did.map((item) => ({ category: item.category, status: item.status, code: item.code, detail: item.detail })) })), null, 1));
-    expect(saved).toHaveLength(15);
+    expect(saved).toHaveLength(12);
     console.info(`DNESKAi dry-day slides and contact sheet: ${OUT}`);
   });
 });
