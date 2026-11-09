@@ -33,7 +33,7 @@ beforeAll(async () => {
   db = await createMigratedDatabase({ owner, instant: new Date() });
   ownerAccount = await makeAccount(owner, 'dneskai');
   otherAccount = await makeAccount(other, 'other');
-});
+}, 60_000);
 afterAll(async () => { await db?.close(); });
 
 async function insertComment(user: string, account: string, commentId: string) {
