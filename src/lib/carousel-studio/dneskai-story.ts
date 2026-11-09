@@ -24,10 +24,10 @@ export const DNESKAI_STORY_SHADE = {
   stops: [
     { at: 0, opacity: 0.45 },
     { at: 0.14, opacity: 0 },
-    { at: 0.38, opacity: 0 },
-    { at: 0.5, opacity: 0.8 },
-    { at: 0.75, opacity: 0.92 },
-    { at: 1, opacity: 0.96 }
+    { at: 0.34, opacity: 0 },
+    { at: 0.46, opacity: 0.7 },
+    { at: 0.62, opacity: 0.9 },
+    { at: 1, opacity: 0.98 }
   ]
 } as const;
 
