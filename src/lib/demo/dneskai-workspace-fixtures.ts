@@ -52,7 +52,12 @@ export function demoAccounts(now: Date): MarketingAccountStatus[] {
     token: { expiresAt: new Date(now.getTime() + 8 * 86_400_000).toISOString(), refreshedAt: new Date(now.getTime() - 52 * 86_400_000).toISOString(), scopes: ['instagram_business_basic', 'instagram_business_content_publish'], loginMode: 'instagram' } }];
 }
 
-export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
+/**
+ * `busy` (owner request, 9 November 2026): four more approved posts tomorrow, so the Zítra panel holds more than five
+ * cards and scrolls inside itself. /dev-preview turns it on with `?labFixture=busy`; every other spec keeps the
+ * ordinary day.
+ */
+export function createDneskaiWorkspaceFixture(now: Date, options: { busy?: boolean } = {}): DneskaiWorkspaceRead {
   const today = pragueMarketingDate(now);
   const at = (day: number, time: string) => pragueScheduledAt(pragueDayAfter(today, day), time);
   const created = (hours: number) => new Date(now.getTime() - hours * 3_600_000).toISOString();
@@ -115,6 +120,9 @@ export function createDneskaiWorkspaceFixture(now: Date): DneskaiWorkspaceRead {
     base(11, 'e', { title: 'Malý model bez připojení', brief: brief('Ukázkové téma s prošlým časem', 0),
       scheduledAt: new Date(Math.max(now.getTime() - 20 * 60_000, Date.parse(at(0, '00:00')))).toISOString() }),
   ];
+  if (options.busy) posts.push(...(['a', 'b', 'c', 'd'] as const).map((deck, index) => base(21 + index, deck, {
+    title: ['Ukázka: co měří nový test řeči', 'Ukázka: tři chyby v promptu', 'Ukázka: kdy model hádá', 'Ukázka: jak číst cenu tokenů'][index]!,
+    status: 'approved', approvedAt: created(2), scheduledAt: at(1, ['09:15', '10:45', '14:15', '15:45'][index]!) })));
   return {
     schemaVersion: DNESKAI_WORKSPACE_VERSION, today, generatedAt: now.toISOString(), slots: ['08:00', '12:30', '17:00', '20:00'],
     accounts: [{ id: 'd0e5ca10-0000-4000-8000-0000000000aa', remoteId: '17841400000000001', handle: 'dneskai', verified: true, enabled: false }],
