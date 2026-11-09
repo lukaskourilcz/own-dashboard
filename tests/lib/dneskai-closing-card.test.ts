@@ -15,4 +15,14 @@ describe('the DNESKAi closing card drawn from its words (9 November 2026)', () =
     expect(await sharp(png).metadata()).toMatchObject({ width: 1080, height: 1350, format: 'png' });
     expect((await renderDneskaiClosingCard(DNESKAI_CLOSING_DEFAULTS)).equals(png)).toBe(true);
   }, 60000);
+
+  it('fits a wide custom headline inside the card margin', async () => {
+    const sharp = (await import('sharp')).default;
+    const blank = await renderDneskaiClosingCard({ ...DNESKAI_CLOSING_DEFAULTS, headline: '' });
+    const wide = await renderDneskaiClosingCard({ ...DNESKAI_CLOSING_DEFAULTS, headline: 'W'.repeat(24) });
+    const pixels = (image: Buffer, left: number, width: number) =>
+      sharp(image).extract({ left, width, top: 590, height: 290 }).raw().toBuffer();
+    expect((await pixels(wide, 66, 936)).equals(await pixels(blank, 66, 936))).toBe(false);
+    expect((await pixels(wide, 1008, 72)).equals(await pixels(blank, 1008, 72))).toBe(true);
+  }, 60000);
 });
