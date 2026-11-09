@@ -10,13 +10,13 @@
       "name": "cover-photo",
       "templateId": "dneskai-spotlight-cover-photo",
       "version": "1.1.0",
-      "pngHash": "9d1e4ef5a79985bd4e75ca9d2fa00a31d91d35faca50d5cd106ae4f593fa3994"
+      "pngHash": "7604a68ab2503efcccdd2cfefd2693bc2d9e474b1d84145fff72dd1041fc7255"
     },
     {
       "name": "cover-photo-crop",
       "templateId": "dneskai-spotlight-cover-photo",
       "version": "1.1.0",
-      "pngHash": "361f946b1e34dc06a50d1f589676c9d7f3acf945d514bcc290167f69b396fe60"
+      "pngHash": "7c99b184b974738aeaf5f43071cf7c40717591a8d881ffa76271fe3c584ff0ed"
     },
     {
       "name": "figure",
@@ -46,31 +46,31 @@
       "name": "statement-ink",
       "templateId": "dneskai-spotlight-statement",
       "version": "1.1.0",
-      "pngHash": "cfb7a749a95c1ca57189c5ad09a349e0467ce61765d3a3e47e882491246fff7c"
+      "pngHash": "d5ea824c90611a0aa9be55d634f16ff41c459472b035aeec693f4e36857a5458"
     },
     {
       "name": "sources",
       "templateId": "dneskai-spotlight-sources-4",
       "version": "1.1.0",
-      "pngHash": "acb94a5bab424d21d7dec204d13acf0772369ff52534e2f1f8cda1fe3d9a7427"
+      "pngHash": "ab5af0c0ff01ea0762de24754691b3ae7e38803ef8f82ae54ec1b3cfdd4e0def"
     },
     {
       "name": "single-photo",
       "templateId": "dneskai-spotlight-single-photo",
       "version": "1.1.0",
-      "pngHash": "61e14806a08a06c87d625fa39620cac73e5bd1257cfeb60c5a8ffc7183e1af3d"
+      "pngHash": "e6b2c7fc456fdd9d9efd1d56d09dcb2a97cf75761a4c3bc906b74aec9a7c85c8"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-spotlight-single-photo",
       "version": "1.1.0",
-      "pngHash": "4e217dae4d0f79210af560a38bdb1a3db57e49faab7d2fd48a49e25492567cdb"
+      "pngHash": "714abd863c8f7c0b3ca1ed4dab1214a52a0b95e4d3b7b0d2c220673a2e1b2926"
     },
     {
       "name": "single-type",
       "templateId": "dneskai-spotlight-single-type",
       "version": "1.1.0",
-      "pngHash": "c2033c4289d8d7283f88847aa344fc0955172193a4384520e393baaa7ce67fd4"
+      "pngHash": "cec843c8eee17028597a7ae8871cddcf55da65401ca8685c72e60ab209a73725"
     }
   ]
 }

@@ -98,11 +98,12 @@ export function plated(slot: string, x: number, y: number, width: number, height
 export const COVER_SHADE = {
   colorToken: "foreground",
   stops: [
-    { at: 0, opacity: 0.5 },
-    { at: 0.16, opacity: 0 },
-    { at: 0.36, opacity: 0 },
-    { at: 0.56, opacity: 0.68 },
-    { at: 1, opacity: 0.9 }
+    { at: 0, opacity: 0.45 },
+    { at: 0.14, opacity: 0 },
+    { at: 0.4, opacity: 0 },
+    { at: 0.55, opacity: 0.62 },
+    { at: 0.74, opacity: 0.88 },
+    { at: 1, opacity: 0.96 }
   ]
 };
 

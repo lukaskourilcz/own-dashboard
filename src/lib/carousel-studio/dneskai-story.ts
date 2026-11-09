@@ -17,15 +17,17 @@ const sf = (x: number, y: number, w: number, h: number) => ({ x: x / 1080, y: y 
  * The story's own shade: the cover's gradient reaches full strength only below 0.56 of a 4:5 frame, which on the
  * taller story leaves the headline's first lines over bare photograph. This one is dark across the whole lower half
  * where the headline stands, so white type clears 4.5:1 over a pale picture, and a touch at the head carries the logo.
+ * Near-black at the bottom edge since 9 November 2026 (owner request: a strong vignette like Complex's covers).
  */
 export const DNESKAI_STORY_SHADE = {
   colorToken: "foreground",
   stops: [
     { at: 0, opacity: 0.45 },
     { at: 0.14, opacity: 0 },
-    { at: 0.4, opacity: 0 },
-    { at: 0.5, opacity: 0.78 },
-    { at: 1, opacity: 0.92 }
+    { at: 0.38, opacity: 0 },
+    { at: 0.5, opacity: 0.8 },
+    { at: 0.75, opacity: 0.92 },
+    { at: 1, opacity: 0.96 }
   ]
 } as const;
 
