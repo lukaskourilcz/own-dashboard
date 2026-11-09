@@ -263,7 +263,7 @@ hash; approval binds exactly that hash (`marketing_approve_revision`). Actions:
 - **Vrátit**, **Přeskočit**, and **Schválit celý den**.
 
 The DNESKAi workspace has four tabs and a `⋯` menu (#169; the project header is gone from every project, #171):
-- **Dnes ke schválení:** Náměty (topics to approve or reject, #154) above the Lab, which has channel sub-tabs
+- **Dnes ke schválení:** a link to Náměty (topics to approve or reject, #154, its own section at `/topics` since 9 November 2026) above the Lab, which has channel sub-tabs
   Instagram, Threads and LinkedIn (the last two disabled, #170). The Lab also edits the comment keyword, DM and public
   reply (`DNESKAI_ENGAGEMENT_EDITOR_ENABLED`, #159), the format (Karusel or Reel) and the Reel's music.
 - **Kalendář:** the week's slots.
