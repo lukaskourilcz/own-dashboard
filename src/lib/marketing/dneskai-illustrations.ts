@@ -66,7 +66,7 @@ const LOOK_SYSTEM = [
   'tags: 4 to 12 lowercase English words or short phrases naming what is shown and what news topics it could illustrate (for example "server room", "data center", "cloud", "ai").',
   'description: one plain sentence describing the picture.',
   'brand_or_logo: true if any company name, brand mark or logo can be recognised (a bank, a phone maker, an app).',
-  'readable_text: true if any word, number or sign can be read.',
+  'readable_text: true only if prominent words or numbers a reader would notice can be read (a sign, a headline, a screen full of legible text); tiny markings, part numbers or blurred text do not count.',
   'person_as_subject: true if a person is the main subject or a face is clearly recognisable; hands or a distant figure are fine.',
   'looks_like_stock_photo_ok: true if it is a sharp, natural photograph fit for a news slide, false for an illustration, collage or a poor picture.',
 ].join('\n');
@@ -125,10 +125,12 @@ export async function addDneskaiIllustrations(db: Database, env: Environment, in
   const since = now.getTime() - 86_400_000;
   let spent = all.filter((row) => Date.parse(row.created_at as string) >= since).reduce((sum, row) => sum + Number(row.cost_usd ?? 0), 0);
   if (spent + LOOK.reserveUsd > settings.dailyUsd) return { ...result, code: 'illustrations-daily-cap' };
+  // A topic is full with its ready pictures; refused ones only move its search on, up to four pages' worth.
   const counts = new Map(DNESKAI_ILLUSTRATION_TOPICS.map((entry) => [entry.topic, all.filter((row) => row.topic === entry.topic).length]));
-  const open = DNESKAI_ILLUSTRATION_TOPICS.filter((entry) => (counts.get(entry.topic) ?? 0) < DNESKAI_ILLUSTRATION_PER_TOPIC);
+  const ready = new Map(DNESKAI_ILLUSTRATION_TOPICS.map((entry) => [entry.topic, all.filter((row) => row.topic === entry.topic && row.status === 'ready').length]));
+  const open = DNESKAI_ILLUSTRATION_TOPICS.filter((entry) => (ready.get(entry.topic) ?? 0) < DNESKAI_ILLUSTRATION_PER_TOPIC && (counts.get(entry.topic) ?? 0) < DNESKAI_ILLUSTRATION_PER_TOPIC * 4);
   if (!open.length) return { ...result, code: 'illustrations-topics-full' };
-  const entry = open.reduce((a, b) => ((counts.get(a.topic) ?? 0) <= (counts.get(b.topic) ?? 0) ? a : b));
+  const entry = open.reduce((a, b) => ((ready.get(a.topic) ?? 0) <= (ready.get(b.topic) ?? 0) ? a : b));
   const known = new Set(all.map((row) => String(row.source_id)));
   const have = counts.get(entry.topic) ?? 0;
   const query = entry.queries[have % entry.queries.length]!;
