@@ -2,7 +2,6 @@ import 'server-only';
 import { request as httpsRequest } from 'node:https';
 import { parseSourcePacket, sourceUsable, type MarketingBrand, type SourcePacket } from './contracts';
 import { contentHash } from './hashes';
-import { signAutomationBody } from './automation-auth';
 import { MARKETING_SOURCE_MAX_AGE_MS } from './publisher';
 import { marketingPilotConfiguration } from './pilot';
 import { previewPilotRetired } from './preview-pilot';
@@ -186,28 +185,17 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
   }
   const bridgeIds = input.sourceIds?.filter(id => !briefs.some(packet => packet.sourceId === id) && !concepts.includes(id));
   if (bridgeIds && !bridgeIds.length) return result;
+  if (input.brand === 'dneskai') {
+    // DNESKAi sources are the owner's own briefs (#115), re-read from the brief store above. Quorum's signed source
+    // bridge was removed on 9 November 2026 (Quorum is not needed), so a non-brief id is held rather than fetched; in
+    // practice every DNESKAi source is a brief, so nothing reaches here.
+    for (const id of bridgeIds ?? []) result.held.push({ sourceId: id, reason: 'source-unavailable' });
+    return result;
+  }
   input = { ...input, ...(bridgeIds ? { sourceIds: bridgeIds } : {}) };
   const config = input.config ?? sourceRefreshConfig(input.brand, input.env);
   const base = endpoint(config);
   if (config.previewShare) validatePreviewShare(config.previewShare, base, input.env ?? process.env);
-  if (input.brand === 'dneskai') {
-    if (base.pathname !== '/admin/api/marketing-source' || base.search) throw new SourceRefreshError('source-integration-invalid');
-    const body = JSON.stringify({ action: 'sources', ...(input.sourceIds ? { sourceIds: input.sourceIds } : {}) });
-    const raw = await request(input, base, { method: 'POST', body, headers: signAutomationBody(body, config.secret, now.getTime()) }, config);
-    if (!raw || typeof raw !== 'object' || !('schemaVersion' in raw) || raw.schemaVersion !== 'marketing-source-query/1' || !('sources' in raw) || !Array.isArray(raw.sources) || raw.sources.length > 20 || !('brand' in raw) || raw.brand !== 'dneskai') throw new SourceRefreshError('source-response-invalid');
-    const seen = new Set<string>();
-    for (const row of raw.sources) {
-      if (!row || typeof row !== 'object' || typeof row.sourceId !== 'string') { result.dropped++; continue; }
-      if (input.sourceIds && !input.sourceIds.includes(row.sourceId)) { result.dropped++; continue; }
-      seen.add(row.sourceId);
-      if (!row.packet) { result.held.push({ sourceId: row.sourceId, reason: 'article-not-approved-or-unavailable' }); continue; }
-      if (row.status !== 'approved' && row.packet.eligible !== false) { result.held.push({ sourceId: row.sourceId, reason: 'article-not-approved-or-unavailable' }); continue; }
-      append(row.packet, row.sourceId);
-    }
-    for (const id of input.sourceIds ?? []) if (!seen.has(id)) result.held.push({ sourceId: id, reason: 'source-unavailable' });
-    if ('noEditionDates' in raw && Array.isArray(raw.noEditionDates)) result.noEditionDates = raw.noEditionDates.filter((date): date is string => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)).slice(0, 20);
-    return result;
-  }
   const query = async (sourceId?: string) => {
     const url = new URL(base); url.searchParams.set('resource', 'marketing-source'); url.searchParams.set('limit', '20');
     url.searchParams.delete('sourceId'); url.searchParams.delete('daily'); url.searchParams.delete('cursor');

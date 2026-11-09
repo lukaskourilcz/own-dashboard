@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createHmac } from 'node:crypto';
 import { refreshMarketingSources, sourceRefreshConfig, type SourceRefreshConfig } from '@/lib/marketing/source-refresh';
 
 vi.mock('server-only', () => ({}));
@@ -62,22 +61,9 @@ describe('protected producer share preflight; offline fixtures only', () => {
     expect(fetcher).toHaveBeenCalledTimes(2); expect(privacy.clear).toHaveBeenCalledTimes(2);
     expect(privacy.processor.mock.calls.every(([process]) => process() === null)).toBe(true);
   });
-  it('preserves DNESKAi POST/body HMAC only on the second request', async () => {
-    const url = new URL(`${origin}/admin/api/marketing-source`);
-    const dneEnv = { ...env, MARKETING_DNESKAI_SOURCE_URL: url.href, MARKETING_DNESKAI_SOURCE_SECRET: secret,
-      MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN: origin, MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN: token };
-    const fetcher = vi.fn<typeof fetch>(async (target, init) => {
-      if (new URL(String(target)).searchParams.has('_vercel_share')) {
-        expect(init?.method).toBe('GET'); expect(init?.body).toBeUndefined(); expect([...new Headers(init?.headers)]).toEqual([]); return preflight(url);
-      }
-      const headers = new Headers(init?.headers), body = String(init?.body);
-      expect(String(target)).toBe(url.href); expect(init?.method).toBe('POST'); expect(headers.get('Cookie')).toBe(cookie);
-      expect(headers.get('x-marketing-signature')).toBe(createHmac('sha256', secret).update(`${headers.get('x-marketing-timestamp')}.${body}`).digest('hex'));
-      return Response.json({ schemaVersion: 'marketing-source-query/1', brand: 'dneskai', sources: [{ sourceId: 'held-test-only', status: 'held', packet: null }] });
-    });
-    expect((await refreshMarketingSources({ brand: 'dneskai', sourceIds: ['held-test-only'], env: dneEnv, now, fetcher })).held).toEqual([{ sourceId: 'held-test-only', reason: 'article-not-approved-or-unavailable' }]);
-    expect(fetcher).toHaveBeenCalledTimes(2);
-  });
+  // DNESKAi's signed source bridge (and its Preview share) was removed on 9 November 2026: DNESKAi sources are the
+  // owner's own briefs, so a DNESKAi refresh never performs a preflight or POST. The Preview-share transport below is
+  // exercised through devShark, which still reads its source over the bridge.
   it('ignores a retired share outside Preview: no share preflight or cookie, only the ordinary signed request (#113)', async () => {
     for (const retired of [{ ...env, VERCEL_ENV: 'production' }, { ...env, VERCEL_ENV: undefined }, { ...env, VERCEL_ENV: 'production', MARKETING_PILOT_EXPIRES_AT: now.toISOString() },
       { ...env, VERCEL_ENV: 'development', MARKETING_DEVSHARK_SOURCE_PREVIEW_SHARE_TOKEN: 'bad\r\nvalue' }]) {

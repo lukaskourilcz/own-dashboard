@@ -63,19 +63,6 @@ describe('retired preview pilot notice (#113)', () => {
     expect(dneskaiCollectionBlockers({ VERCEL_ENV: 'production' })).not.toContain('collection-paid-pilot-blocked');
   });
 
-  it('keeps ordinary collection on the direct signed bridge when a retired share is left outside Preview', async () => {
-    const { collectDneskaiFeed } = await import('@/lib/marketing/dneskai-providers');
-    const { DNESKAI_SOURCES } = await import('@/lib/marketing/dneskai-registry');
-    const source = DNESKAI_SOURCES.find(item => item.id === 'openai-blog')!, origin = 'https://quorum-production.example.invalid';
-    const env = { VERCEL_ENV: 'production', MARKETING_DNESKAI_SOURCE_URL: `${origin}/admin/api/marketing-source`, MARKETING_DNESKAI_SOURCE_SECRET: 'offline-bridge-secret'.repeat(2),
-      MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN: marker, MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN: 'https://quorum-isolated.vercel.app' };
-    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ schemaVersion: 'dneskai-feed/1', sources: [{ sourceId: source.id, status: 'ok', errorCode: null, items: [] }] }));
-    expect((await collectDneskaiFeed(source, '2026-10-12T00:00:00Z', { env, fetcher, signal: new AbortController().signal, now })).complete).toBe(true);
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    const [url, init] = fetcher.mock.calls[0];
-    expect(String(url)).toBe(`${origin}/admin/api/marketing-collection`); expect(new Headers(init?.headers).get('cookie')).toBeNull();
-    expect(new Headers(init?.headers).get('x-marketing-signature')).toMatch(/^[a-f0-9]{64}$/);
-    expect(JSON.stringify(fetcher.mock.calls)).not.toContain(marker);
-    expect(lines()).toEqual([{ event: 'pilot-retired', family: 'source-preview', vercelEnv: 'production', variables: ['MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN', 'MARKETING_DNESKAI_SOURCE_PREVIEW_ORIGIN'] }]);
-  });
+  // The DNESKAi collection bridge (and its Preview share) was removed on 9 November 2026 — collection reads the free
+  // feeds natively — so source-preview's retirement is now observed only through sourceRefreshConfig above.
 });
