@@ -83,7 +83,8 @@ export function SlideCanvas({ deck, index, lang, disabled, onChange }: { deck: D
  */
 export function DevsharkStudioSlide({ deck, index, label, className }: { deck: Pick<DevsharkDeck, 'cover' | 'slides'>; index: number; label: string; className?: string }) {
   const svg = useMemo(() => devsharkStudioSlideSvg(deck, index), [deck, index]);
-  return <div role="img" aria-label={label} className={cn('relative aspect-[4/5] overflow-hidden [&>svg]:h-full [&>svg]:w-full', className)} data-testid="devshark-studio-slide">
+  // An empty label marks a decorative copy (a card cover next to its title), hidden from assistive technology.
+  return <div {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })} className={cn('relative aspect-[4/5] overflow-hidden [&>svg]:h-full [&>svg]:w-full', className)} data-testid="devshark-studio-slide">
     <style>{STUDIO_FONT_FACES}</style>
     <div aria-hidden className="absolute inset-0 [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
   </div>;
