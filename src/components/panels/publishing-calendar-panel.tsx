@@ -25,12 +25,15 @@ import {
   versionLive,
   type PublishingCalendar,
   type PublishingChannel,
+  type PublishingLive,
   type PublishingNetwork,
   type PublishingPost,
   type PublishingSwitch,
   type PublishingVersion,
 } from "@/lib/publishing-calendar";
 import { cn } from "@/lib/utils";
+import { dneskaiWorkspaceApi } from "@/lib/marketing/dneskai-workspace-client";
+import { renderDevsharkPreview } from "@/lib/marketing/devshark-studio";
 
 type Lang = "en" | "cs";
 
@@ -142,10 +145,36 @@ function PostCard({ post, connected, lang, onOpen }: { post: PublishingPost; con
   </button>;
 }
 
+/**
+ * A version the Design Lab draws on demand, drawn here with the Lab's own request and route (owner request, 9 November
+ * 2026): the DNESKAi story through the Lab's preview, an unplanned devShark concept through the Studio's. In
+ * /dev-preview the DNESKAi story uses the Lab's fixture renderer; the Studio does not render there, so neither does this.
+ */
+function useLiveRender(live: PublishingLive | null | undefined, isPreview: boolean) {
+  const enabled = !!live && !(live.kind === "devshark-deck" && isPreview);
+  return useQuery({
+    queryKey: [...qk.publishingCalendarLive, isPreview ? "preview" : "live", JSON.stringify(live ?? null)],
+    enabled, staleTime: 5 * 60_000, gcTime: 10 * 60_000, retry: false, refetchOnWindowFocus: false,
+    queryFn: async ({ signal }): Promise<Array<{ src: string; alt: string }>> => {
+      if (!live) return [];
+      if (live.kind === "dneskai-story") {
+        const result = await (await dneskaiWorkspaceApi(isPreview)).renderPreview(live.request, signal);
+        return result.status === "rendered" && result.image ? [{ src: result.image, alt: "" }] : [];
+      }
+      return (await renderDevsharkPreview(live.deck)).slides.map((slide) => ({ src: slide.src, alt: slide.alt }));
+    },
+  });
+}
+
 /** How one version will look: the 9:16 story frame, the slides as a carousel, the Threads text with its picture. */
-function VersionPreview({ version, lang }: { version: PublishingVersion; lang: Lang }) {
+function VersionPreview({ version, title, lang, isPreview }: { version: PublishingVersion; title: string; lang: Lang; isPreview: boolean }) {
   const t = strings[lang];
   const pictures = version.pictures;
+  const live = useLiveRender(pictures.length ? null : version.live, isPreview);
+  const drawn = live.data ?? [];
+  const waiting = live.isFetching && !drawn.length;
+  const missing = <p className="flex h-full items-center justify-center p-3 text-center text-xs text-foreground-muted" role={waiting ? "status" : undefined}>
+    {waiting ? t.rendering : live.isError ? t.renderFailed : t.notRendered}</p>;
   return <div className="space-y-3">
     <p className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
       <span className="font-semibold tabular-nums text-foreground">{t.channel[version.channel]} {t.at(version.time)}</span>
@@ -154,19 +183,25 @@ function VersionPreview({ version, lang }: { version: PublishingVersion; lang: L
     {version.channel === "story"
       ? <div className="mx-auto aspect-[9/16] w-44 overflow-hidden rounded-lg border border-border bg-surface-inset sm:w-52" data-testid="story-frame">
           {pictures[0]
-            // A rendered 9:16 story fills the frame; until it exists, the 4:5 cover sits whole inside it, never cropped.
-            ? <Image unoptimized src={pictures[0].url} alt={pictures[0].alt} width={pictures[0].width} height={pictures[0].height}
-                className={cn("h-full w-full", pictures[0].height / pictures[0].width >= 1.7 ? "object-cover" : "object-contain")} />
-            : <p className="flex h-full items-center justify-center p-3 text-center text-xs text-foreground-muted">{t.notRendered}</p>}
+            ? <Image unoptimized src={pictures[0].url} alt={pictures[0].alt} width={pictures[0].width} height={pictures[0].height} className="h-full w-full object-cover" data-testid="story-image" />
+            : drawn[0]
+              // eslint-disable-next-line @next/next/no-img-element -- the Design Lab's own render, a data URL; nothing to optimise
+              ? <img src={drawn[0].src} alt={t.storyAlt(title)} className="h-full w-full object-cover" data-testid="story-image" />
+              : missing}
         </div>
-      : pictures.length === 0
-        ? <p className="rounded-md border border-dashed border-border-strong px-3 py-4 text-xs text-foreground-muted">{t.notRendered}</p>
+      : pictures.length === 0 && drawn.length === 0
+        ? <div className="rounded-md border border-dashed border-border-strong px-3 py-4">{missing}</div>
         : <ul role="list" tabIndex={0} aria-label={t.channel[version.channel]} data-testid="version-slides"
             className={cn("flex w-0 min-w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain rounded-md pb-2 focus-ring", version.channel === "threads" && "max-w-xs")}>
-            {(version.channel === "threads" ? pictures.slice(0, 1) : pictures).map((picture, index) => <li key={`${picture.url}-${index}`} className="w-52 shrink-0 snap-start sm:w-60">
-              <Image unoptimized src={picture.url} alt={picture.alt || t.slideOf(index + 1, pictures.length)} width={picture.width} height={picture.height} loading="lazy" sizes="15rem"
-                className="h-auto w-full rounded border border-border bg-surface-inset" />
-            </li>)}
+            {pictures.length
+              ? (version.channel === "threads" ? pictures.slice(0, 1) : pictures).map((picture, index) => <li key={`${picture.url}-${index}`} className="w-52 shrink-0 snap-start sm:w-60">
+                <Image unoptimized src={picture.url} alt={picture.alt || t.slideOf(index + 1, pictures.length)} width={picture.width} height={picture.height} loading="lazy" sizes="15rem"
+                  className="h-auto w-full rounded border border-border bg-surface-inset" />
+              </li>)
+              : (version.channel === "threads" ? drawn.slice(0, 1) : drawn).map((slide, index) => <li key={index} className="w-52 shrink-0 snap-start sm:w-60">
+                {/* eslint-disable-next-line @next/next/no-img-element -- the Studio's own render, a data URL; nothing to optimise */}
+                <img src={slide.src} alt={slide.alt || t.slideOf(index + 1, drawn.length)} width={1080} height={1350} className="h-auto w-full rounded border border-border bg-surface-inset" />
+              </li>)}
           </ul>}
     {version.channel !== "story" && <p className="whitespace-pre-line rounded-md border border-border bg-surface-inset p-3 text-sm break-words" data-testid="version-caption">
       {version.caption?.trim() || <span className="text-foreground-muted">{t.noCaption}</span>}
@@ -174,7 +209,7 @@ function VersionPreview({ version, lang }: { version: PublishingVersion; lang: L
   </div>;
 }
 
-function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed }: { post: PublishingPost; connected: PublishingCalendar["connected"]; lang: Lang; onClose: () => void;
+function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed, isPreview }: { post: PublishingPost; connected: PublishingCalendar["connected"]; lang: Lang; onClose: () => void; isPreview: boolean;
   onSwitch: (input: PublishingSwitch) => void; saving: boolean; failed: boolean }) {
   const t = strings[lang];
   const versions = useMemo(() => new Map(post.versions.map((v) => [v.channel, v])), [post]);
@@ -223,7 +258,7 @@ function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed }
           <Switch checked={!current.off} disabled={saving || !connected[networkOfChannel(current.channel)]} aria-label={t.shareVersion(t.channel[current.channel])} data-testid="version-switch"
             onCheckedChange={(on) => onSwitch({ brand: post.brand, slotId: post.slotId, channel: current.channel, off: !on })} />
         </label>}
-        {current ? <VersionPreview version={current} lang={lang} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
+        {current ? <VersionPreview version={current} title={post.title} lang={lang} isPreview={isPreview} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
       </div>
       {post.target && <div className="mt-4 flex justify-end">
         <Button type="button" variant="outline" onClick={() => { const target = post.target!; onClose(); openTarget(target, selected); }}>
@@ -299,7 +334,7 @@ export function PublishingCalendarPanel({ isPreview = false }: { isPreview?: boo
           </Card>)}
         </div>
         {openPost && <PostDialog key={openPost.id} post={openPost} connected={calendar.connected} lang={lang} onClose={() => { mutation.reset(); setOpen(null); }}
-          onSwitch={onSwitch} saving={mutation.isPending} failed={mutation.isError} />}
+          onSwitch={onSwitch} saving={mutation.isPending} failed={mutation.isError} isPreview={isPreview} />}
       </>}
   </section>;
 }
