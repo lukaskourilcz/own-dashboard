@@ -13,7 +13,7 @@ import { box, text, logo, kicker, body, template, FLOWED, LEFT, MEASURE, W, H } 
  * those accounts put "now" beside "then". The quote slides put two photographs side by side, edge
  * to edge, and set the sentence as a quote under a pair of quotation marks with the speaker under
  * it. The owner asked for this style for this kit only, so it is the one DNESKAi kit that centres
- * its words and draws a circle; the flat rules still hold everywhere else: square corners, no
+ * its first slide's words (every later slide is flush left, owner request of 9 November 2026) and draws a circle; the flat rules still hold everywhere else: square corners, no
  * glow, no blur, no ornament, colour photographs, and the only gradient is the shade over a
  * photograph.
  *
@@ -105,17 +105,19 @@ const inset: CarouselLayerInput = {
   border: { colorToken: "foreground", width: 6 }
 };
 
+// Only the first slide (the cover, or a single post's one slide) is centred; every other slide is set flush left
+// (owner request, 9 November 2026).
 const headline = (frame: Frame, options: Parameters<typeof text>[2]): CarouselLayerInput =>
   // Key words (`[[…]]`) in the post's colour (owner request, 8 November 2026); on the blue statement ground they are ink.
-  text("headline", frame, { colorToken: "foreground", fontToken: "headline", fontWeight: 800, align: "middle", uppercase: UPPERCASE, emphasisColorToken: "secondary", ...options });
+  text("headline", frame, { colorToken: "foreground", fontToken: "headline", fontWeight: 800, align: "start", uppercase: UPPERCASE, emphasisColorToken: "secondary", ...options });
 
 /** The pair of quotation marks above a quote; the API writes them. */
 const mark = (frame: Frame): CarouselLayerInput =>
-  text("quote-mark", frame, { colorToken: "foreground", fontToken: "headline", fontWeight: 800, align: "middle", minFontSize: MARK, maxFontSize: MARK, maxChars: 2, maxLines: 1 });
+  text("quote-mark", frame, { colorToken: "foreground", fontToken: "headline", fontWeight: 800, align: "start", minFontSize: MARK, maxFontSize: MARK, maxChars: 2, maxLines: 1 });
 
-/** The speaker line under a quote: Inter 700, uppercase, centred. */
+/** The speaker line under a quote: Inter 700, uppercase, flush left. */
 const speaker = (frame: Frame): CarouselLayerInput =>
-  text("kicker", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 30, maxFontSize: 30, maxChars: 28, maxLines: 1, uppercase: true, tracking: 0.02, align: "middle" });
+  text("kicker", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 30, maxFontSize: 30, maxChars: 28, maxLines: 1, uppercase: true, tracking: 0.02, align: "start" });
 
 /**
  * A series post's label and running number above the cover headline ("Slovník AI #3", owner decision, 8 November
@@ -125,7 +127,7 @@ const seriesLine = (frame: Frame): CarouselLayerInput =>
   text("series", frame, { colorToken: "foreground", fontToken: "body", fontWeight: 700, minFontSize: 24, maxFontSize: 24, maxChars: 48, maxLines: 1, uppercase: true, tracking: 0.04, align: "middle" });
 
 const copy = (frame: Frame, options: Parameters<typeof body>[1]): CarouselLayerInput =>
-  body(frame, { colorToken: "surface", align: "middle", ...options });
+  body(frame, { colorToken: "surface", align: "start", ...options });
 
 const coverPhoto = template({
   id: "dneskai-spotlight-cover-photo",
@@ -137,7 +139,7 @@ const coverPhoto = template({
     photo("image-1", 0, W, H, BLEED_FADE),
     inset,
     logo,
-    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7 }),
+    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7, align: "middle" }),
     seriesLine(box(LEFT, H - 140, MEASURE, 40))
   ]
 });
@@ -145,7 +147,7 @@ const coverPhoto = template({
 const figure = template({
   id: "dneskai-spotlight-figure",
   name: "DNESKAi spotlight · figure",
-  description: "A photograph across the top fading into ink, the headline and its explanation centred on the fade, standing on the floor.",
+  description: "A photograph across the top fading into ink, the headline and its explanation set flush left on the fade, standing on the floor.",
   backgroundToken: "background",
   version: FLOWED,
   layers: [
@@ -176,7 +178,7 @@ const split = template({
 const splitPair = template({
   id: "dneskai-spotlight-split-pair",
   name: "DNESKAi spotlight · split, two images",
-  description: "Two photographs side by side, each half the width and edge to edge, fading into ink, with the quote, the speaker and the explanation centred under them.",
+  description: "Two photographs side by side, each half the width and edge to edge, fading into ink, with the quote, the speaker and the explanation set flush left under them.",
   backgroundToken: "background",
   version: FLOWED,
   layers: [photo("image-1", 0, W / 2, DEPTH, DEPTH_FADE), photo("image-2", W / 2, W / 2, DEPTH, DEPTH_FADE), logo, ...quote(320)]
@@ -185,7 +187,7 @@ const splitPair = template({
 const statement = template({
   id: "dneskai-spotlight-statement",
   name: "DNESKAi spotlight · statement",
-  description: "One sentence set as a quote under a pair of quotation marks, centred on blueprint blue, or on ink in the INK variant, with a quieter note under it.",
+  description: "One sentence set as a quote under a pair of quotation marks, flush left on blueprint blue, or on ink in the INK variant, with a quieter note under it.",
   backgroundToken: "accent",
   version: FLOWED,
   // On the light blue ground (#6ec1ff since 8 November 2026) the words are ink; the INK variant draws them white.
@@ -234,7 +236,7 @@ const singlePhoto = template({
   layers: [
     photo("image-1", 0, W, H, BLEED_FADE),
     logo,
-    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7 })
+    headline(box(LEFT, 640, MEASURE, 620), { minFontSize: 64, maxFontSize: 104, maxChars: 110, maxLines: 7, align: "middle" })
   ]
 });
 
@@ -246,7 +248,7 @@ const singleType = template({
   version: FLOWED,
   layers: [
     logo,
-    headline(box(LEFT, 196, MEASURE, 1_054), { minFontSize: 60, maxFontSize: 104, maxChars: 120, maxLines: 10 })
+    headline(box(LEFT, 196, MEASURE, 1_054), { minFontSize: 60, maxFontSize: 104, maxChars: 120, maxLines: 10, align: "middle" })
   ]
 });
 
