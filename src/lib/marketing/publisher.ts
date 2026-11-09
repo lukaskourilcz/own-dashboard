@@ -41,8 +41,8 @@ export const CONTAINER_RETRY_CODE = 'container-retry';
 /**
  * Failures before media_publish that may clear on their own: an uncertain or
  * 5xx/429 request, an unreadable response, a missing container ID, the run's
- * deadline or a failed revalidation read. A definite 4xx rejection is a plain
- * failure instead. Neither published anything.
+ * deadline or a failed revalidation read. The publisher also retries errors
+ * Threads explicitly marks transient. A definite rejection is a plain failure.
  */
 export function containerFailureRetryable(code: string): boolean {
   return /^meta-http-(5\d\d|429)$/.test(code) || ['meta-request-uncertain', 'meta-invalid-response', 'container-identity-unavailable', 'container-status-unavailable',
@@ -150,8 +150,23 @@ function graphBase(config: MetaPublisherConfig): string {
   const host = config.loginMode === 'threads' ? 'graph.threads.net' : config.loginMode === 'instagram' ? 'graph.instagram.com' : 'graph.facebook.com';
   return `https://${host}/${config.apiVersion}`;
 }
-class MetaFailure extends Error { constructor(readonly code: string) { super(code); } }
+class MetaFailure extends Error {
+  constructor(readonly code: string, readonly diagnosticCode = code, readonly transient = false) { super(code); }
+}
 class CheckpointFailure extends Error {}
+type ThreadsGraphStep = 'profile' | 'quota' | 'carousel-item' | 'container' | 'status' | 'publish';
+const metaErrorNumber = (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 999_999_999;
+
+async function graphFailure(response: Response, threadsStep?: ThreadsGraphStep): Promise<MetaFailure> {
+  const code = `meta-http-${response.status}`;
+  if (!threadsStep) return new MetaFailure(code);
+  // Keep only the numeric identifiers. Provider text can contain request data, including signed media URLs.
+  const payload = await response.json().catch(() => null) as { error?: { code?: unknown; error_subcode?: unknown; is_transient?: unknown } } | null;
+  const { code: errorCode, error_subcode: errorSubcode, is_transient: transient } = payload?.error ?? {};
+  const metaCode = metaErrorNumber(errorCode) ? `-${errorCode}` : '';
+  const subcode = metaCode && metaErrorNumber(errorSubcode) ? `-${errorSubcode}` : '';
+  return new MetaFailure(code, `threads-${threadsStep}-http-${response.status}${metaCode}${subcode}`, transient === true);
+}
 async function pollWait(input: PublishMarketingInput, ms: number): Promise<void> {
   input.signal?.throwIfAborted();
   if (!input.signal) return (input.wait ?? (delay => new Promise(resolve => setTimeout(resolve, delay))))(ms);
@@ -171,7 +186,7 @@ async function pollWait(input: PublishMarketingInput, ms: number): Promise<void>
     if (timer) clearTimeout(timer);
   }
 }
-async function graph(input: PublishMarketingInput, node: string, method: 'GET' | 'POST', fields: Record<string, string>) {
+async function graph(input: PublishMarketingInput, node: string, method: 'GET' | 'POST', fields: Record<string, string>, step?: ThreadsGraphStep) {
   input.signal?.throwIfAborted();
   const url = new URL(`${graphBase(input.config)}/${node}`);
   const requestTimeout = AbortSignal.timeout(Math.min(15000, Math.max(1000, input.config.requestTimeoutMs ?? 10000)));
@@ -181,7 +196,7 @@ async function graph(input: PublishMarketingInput, node: string, method: 'GET' |
   else { options.body = new URLSearchParams(fields); options.headers = { ...options.headers, 'Content-Type': 'application/x-www-form-urlencoded' }; }
   let response: Response;
   try { response = await (input.fetcher ?? fetch)(url.href, options); } catch { throw new MetaFailure('meta-request-uncertain'); }
-  if (!response.ok) throw new MetaFailure(`meta-http-${response.status}`);
+  if (!response.ok) throw await graphFailure(response, input.account.platform === 'threads' ? step : undefined);
   try {
     const raw: unknown = await response.json();
     if (!raw || typeof raw !== 'object' || Array.isArray(raw) || 'error' in raw) throw new MetaFailure('meta-invalid-response');
@@ -195,7 +210,7 @@ async function verifyRemoteAccount(input: PublishMarketingInput): Promise<string
   const instagramLogin = input.config.loginMode === 'instagram';
   const fields = [instagramLogin ? 'id,user_id,username' : 'id,username', ...(story ? ['account_type'] : [])].join(',');
   let profile: Record<string, unknown>;
-  try { profile = await graph(input, input.account.remote_account_id, 'GET', { fields }); }
+  try { profile = await graph(input, input.account.remote_account_id, 'GET', { fields }, 'profile'); }
   catch (error) { if (story) return 'story-business-account-unverified'; throw error; }
   const identity = instagramLogin && typeof profile.user_id === 'string' ? profile.user_id : profile.id;
   if (identity !== input.account.remote_account_id || typeof profile.username !== 'string' || profile.username.toLowerCase() !== normalizedHandle(input.account.handle)) return 'remote-account-mismatch';
@@ -275,7 +290,7 @@ async function verifyAssets(input: PublishMarketingInput): Promise<void> {
 /** The provider's quota_total is authoritative (Meta's reference documents 50 posts per 24 hours, its guide 100); no number is assumed when it is absent. */
 async function publishingQuotaGate(input: PublishMarketingInput): Promise<string | null> {
   const threads = input.account.platform === 'threads';
-  const quota = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publishing_limit' : 'content_publishing_limit'}`, 'GET', { fields: 'quota_usage,config' });
+  const quota = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publishing_limit' : 'content_publishing_limit'}`, 'GET', { fields: 'quota_usage,config' }, 'quota');
   const limit = Array.isArray(quota.data) ? quota.data[0] as Record<string, unknown> | undefined : quota;
   const quotaConfig = limit?.config;
   const total = quotaConfig && typeof quotaConfig === 'object' && 'quota_total' in quotaConfig ? quotaConfig.quota_total : null;
@@ -285,7 +300,7 @@ async function publishingQuotaGate(input: PublishMarketingInput): Promise<string
 }
 async function containerStatus(input: PublishMarketingInput, container: string): Promise<string> {
   const threads = input.account.platform === 'threads';
-  const data = await graph(input, container, 'GET', { fields: threads ? 'id,status' : 'id,status_code' });
+  const data = await graph(input, container, 'GET', { fields: threads ? 'id,status' : 'id,status_code' }, 'status');
   if (data.id !== container) throw new MetaFailure('container-identity-mismatch');
   const status = data[threads ? 'status' : 'status_code'];
   if (typeof status !== 'string' || !['FINISHED', 'IN_PROGRESS', 'PUBLISHED', 'ERROR', 'EXPIRED'].includes(status)) throw new MetaFailure('container-status-unavailable');
@@ -420,7 +435,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       await verifyAssets(input);
       return outcome(await publishingQuotaGate(input));
     } catch (error) {
-      return outcome(error instanceof MetaFailure ? error.code : input.signal?.aborted ? 'publication-deadline-exceeded' : 'preflight-unavailable');
+      return outcome(error instanceof MetaFailure ? error.diagnosticCode : input.signal?.aborted ? 'publication-deadline-exceeded' : 'preflight-unavailable');
     }
   }
   if (gate) return result('held', gate, previous.remote_container_id);
@@ -447,7 +462,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     if (quotaGate) return result('held', quotaGate, container);
     const createPath = `${input.account.remote_account_id}/${threads ? 'threads' : 'media'}`;
     const create = async (params: Record<string, string>) => {
-      const data = await graph(input, createPath, 'POST', params);
+      const data = await graph(input, createPath, 'POST', params, params.is_carousel_item ? 'carousel-item' : 'container');
       if (!idValid(data.id as string)) throw new MetaFailure('container-identity-unavailable'); return data.id as string;
     };
     if (!container) {
@@ -506,7 +521,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       try { container = await create(fields); }
       catch (error) {
         // A topic tag Threads refuses (a 4xx; nothing was created): the topic goes in the text as its one hashtag instead.
-        if (fields.topic_tag && error instanceof MetaFailure && /^meta-http-4\d\d$/.test(error.code) && error.code !== 'meta-http-429') {
+        if (fields.topic_tag && error instanceof MetaFailure && !error.transient && /^meta-http-4\d\d$/.test(error.code) && error.code !== 'meta-http-429') {
           const { topic_tag: topic, ...rest } = fields;
           container = await create({ ...rest, text: `${rest.text}\n\n#${topic}`.slice(0, 500) });
         } else {
@@ -546,7 +561,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     input.signal?.throwIfAborted();
     await save('publish-intent', result('pending', 'publish-intent', container));
     publishIntentSaved = true;
-    const published = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publish' : 'media_publish'}`, 'POST', { creation_id: container });
+    const published = await graph(input, `${input.account.remote_account_id}/${threads ? 'threads_publish' : 'media_publish'}`, 'POST', { creation_id: container }, 'publish');
     if (!idValid(published.id as string) || (revision.format === 'story' && !/^[1-9]\d{0,99}$/.test(published.id as string))) throw new MetaFailure('published-media-identity-unavailable');
     media = published.id as string;
     if (revision.format === 'story') {
@@ -563,7 +578,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     return outcome;
   } catch (error) {
     if (error instanceof CheckpointFailure) return result(publishIntentSaved ? 'reconciliation' : 'held', 'checkpoint-fence-lost', publishIntentSaved ? container : previous.remote_container_id, media, remoteUrl);
-    const code = error instanceof MetaFailure ? error.code : input.signal?.aborted ? 'publication-deadline-exceeded' : 'checkpoint-or-revalidation-failed';
+    const code = error instanceof MetaFailure ? error.diagnosticCode : input.signal?.aborted ? 'publication-deadline-exceeded' : 'checkpoint-or-revalidation-failed';
     if (publishIntentSaved) {
       // media_publish may have been sent: only the read-only reconciliation may settle this, never a second POST.
       const outcome = result('reconciliation', code, container, media, remoteUrl);
@@ -572,7 +587,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
     }
     // No media_publish was sent. A transient failure around the containers
     // forgets them; a later tick inside the claim recreates them from scratch.
-    if (containerWorkStarted && containerFailureRetryable(code)) {
+    if ((error instanceof MetaFailure && error.transient) || (containerWorkStarted && containerFailureRetryable(error instanceof MetaFailure ? error.code : code))) {
       try { await save('container-retry', result('pending', CONTAINER_RETRY_CODE, null)); }
       catch { return result('held', 'checkpoint-fence-lost', previous.remote_container_id); }
       return { ...result('pending', CONTAINER_RETRY_CODE, null), retryCause: code };
