@@ -24,6 +24,14 @@ const revision = (patch: Partial<ContentRevision> = {}): ContentRevision => with
 const head = (patch: Partial<DneskaiPlanHead> = {}, content: Partial<ContentRevision> = {}): DneskaiPlanHead => ({ id: '33333333-3333-4333-8333-333333333333', status: 'review', ready: true, content_hash: 'h', revision: revision(content), render_report: null, ...patch });
 
 describe('dneskaiPlanAction', () => {
+  it('lets a post whose render just failed wait half an hour, so the posts behind it get the render (9 November 2026)', () => {
+    const failed = { schemaVersion: 'dneskai-render-report/1', status: 'failed', problems: [{ slide: -1, code: 'render-unavailable', blocking: true, message: 'x' }], renderKeys: [], renderedAt: '2026-11-07T13:50:00.000Z' };
+    const own = slot({ written_revision_id: '33333333-3333-4333-8333-333333333333' });
+    const unrendered = (report: unknown) => { const value = head({ ready: false, render_report: report }); return { ...value, revision: { ...value.revision, assets: [] } }; };
+    expect(dneskaiPlanAction(own, unrendered(failed), null, true, now)).toEqual({ kind: 'wait', status: 'failed', code: 'render-retry-later' });
+    expect(dneskaiPlanAction(own, unrendered({ ...failed, renderedAt: '2026-11-07T13:00:00.000Z' }), null, true, now)).toEqual({ kind: 'rerender', status: 'ready' });
+  });
+
   it('moves an approved post whose slot moved to 19:00 or 21:00 while the slot is ahead (8 November 2026)', () => {
     const moved = slot({ local_time: '19:00' });
     expect(dneskaiPlanAction(moved, head({ status: 'approved' }, { scheduledAt: '2026-11-08T16:00:00.000Z' }), null, true, now)).toEqual({ kind: 'move', status: 'ready' });

@@ -96,7 +96,13 @@ export async function renderAndAttachDneskaiRevision(db: Database, owner: string
   if (reuse) result = { status: "rendered", assets: reuse.assets, renderKeys: reuse.report.renderKeys, problems: reuse.report.problems };
   else {
     try { result = await dependencies.render({ owner, revisionId: input.revisionId, deck: revision.deck, loadMedia: dependencies.loadMedia, signal: dependencies.signal }); }
-    catch { result = null; }
+    catch (error) {
+      // The cause, never the deck or a URL, so a render that keeps failing can be told apart from a timeout.
+      const name = error instanceof Error ? error.name : typeof error;
+      const code = error instanceof Error ? error.message.replace(/https?:\/\/\S+/g, '<url>').slice(0, 160) : '';
+      console.warn(JSON.stringify({ event: 'dneskai-render-threw', revisionId: input.revisionId, name, code, aborted: dependencies.signal?.aborted ?? false }));
+      result = null;
+    }
   }
   if (!result || !["rendered", "refused"].includes(result.status)) {
     report = { schemaVersion: DNESKAI_RENDER_REPORT_VERSION, status: "failed", renderKeys: [], renderedAt,

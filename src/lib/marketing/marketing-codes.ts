@@ -40,6 +40,7 @@ const CODES = {
   // Approval (POST /api/marketing/revisions approve) and owner decisions.
   'revision-not-ready': ['edit', 'This version has no finished render yet, so it cannot be approved.', 'Tato verze ještě nemá hotové vykreslení, proto ji nelze schválit.'],
   'render-blocked': ['edit', 'The render found a problem that blocks approval.', 'Vykreslení našlo problém, který brání schválení.'],
+  'render-retry-later': ['wait', 'The slides failed to render; the plan tries again in half an hour.', 'Slidy se nepodařilo vykreslit; plán to zkusí znovu za půl hodiny.'],
   // devShark concept generation (7 November 2026).
   'concept-deck-invalid': ['auto', 'The model wrote a concept in the wrong shape; it was set aside.', 'Model napsal koncept ve špatném tvaru; byl odložen.'],
   'concept-closing-missing': ['auto', 'The model left out the closing slide; the concept was set aside.', 'Model vynechal závěrečný slide; koncept byl odložen.'],
