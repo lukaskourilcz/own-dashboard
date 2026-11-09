@@ -11,6 +11,9 @@ import { devsharkCalendarRenders, dneskaiCalendarRenders } from "@/lib/publishin
 import { createDneskaiWorkspaceFixture } from "@/lib/demo/dneskai-workspace-fixtures";
 import { demoDevsharkStudio } from "@/lib/demo/devshark-studio-demo";
 import type { PublishingCalendar } from "@/lib/publishing-calendar";
+import { devsharkStudioSlideSvg } from "@/lib/design-studio/devshark-studio-slide";
+import { layoutDevsharkSlide } from "@/lib/design-studio/devshark-layout";
+import { STUDIO_BROWSER_ASSETS } from "@/components/design-studio/slide-canvas";
 
 /**
  * Owner request, 9 November 2026: the publishing calendar shows exactly what the Design Lab shows, the same picture
@@ -57,10 +60,13 @@ describe("calendar previews are the Design Lab's previews", () => {
     }
   });
 
-  it("devShark: before the plan stores JPEGs the calendar sends the Studio's request; after, it shows the stored post and story", async () => {
+  it("devShark: before the plan stores JPEGs the calendar draws the Studio's own slides; after, it shows the stored post and story", async () => {
     const concept = (await demoDevsharkStudio.load()).drafts[0]!;
     const drawn = devsharkCalendarRenders(concept, { post: [], threads: [], story: [] });
     expect(drawn.live).toEqual({ kind: "devshark-deck", ...devsharkStudioRenderRequest(concept) });
+    // The calendar draws each slide with devsharkStudioSlideSvg; the Studio's canvas draws the same SVG.
+    const deck = drawn.live!.kind === "devshark-deck" ? drawn.live!.deck : null;
+    concept.deck.slides.forEach((_, index) => expect(devsharkStudioSlideSvg(deck!, index)).toBe(layoutDevsharkSlide(concept.deck, index, STUDIO_BROWSER_ASSETS).svg));
     expect(drawn.slides).toEqual([]);
     expect(drawn.story).toEqual([]);
     const stored = devsharkCalendarRenders(concept, { post: [jpeg("d1"), jpeg("d2")], threads: [], story: [{ ...jpeg("ds"), width: 1080, height: 1920 }] });
