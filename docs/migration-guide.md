@@ -1088,3 +1088,10 @@ from Instagram exports only),
 `marketing_collection_requeue`, `marketing_collection_claim` (queued → scraping once) and `marketing_collection_finish`
 (digest plus procedures through `marketing_import_knowledge` in one transaction). Nothing runs on its own: the owner
 starts every scrape and summary. Additive.
+
+## DNESKAi illustration library, 9 November 2026
+
+`20261109130000_dneskai_illustrations.sql` creates the private bucket `dneskai-illustrations`, the service-only table
+`public.dneskai_illustrations` (source id, page URL, photographer, licence, topic, sha256, Claude's tags and flags,
+status, cost, use count) and the pg_cron job `dneskai-illustrations-tick` (`1-59/5`), which posts a signed tick to
+`/api/marketing/dneskai/illustrations/tick`. The route does nothing until `DNESKAI_ILLUSTRATIONS_ENABLED=true`.

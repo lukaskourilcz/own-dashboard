@@ -208,6 +208,7 @@ The migrations, in the order they run:
 110. `20261109040000_heydarlink_ambient_import_gate.sql` — an imported ambient picture records whether Claude or the owner's review looked at it.
 111. `20261109050000_dneskai_finish_day_cap.sql` — a DNESKAi run picks only what is left of the day's four events, so a day with briefs no longer breaks its count.
 112. `20261109120000_ig_collection.sql` — IG Kolekce: saved-post columns on the knowledge sources (posts already in IG TIPS backfilled as done), the hashed share token and import high-water mark, and the import, requeue, claim and finish functions.
+113. `20261109130000_dneskai_illustrations.sql` — the DNESKAi illustration library: a private bucket, the tagged pictures with their licence and use count, and its own signed tick.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.
