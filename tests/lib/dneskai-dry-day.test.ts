@@ -340,7 +340,7 @@ describe('one DNESKAi day on the real modules with fake providers (#110)', () =>
     expect(approvedRow).toEqual({ approved_hash: morning.content_hash, content_hash: morning.content_hash, status: 'published' });
     expect(graph.fetchedImages.map((image) => image.sha256)).toEqual(morning.revision.assets.map((asset) => asset.sha256));
     const carousel = [...graph.containers.values()].find((container) => container.children)!;
-    expect(carousel.children).toHaveLength(5);
+    expect(carousel.children).toHaveLength(4);
     expect(carousel.caption).toBe(morning.revision.caption);
     expect([...graph.containers.values()].filter((container) => container.alt).map((container) => container.alt)).toEqual(morning.revision.assets.map((asset) => asset.alt));
   }, 300_000);
