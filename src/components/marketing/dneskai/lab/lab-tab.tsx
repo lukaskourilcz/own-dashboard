@@ -2,6 +2,7 @@
 
 import { DneskaiAudioPicker } from './audio-picker';
 import { DneskaiFormatSwitch } from './format-switch';
+import { DneskaiClosingPanel } from './closing-panel';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
@@ -141,6 +142,7 @@ export function DneskaiLabTab(props: Props) {
     <Dialog open={pending !== null} onOpenChange={(open) => { if (!open) setPending(null); }}><DialogContent><DialogHeader><DialogTitle>{t.actions.discard}</DialogTitle><DialogDescription>{t.actions.dirty}</DialogDescription></DialogHeader>
       <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setPending(null)}>{t.actions.cancel}</Button><Button onClick={() => { const post = pending!; setPending(null); setDirty(false); setChosen({ post, slide: 0 }); remember(post, 0); }}>{t.actions.discard}</Button></div>
     </DialogContent></Dialog>
+    <DneskaiClosingPanel lang={props.lang} disabled={props.preview || props.guest} />
     {props.preview && <details className="border-t border-border pt-3 text-xs"><summary className="min-h-11 cursor-pointer py-3 font-medium">{t.specimens.title}</summary><div className="space-y-6">{DNESKAI_OFFERED_KITS.map((kit) => <figure key={kit} className="space-y-2"><figcaption className="text-foreground-muted">{t.specimens.help(t.kits.names[kit])}</figcaption><a href={`/demo/dneskai/kit-${kit}.png`} target="_blank" rel="noreferrer"><Image unoptimized src={`/demo/dneskai/kit-${kit}.png`} alt={t.specimens.help(t.kits.names[kit])} width={1944} height={2574} sizes="100vw" className="h-auto w-full" /></a></figure>)}</div></details>}
     {batch && <ApproveDay {...props} day={batch} onClose={() => setBatch(null)} />}
   </section>;

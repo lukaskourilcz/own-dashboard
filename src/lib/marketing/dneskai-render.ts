@@ -8,6 +8,7 @@ import type { DneskaiDeckRenderResult, DneskaiRenderProblem, DneskaiRenderedAsse
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { DNESKAI_CLOSING_CARD_FILE, DNESKAI_CLOSING_CARD_SHA256, DNESKAI_CLOSING_CARD_TEMPLATE, DNESKAI_CLOSING_FILE, DNESKAI_CLOSING_SHA256, isDneskaiClosingSlide } from "./dneskai-closing";
+import { DNESKAI_CLOSING_CARD_VERSION, dneskaiClosingWords, renderDneskaiClosingCard } from "./dneskai-closing-card";
 
 /** The closing slide's picture, read from the app's files and checked against its pinned hash. */
 let closingBytes: Promise<Buffer> | null = null;
@@ -255,7 +256,7 @@ export function dneskaiRenderKey(slide: DneskaiSlide, position: Position, encode
     // Keyed only when the post has its own key-word colour, so every other key stays what it was.
     ...(emphasis ? { emphasis } : {}),
     // The closing slide is the finished card, so a new card is a new key.
-    ...(isDneskaiClosingSlide(slide) ? { closingCard: DNESKAI_CLOSING_CARD_SHA256 } : {}),
+    ...(isDneskaiClosingSlide(slide) ? { closingCard: DNESKAI_CLOSING_CARD_VERSION } : {}),
   }));
 }
 
@@ -428,10 +429,13 @@ function storageStage<T>(run: () => Promise<T>): Promise<T> {
 
 type RenderedSlide = { png: Buffer; pngHash: string; svgHash: string; template: { id: string; version: string }; problems: DneskaiSlideRenderProblem[] };
 
-/** The closing slide drawn as the finished card, whatever the deck's kit (owner, 8 November 2026). */
-async function closingCardRender(): Promise<RenderedSlide> {
+/**
+ * The closing slide drawn as the finished card, whatever the deck's kit (owner, 8 November 2026), from the slide's own
+ * words, which the owner edits in the Design Lab (9 November 2026).
+ */
+async function closingCardRender(slide: Pick<DneskaiSlide, "headline" | "body">): Promise<RenderedSlide> {
   let png: Buffer;
-  try { png = await dneskaiClosingCardBytes(); }
+  try { png = await renderDneskaiClosingCard(dneskaiClosingWords(slide)); }
   catch { throw new DneskaiRenderError("render-rasterization-failed"); }
   return { png, pngHash: sha256(png), svgHash: "", template: { ...DNESKAI_CLOSING_CARD_TEMPLATE }, problems: [] };
 }
@@ -465,7 +469,7 @@ export function createDneskaiDeckRenderer(dependencies: { storage(owner: string,
       problems.push(...ownProblems[index]!);
       const hit = cached[index];
       if (hit) { problems.push(...cachedProblems(index, hit)); rendered.push(null); continue; }
-      if (isDneskaiClosingSlide(slide)) { rendered.push(refusedByText ? null : await closingCardRender()); continue; }
+      if (isDneskaiClosingSlide(slide)) { rendered.push(refusedByText ? null : await closingCardRender(slide)); continue; }
       const loaded = await slideImages(slide, index, load, input.signal);
       abortCheck();
       problems.push(...loaded.problems);
@@ -570,7 +574,7 @@ export async function previewDneskaiSlide(value: DneskaiDeck, index: number, loa
     return { status: "rendered", image: hit.image, renderKey, problems: [], cached: true, blocks: hit.blocks };
   }
   if (!options.story && isDneskaiClosingSlide(slide) && !own.length) {
-    const card = await closingCardRender();
+    const card = await closingCardRender(slide);
     const sharp = await sharpModule();
     const image = await sharp(card.png).resize(DNESKAI_PREVIEW_IMAGE.width, DNESKAI_PREVIEW_IMAGE.height, { fit: "fill" }).webp({ quality: DNESKAI_PREVIEW_IMAGE.quality }).toBuffer();
     return { status: "rendered", image, renderKey, problems: [], cached: false, blocks: [] };
