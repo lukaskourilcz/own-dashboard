@@ -21,7 +21,7 @@ import { createDneskaiSlideStorage } from './worker-runtime';
 import { STORY_HEIGHT, STORY_WIDTH, composeStoryFromCover, storyRenderKey } from './story-image';
 import { renderDneskaiStoryJpeg } from './dneskai-render';
 import { synchronizeMarketingSources } from './orchestrator';
-import { illustrateDneskaiPost } from './dneskai-illustrate';
+import { illustrateDneskaiPost, setDneskaiCoverFromLibrary } from './dneskai-illustrate';
 import { DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesCaption, dneskaiSeriesDeck, dneskaiSeriesHeading, dneskaiSeriesNumbers, dneskaiSeriesOf, dneskaiSeriesSlot, type DneskaiSeries } from './dneskai-series';
 
 /**
@@ -491,6 +491,24 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
             continue;
           }
           await record(slot, { status: 'generating' }); break;
+        }
+        // The owner's cover pick (`cover-<sha256>[-<rrggbb>]` on the slot, 9 November 2026): that library picture on the
+        // first slide and, when given, the key words in that colour. The version counts as the owner's edit, so the
+        // plan keeps its colour instead of the slot's.
+        const coverPick = /^cover-([0-9a-f]{64})(?:-([0-9a-f]{6}))?$/.exec(slot.code ?? '');
+        if (coverPick && head && (head.status === 'review' || head.status === 'approved') && head.revision.deck) {
+          if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS + 10_000) break;
+          const picked = await setDneskaiCoverFromLibrary(db, owner, { revision: head.revision, sha256: coverPick[1]! });
+          if (!picked.deck) { const patch = { code: picked.code }; await record(slot, patch); Object.assign(slot, patch); break; }
+          const deck = coverPick[2] ? { ...picked.deck, emphasis: `#${coverPick[2]}` } : picked.deck;
+          const revision = parseContentRevision({ ...head.revision, deck, assets: [] });
+          const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
+          await markIllustrationChecked(db, saved.id, 'illustrate-result');
+          const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: saved.id, revision }, { render: wired().render, loadMedia: wired().loadMedia, signal: input.signal });
+          result.rendered++;
+          const patch: Partial<DneskaiPlanRow> = { head_revision_id: saved.id, written_revision_id: head.id, status: rendered.ready ? 'ready' : 'failed', code: rendered.ready ? null : 'render-blocked' };
+          await record(slot, patch); Object.assign(slot, patch);
+          break;
         }
         // Fitting photographs on every slide (owner request, 9 November 2026): once per post version, behind
         // DNESKAI_ILLUSTRATE_ENABLED, a ready Instagram post whose slot is ahead is checked and its photo-less or
