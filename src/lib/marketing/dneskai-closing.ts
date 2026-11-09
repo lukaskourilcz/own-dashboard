@@ -25,11 +25,12 @@ export const DNESKAI_CLOSING_CARD_TEMPLATE = { id: "dneskai-closing-card", versi
 export const DNESKAI_CLOSING_HEADLINE = "Sleduj [[DNESKAi]]";
 export const DNESKAI_CLOSING_BODY = "pro všechny novinky ze světa AI a technologií. @dneskai";
 
-export function dneskaiClosingSlide(): DneskaiSlide {
+/** The closing slide, with the owner's words from the Design Lab when given (9 November 2026). */
+export function dneskaiClosingSlide(words?: { headline: string; body: string; handle: string }): DneskaiSlide {
   return {
     type: "figure",
-    headline: DNESKAI_CLOSING_HEADLINE,
-    body: DNESKAI_CLOSING_BODY,
+    headline: words ? `${words.headline} [[DNESKAi]]` : DNESKAI_CLOSING_HEADLINE,
+    body: words ? `${words.body} ${words.handle}` : DNESKAI_CLOSING_BODY,
     images: [{ slot: "image-1", assetSha256: DNESKAI_CLOSING_SHA256 }],
     alt: "Závěrečný snímek DNESKAi: noční město s modrými světly a výzva sledovat DNESKAi pro novinky ze světa AI a technologií.",
   };
