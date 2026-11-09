@@ -40,7 +40,7 @@ describe('dneskaiPlanAction', () => {
 
   it('draws again a post rendered before the icy blue and new logo, approved or not, while its slot is ahead (8 November 2026)', () => {
     const stale = { schemaVersion: 'dneskai-render-report/1', status: 'rendered', problems: [], renderKeys: [], renderedAt: '2026-11-08T15:55:00.000Z' };
-    const fresh = { ...stale, renderedAt: '2026-11-08T19:00:00.000Z' };
+    const fresh = { ...stale, renderedAt: '2026-11-09T01:00:00.000Z' };
     expect(dneskaiRenderStale(stale)).toBe(true);
     expect(dneskaiRenderStale(fresh)).toBe(false);
     expect(dneskaiRenderStale(null)).toBe(false);

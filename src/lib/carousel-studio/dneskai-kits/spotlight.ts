@@ -60,15 +60,16 @@ const MARK_PULL = 76;
  * picture's upper half, then deep enough from the headline frame's top that white type clears
  * 4.5:1 over a white photograph (the contrast check reads the weakest point under the words).
  */
+// Strong at the floor (owner request, 9 November 2026: a strong bottom vignette like Complex's covers, near-black at the bottom edge, so the headline reads on any photograph).
 const BLEED_FADE = {
   colorToken: "background",
   stops: [
-    { at: 0, opacity: 0.5 },
+    { at: 0, opacity: 0.45 },
     { at: 0.14, opacity: 0 },
-    { at: 0.36, opacity: 0 },
-    { at: 0.56, opacity: 0.7 },
-    { at: 0.78, opacity: 0.88 },
-    { at: 1, opacity: 0.94 }
+    { at: 0.4, opacity: 0 },
+    { at: 0.55, opacity: 0.62 },
+    { at: 0.74, opacity: 0.88 },
+    { at: 1, opacity: 0.96 }
   ]
 };
 

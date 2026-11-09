@@ -74,9 +74,9 @@ export type DneskaiPlanAction =
 export const dneskaiDeckLacksPhoto = (revision: Pick<ContentRevision, 'deck'>) => !!revision.deck && !(revision.deck.slides[0]?.images.length);
 /**
  * Slides drawn before this instant predate the icy blue, the new logo and the two remaining styles (owner, 8 November
- * 2026). The plan draws an unpublished post rendered earlier again, under `DNESKAI_RENDER_POLICY` (dneskai-render/4).
+ * 2026). The plan draws an unpublished post rendered earlier again, under `DNESKAI_RENDER_POLICY` (dneskai-render/5: the strong cover vignette of 9 November 2026).
  */
-export const DNESKAI_RENDERS_CURRENT_SINCE = '2026-11-08T16:26:00.000Z';
+export const DNESKAI_RENDERS_CURRENT_SINCE = '2026-11-09T00:30:00.000Z';
 export function dneskaiRenderStale(report: unknown): boolean {
   const at = report && typeof report === 'object' ? (report as { renderedAt?: unknown }).renderedAt : undefined;
   return typeof at === 'string' && Date.parse(at) < Date.parse(DNESKAI_RENDERS_CURRENT_SINCE);

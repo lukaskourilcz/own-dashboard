@@ -39,15 +39,16 @@ const DEPTH = 1_296;
 const LEADING = 1.24;
 
 /** A photograph's shade: ink behind the logotype, clear through the middle, deep under the words. */
+// Strong at the floor (owner request, 9 November 2026: a strong bottom vignette like Complex's covers, near-black at the bottom edge, so the headline reads on any photograph).
 const BLEED_FADE = {
   colorToken: "background",
   stops: [
     { at: 0, opacity: 0.45 },
     { at: 0.14, opacity: 0 },
-    { at: 0.36, opacity: 0 },
-    { at: 0.56, opacity: 0.72 },
-    { at: 0.78, opacity: 0.9 },
-    { at: 1, opacity: 0.95 }
+    { at: 0.4, opacity: 0 },
+    { at: 0.55, opacity: 0.62 },
+    { at: 0.74, opacity: 0.88 },
+    { at: 1, opacity: 0.96 }
   ]
 };
 

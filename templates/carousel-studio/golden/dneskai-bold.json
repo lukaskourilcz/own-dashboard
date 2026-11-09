@@ -22,19 +22,19 @@
       "name": "figure",
       "templateId": "dneskai-bold-figure",
       "version": "1.1.0",
-      "pngHash": "a263f3f1219bdd2c09f0507c05ec2e0748120aa9c3cab5ebb3b49989d2b048dd"
+      "pngHash": "1972f975e9a0be4c05a28523d5984442e4b24abb3059ec604c3400172d0408ce"
     },
     {
       "name": "split",
       "templateId": "dneskai-bold-split",
       "version": "1.1.0",
-      "pngHash": "b2dea8f7ad0794ac09ba28148bcf08dcc5a82606bad190b6426b2f36d770e7de"
+      "pngHash": "d62b6bfa15b405829178f1fd5d19f8074b76ce6645af1f848dfed8beaa2f11e1"
     },
     {
       "name": "split-pair",
       "templateId": "dneskai-bold-split-pair",
       "version": "1.1.0",
-      "pngHash": "ec8b70eab26da0bab08dcd8c3eab41e1b82d97dc963caf298ac8a740bee657d4"
+      "pngHash": "9ba32ace0a4edb8c4a7d4245bac856d69d72a081ab9aa9c09383ef5445f2d6ab"
     },
     {
       "name": "statement",
@@ -46,25 +46,25 @@
       "name": "statement-ink",
       "templateId": "dneskai-bold-statement",
       "version": "1.1.0",
-      "pngHash": "5699c5c6c2d138bb93ae9be48fa33e5ec8a113649f04fa906b83ccacc1fad06d"
+      "pngHash": "ef7fa0b03e3b70194872530c668978496967b4f40af0cfe911b3b4ca9b6dce97"
     },
     {
       "name": "sources",
       "templateId": "dneskai-bold-sources-4",
       "version": "1.1.0",
-      "pngHash": "85adc7dcd5e9d4d5f12532ffebe587f68bf116df50a96260aa454898a4907a69"
+      "pngHash": "95592f10216e927b24ddcc2a19a9d258a494b8e30d389e9061daca225a5f92a2"
     },
     {
       "name": "single-photo",
       "templateId": "dneskai-bold-single-photo",
       "version": "1.1.0",
-      "pngHash": "05bd0a725846f9c35dbf37789e6b5ff44ab68fec84281bfa5ce8a3630766287c"
+      "pngHash": "bd6db1f618258cbca99a0658d09bd45442cd2da847ded838f6955a03148eff5d"
     },
     {
       "name": "single-photo-focal",
       "templateId": "dneskai-bold-single-photo",
       "version": "1.1.0",
-      "pngHash": "67dbc1ae5ca800fb450a4156b0d50fc4dd7726b5c582275b230747622b2f54e6"
+      "pngHash": "eb187847748c2f207fb1d0a0dc619af97cd9b42391785aa463e1e024948e7f3c"
     },
     {
       "name": "single-type",
