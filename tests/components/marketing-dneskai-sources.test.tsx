@@ -42,7 +42,7 @@ describe('read-only DNESKAi source checks', () => {
     expect(container.querySelector('time[datetime="2026-10-10T20:05:00Z"]')).toBeNull();
   });
   it('shows missing configuration and no scheduled checks without inventing a successful empty run', () => {
-    const value = state(); value.enabled = false; value.blockers = ['collection-bridge-unconfigured']; value.sourceStates = []; value.candidates = []; value.runs = [];
+    const value = state(); value.enabled = false; value.blockers = ['collection-feed-provider-invalid']; value.sourceStates = []; value.candidates = []; value.runs = [];
     render(<DneskaiSourceRecords state={value} lang="en" now={now} />);
     expect(container.textContent).toContain(dneskaiSources.en.disabled); expect(container.textContent).toContain(dneskaiSources.en.notScheduled);
     expect(container.textContent).toContain(dneskaiSources.en.noRuns); expect(container.textContent).toContain(dneskaiSources.en.noTopics);
