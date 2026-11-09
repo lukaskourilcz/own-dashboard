@@ -12,6 +12,7 @@ const en = {
   queue: {
     label: 'Posts by day',
     today: 'Today', tomorrow: 'Tomorrow',
+    scrollLabel: (day: string) => `${day}: posts. The list scrolls past five.`,
     empty: 'No posts planned for this day.',
     preparing: 'Preparing',
     timeLeft: (minutes: number) => minutes < 60 ? `in ${minutes} min` : `in ${Math.floor(minutes / 60)} h ${minutes % 60} min`,
@@ -274,6 +275,7 @@ const cs: typeof en = {
   queue: {
     label: 'Příspěvky podle dne',
     today: 'Dnes', tomorrow: 'Zítra',
+    scrollLabel: (day: string) => `${day}: příspěvky. Nad pět se seznam posouvá.`,
     empty: 'Na tento den není naplánovaný žádný příspěvek.',
     preparing: 'Připravuje se',
     timeLeft: (minutes: number) => minutes < 60 ? `za ${minutes} min` : `za ${Math.floor(minutes / 60)} h ${minutes % 60} min`,
