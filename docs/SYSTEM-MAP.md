@@ -214,9 +214,11 @@ large Manrope type with green highlights and the large fin; no corner fin and no
 `marketing_devshark_drafts`. The owner edits, previews and approves each in the devShark project's **Studio** tab
 (`/api/marketing/devshark/drafts`, `/api/marketing/devshark/preview`); a saved edit returns the concept to review. Behind
 `DEVSHARK_PLAN_ENABLED` the tick's `devshark-plan` step places approved concepts into `marketing_devshark_plan`: one
-Instagram post a day at 12:00, also on Threads, and a Threads post at 19:00. Once a concept is in the plan, the same step renders it, stores
-the slides and saves and approves one revision per channel: the Instagram carousel at 12:00 with a story from its
-cover ten minutes later, and the Threads post (12:00 as the twin, 19:00 alone). Each revision cites the concept as
+Instagram post a day at 16:00 Prague time, also on Threads, and a Threads post at 19:00. The owner can mark a concept
+as **Strong post** in the Design Lab. After approval it waits for an empty Wednesday or Friday Instagram slot. When
+no marked concept is waiting, those slots take an ordinary concept. Once a concept is in the plan, the same step renders it, stores
+the slides and saves and approves one revision per channel: the Instagram carousel at 16:00 with a story from its
+cover ten minutes later, and the Threads post (16:00 as the twin, 19:00 alone). Each revision cites the concept as
 its source (`devshark-source.ts`), so a concept edited afterwards stops them; the publishing step then sends devShark
 like DNESKAi, under `MARKETING_DEVSHARK_PUBLISH_ENABLED` and each account's own switch. The first five concepts are in `content/devshark/concepts-2026-11-07.json`, the next five, written in the house style, in `concepts-2026-11-08.json`. With `DEVSHARK_GENERATION_ENABLED`,
 the `devshark-concepts` step keeps five concepts waiting in the studio: one Claude Sonnet 5.5 call per concept from a

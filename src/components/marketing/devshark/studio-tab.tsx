@@ -49,7 +49,7 @@ export function DevsharkStudioTab({ lang, preview = false }: { lang: Lang; previ
               <button type="button" aria-current={draft.id === current?.id ? 'true' : undefined} onClick={() => setSelected(draft.id)}
                 className={cn('flex min-h-11 w-full min-w-40 flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left focus-ring', draft.id === current?.id ? 'border-border-strong bg-accent' : 'border-border bg-surface hover:bg-surface-hover')}>
                 <span className="text-sm font-medium break-words">{draft.title}</span>
-                <span className="text-xs text-foreground-muted">{t.statuses[draft.status]}</span>
+                <span className="text-xs text-foreground-muted">{t.statuses[draft.status]}{draft.deck.strong && ` · ${t.strong.label}`}</span>
               </button>
             </li>)}
           </ul>
@@ -98,6 +98,21 @@ function Editor({ draft, lang, preview }: { draft: DevsharkDraft; lang: Lang; pr
       <label className="block space-y-1 text-xs font-medium text-foreground-muted">{t.fields.title}
         <input id={`${ids}-title`} className={fieldClass} value={value.title} maxLength={160} onChange={(event) => setValue((prev) => ({ ...prev, title: event.target.value }))} />
       </label>
+      <div>
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4 focus-ring" checked={value.deck.strong === true} aria-describedby={`${ids}-strong-help`}
+            onChange={(event) => {
+              const { checked } = event.target;
+              setValue((prev) => {
+                const deck = { ...prev.deck };
+                if (checked) deck.strong = true; else delete deck.strong;
+                return { ...prev, deck };
+              });
+            }} />
+          {t.strong.label}
+        </label>
+        <p id={`${ids}-strong-help`} className="text-xs text-foreground-muted">{t.strong.help}</p>
+      </div>
       <div className="min-w-0 space-y-2" data-testid="design-studio">
         <div role="tablist" aria-label={s.slides} className="flex flex-wrap gap-1">{value.deck.slides.map((slide, index) => <button key={index} type="button" role="tab" aria-selected={index === active}
           onClick={() => setActive(index)} className={cn('min-h-9 rounded-md px-3 text-xs font-medium focus-ring', index === active ? 'bg-accent text-foreground' : 'text-foreground-muted hover:bg-surface-hover')}>{s.slideTab(index + 1)} · {t.kinds[slide.kind]}</button>)}</div>

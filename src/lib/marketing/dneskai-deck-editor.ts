@@ -9,6 +9,7 @@ import {
 } from './dneskai-slide-layout';
 import type { DneskaiFieldLimit, DneskaiWorkspacePost } from './dneskai-workspace';
 import type { DneskaiFitResult } from './dneskai-lab';
+import type { DneskaiEmphasisHex } from './dneskai-palette';
 
 /**
  * The owner's post editor (#119) as pure functions: a draft built from one revision, the edits the editor allows
@@ -37,7 +38,7 @@ export type DraftSlide = { from: number | null; slide: DneskaiSlide; fields: Dne
 export type EngagementDraft = { keyword: string; replyMessage: string; publicReply: string };
 /** `audioTrackId`: the Reel track (#164); null leaves the choice to the rotation. */
 /** `format` (#165): how a carousel deck publishes, as a carousel or as a Reel; other decks keep theirs. */
-export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null; kit: DneskaiKitId; audioTrackId: string | null; engagement: EngagementDraft | null; format: DneskaiWorkspacePost['format'] };
+export type DeckDraft = { slides: DraftSlide[]; caption: string; scheduledLocal: string; accountId: string | null; kit: DneskaiKitId; emphasis?: DneskaiEmphasisHex; audioTrackId: string | null; engagement: EngagementDraft | null; format: DneskaiWorkspacePost['format'] };
 
 import { DNESKAI_DEFAULT_PUBLIC_REPLY } from './dneskai-engagement';
 export { DNESKAI_DEFAULT_PUBLIC_REPLY };
@@ -80,6 +81,7 @@ export function createDeckDraft(post: DneskaiWorkspacePost, accountId: string | 
     scheduledLocal: pragueLocalInput(dneskaiScheduleExpired(post, now) ? dneskaiNextEditableTime(now) : post.scheduledAt),
     accountId,
     kit: dneskaiKitOf(post.deck),
+    emphasis: post.deck?.emphasis,
     audioTrackId: dneskaiAudioChoiceKey(post.audio),
     engagement: post.engagement ? { keyword: post.engagement.keyword, replyMessage: post.engagement.replyMessage, publicReply: post.engagement.publicReply ?? '' } : null,
     format: post.format,
@@ -320,7 +322,7 @@ export function scheduledIso(local: string): string | null {
 export type DneskaiSlideEdit = { from: number; headline?: string; body?: string | null; kicker?: string | null; credit?: string; alt?: string; images?: DneskaiSlideImage[]; type?: DneskaiSlide['type']; variant?: NonNullable<DneskaiSlide['variant']> | null; layout?: NonNullable<DneskaiSlide['layout']> | null };
 export type DneskaiSlideInsertEdit = { insert: { type: 'figure' | 'split' | 'statement'; variant?: 'accent' | 'ink'; headline: string; body?: string; kicker?: string; alt: string; images: DneskaiSlideImage[] } };
 /** `engagement` (#157): left out keeps the saved keyword and messages, null removes them. */
-export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; audioTrackId?: string | null; format?: 'carousel' | 'reel'; deck?: { kit?: DneskaiKitId; slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> };
+export type DneskaiEditRequest = { action: 'edit'; id: string; caption: string; scheduledAt: string; accountId?: string; audioTrackId?: string | null; format?: 'carousel' | 'reel'; deck?: { kit?: DneskaiKitId; emphasis?: DneskaiEmphasisHex | null; slides: Array<DneskaiSlideEdit | DneskaiSlideInsertEdit> };
   engagement?: ContentEngagement | null };
 
 const sameImages = (a: readonly DneskaiSlideImage[], b: readonly DneskaiSlideImage[]) => JSON.stringify(a) === JSON.stringify(b);
@@ -335,7 +337,8 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
   if (!scheduledAt) throw new Error('schedule-invalid');
   const original = post.deck?.slides ?? [];
   const kitChanged = draft.kit !== dneskaiKitOf(post.deck);
-  let changed = kitChanged || draft.slides.length !== original.length;
+  const emphasisChanged = draft.emphasis !== post.deck?.emphasis;
+  let changed = kitChanged || emphasisChanged || draft.slides.length !== original.length;
   const slides = draft.slides.map(({ from, slide, fields }, position): DneskaiSlideEdit | DneskaiSlideInsertEdit => {
     if (from === null) {
       changed = true;
@@ -381,7 +384,7 @@ export function dneskaiEditRequest(post: DneskaiWorkspacePost, draft: DeckDraft,
     // Sent only when the choice changed, so an untouched post keeps its saved track (or its rotation).
     ...((draft.audioTrackId ?? null) !== dneskaiAudioChoiceKey(post.audio) ? { audioTrackId: draft.audioTrackId ?? null } : {}),
     ...(draft.format !== post.format && (draft.format === 'carousel' || draft.format === 'reel') ? { format: draft.format } : {}),
-    ...(changed ? { deck: { ...(kitChanged ? { kit: draft.kit } : {}), slides } } : {}),
+    ...(changed ? { deck: { ...(kitChanged ? { kit: draft.kit } : {}), ...(emphasisChanged ? { emphasis: draft.emphasis ?? null } : {}), slides } } : {}),
     ...(dneskaiEngagementChanged(post, draft) ? { engagement: dneskaiDraftEngagement(draft.engagement) } : {}),
   };
 }

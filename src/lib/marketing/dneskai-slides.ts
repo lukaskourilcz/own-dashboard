@@ -111,13 +111,14 @@ export const DneskaiSlideSchema = z.strictObject({
 export type DneskaiSlide = z.infer<typeof DneskaiSlideSchema>;
 
 const DNESKAI_EMPHASIS_HEX_VALUES = DNESKAI_EMPHASIS_PALETTE.map((entry) => entry.hex) as [typeof DNESKAI_EMPHASIS_PALETTE[number]["hex"], ...typeof DNESKAI_EMPHASIS_PALETTE[number]["hex"][]];
+export const DneskaiEmphasisSchema = z.enum(DNESKAI_EMPHASIS_HEX_VALUES);
 export const DneskaiDeckSchema = z.strictObject({
   schemaVersion: z.literal(DNESKAI_SLIDES_VERSION),
   format: z.enum(["carousel", "single-image"]),
   /** Absent means editorial; editorial is never written, so one deck has one hash. */
   kit: DneskaiKitIdSchema.exclude(["editorial"]).optional(),
   /** The post's key-word colour from `DNESKAI_EMPHASIS_PALETTE` (owner request, 8 November 2026); absent: the kit's own. */
-  emphasis: z.enum(DNESKAI_EMPHASIS_HEX_VALUES).optional(),
+  emphasis: DneskaiEmphasisSchema.optional(),
   /** The post's Threads topic as people write the name (owner, 8 November 2026): `FioBanka`, `OpenAI`. */
   topic: z.string().regex(/^[\p{L}\p{N}_]{1,50}$/u).optional(),
   slides: z.array(DneskaiSlideSchema).min(1).max(10),

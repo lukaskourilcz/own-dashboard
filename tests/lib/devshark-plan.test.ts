@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-import { DEVSHARK_PLAN_SLOTS, devsharkPlanDailyCounts, devsharkPlanEmptySlots, devsharkPlanEnabled } from '@/lib/marketing/devshark-plan';
+import { DEVSHARK_PLAN_SLOTS, devsharkPlanAssignments, devsharkPlanDailyCounts, devsharkPlanEmptySlots, devsharkPlanEnabled } from '@/lib/marketing/devshark-plan';
 
 /** The devShark cadence (owner request, 7 November 2026): one Instagram post and two Threads posts a day. */
 describe('devShark plan cadence', () => {
@@ -18,6 +18,15 @@ describe('devShark plan cadence', () => {
   it('leaves taken slots alone', () => {
     const slots = devsharkPlanEmptySlots([{ date: '2026-11-08', local_time: '16:00' }], '2026-11-08', '2026-11-09');
     expect(slots.map((slot) => `${slot.date} ${slot.time}`)).toEqual(['2026-11-08 19:00', '2026-11-09 16:00', '2026-11-09 19:00']);
+  });
+
+  it('reserves strong concepts for Wednesday and Friday Instagram slots', () => {
+    const slots = devsharkPlanEmptySlots([{ date: '2026-11-11', local_time: '16:00' }], '2026-11-10', '2026-11-13');
+    const assigned = devsharkPlanAssignments(slots, [{ id: 'regular' }], [{ id: 'strong' }, { id: 'later' }]);
+    expect(assigned.map(({ slot, draft }) => [slot.date, slot.time, draft.id])).toEqual([
+      ['2026-11-10', '16:00', 'regular'],
+      ['2026-11-13', '16:00', 'strong'],
+    ]);
   });
 
   it('is off unless DEVSHARK_PLAN_ENABLED is true', () => {

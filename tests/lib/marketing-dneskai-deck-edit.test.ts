@@ -18,6 +18,20 @@ vi.useFakeTimers({ toFake: ['Date'] });
 vi.setSystemTime(new Date('2026-10-24T09:00:00Z'));
 
 const code = async (run: () => unknown) => { try { await run(); } catch (error) { return error instanceof DneskaiRevisionEditError ? error.code : String(error); } return null; };
+
+it('saves a palette colour as a deck edit and can restore the kit colour', () => {
+  const post = createDneskaiWorkspaceFixture(new Date()).posts.find((item) => item.deck)!;
+  const draft = createDeckDraft(post);
+  const emphasis = draft.emphasis === '#6ec1ff' ? '#a78bfa' : '#6ec1ff';
+  const edit = dneskaiEditRequest(post, { ...draft, emphasis }).deck!;
+  expect(edit.emphasis).toBe(emphasis);
+  const updated = applyDneskaiDeckEdit(post.deck!, edit);
+  expect(updated.emphasis).toBe(emphasis);
+  expect(updated.slides).toEqual(applyDneskaiDeckEdit(post.deck!, { slides: edit.slides }).slides);
+  const reset = dneskaiEditRequest({ ...post, deck: updated }, { ...draft, emphasis: undefined }).deck!;
+  expect(reset.emphasis).toBeNull();
+  expect(applyDneskaiDeckEdit(updated, reset)).not.toHaveProperty('emphasis');
+});
 const media = (assetSha256: string, candidateId: string, flags: { full: boolean; inset: boolean }, credit = 'Foto: ukázkový zdroj') =>
   ({ assetSha256, candidateId, credit, fullBleedCapable: flags.full, insetCapable: flags.inset });
 /** a: primary source, full-bleed; b: same source, framed only; c: primary source, too small; d: an uncited source. */

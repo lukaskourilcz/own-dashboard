@@ -29,6 +29,7 @@ export const DevsharkDeckSchema = z.strictObject({
   schemaVersion: z.literal('devshark-deck/1'),
   /** The cover's ground; inner slides alternate from it, the answer is green and the closer is ink. */
   cover: z.enum(['light', 'dark']),
+  strong: z.literal(true).optional(),
   slides: z.array(DevsharkSlideSchema).min(2).max(8),
 });
 export type DevsharkDeck = z.infer<typeof DevsharkDeckSchema>;
