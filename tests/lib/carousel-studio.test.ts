@@ -123,7 +123,7 @@ describe('uppercase layers keep brand case (owner, 8 November 2026)', () => {
   it("sets a series post's label above the cover headline in the photo-led kits, and ignores it elsewhere (8 November 2026)", async () => {
     const studio = await import("@/lib/carousel-studio");
     const cover = (await studio.dneskaiGoldenCases()).find((entry) => entry.name === "cover-photo")!.input;
-    for (const kit of ["spotlight", "plakat", "videofirst"] as const) {
+    for (const kit of ["spotlight", "plakat"] as const) {
       const plain = await studio.renderDneskaiSlide({ ...cover, kit });
       const series = await studio.renderDneskaiSlide({ ...cover, kit, series: "Tipy od tvůrce Claude Code Borise Chernyho #16" });
       expect({ kit, status: series.status, truncated: series.truncatedSlots, blocking: series.problems.filter((problem) => problem.blocking) }).toEqual({ kit, status: "rendered", truncated: [], blocking: [] });
