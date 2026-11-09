@@ -1,9 +1,11 @@
 import { demoDneskaiWorkspaceApi, DEMO_DNESKAI_PROJECT_ID } from "@/lib/demo/dneskai-workspace-demo";
 import { demoDevsharkStudio } from "@/lib/demo/devshark-studio-demo";
+import { devsharkCalendarRenders, dneskaiCalendarRenders } from "@/lib/publishing-calendar-renders";
 import {
   PUBLISHING_CONNECTED,
   coverHeadline,
   type PublishingCalendar,
+  type PublishingLive,
   type PublishingPicture,
   type PublishingPost,
   type PublishingSwitch,
@@ -25,8 +27,8 @@ const dayAfter = (date: string, n: number) => new Date(Date.parse(`${date}T12:00
 const at = (date: string, time: string) => new Date(`${date}T${time}:00+01:00`).toISOString();
 const plus = (time: string, minutes: number) => { const [h, m] = time.split(":").map(Number); const t = h! * 60 + m! + minutes; return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`; };
 
-function version(channel: PublishingVersion["channel"], date: string, time: string, status: string, caption: string | null, pictures: PublishingPicture[]): Omit<PublishingVersion, "off"> {
-  return { channel, time, scheduledAt: at(date, time), status, caption, pictures };
+function version(channel: PublishingVersion["channel"], date: string, time: string, status: string, caption: string | null, pictures: PublishingPicture[], live: PublishingLive | null = null): Omit<PublishingVersion, "off"> {
+  return { channel, time, scheduledAt: at(date, time), status, caption, pictures, live };
 }
 
 function withSwitches(post: Omit<PublishingPost, "off" | "versions"> & { versions: Array<Omit<PublishingVersion, "off">> }): PublishingPost {
@@ -43,21 +45,24 @@ export async function previewPublishingCalendar(now = new Date()): Promise<Publi
     .sort((a, b) => Number(b.status === "review") - Number(a.status === "review") || a.scheduledAt.localeCompare(b.scheduledAt)).slice(0, 2);
   live.forEach((post, index) => {
     const date = days[index]!, time = index === 0 ? "08:00" : "12:30";
-    const slides = post.assets.map((asset) => ({ url: asset.url, alt: asset.alt || post.title, width: asset.width, height: asset.height }));
+    // The same resolver the Design Lab and the server read use: all slides or none, the Lab's 9:16 story request.
+    const renders = dneskaiCalendarRenders(post, post.title);
     posts.push(withSwitches({
       id: `dneskai:${SLOTS[index]}`, brand: "dneskai", slotId: SLOTS[index]!, date, time, scheduledAt: at(date, time), title: post.title, headline: coverHeadline(post.deck),
-      status: post.status, thumbnail: slides[0] ?? null, target: { kind: "dneskai-lab", postId: post.id },
-      versions: [version("story", date, plus(time, 10), post.status, null, slides.slice(0, 1)), version("instagram", date, time, post.status, post.caption, slides), version("threads", date, time, post.status, post.caption.split("\n\n")[0] ?? post.caption, slides)],
+      status: post.status, thumbnail: renders.thumbnail, target: { kind: "dneskai-lab", postId: post.id },
+      versions: [version("story", date, plus(time, 10), post.status, null, renders.story.pictures, renders.story.live), version("instagram", date, time, post.status, post.caption, renders.slides), version("threads", date, time, post.status, post.caption.split("\n\n")[0] ?? post.caption, renders.slides)],
     }));
   });
   devshark.drafts.slice(0, 2).forEach((draft, index) => {
     const date = today, time = index === 0 ? "12:00" : "19:00", slot = SLOTS[2 + index]!;
+    // Nothing is stored in the preview, so the post is the Studio's render request, as the Studio draws it.
+    const renders = devsharkCalendarRenders(draft, { post: [], threads: [], story: [] });
     const versions = index === 0
-      ? [version("story", date, plus(time, 10), draft.status, null, []), version("instagram", date, time, draft.status, draft.caption, []), version("threads", date, time, draft.status, draft.caption.split("\n\n")[0] ?? draft.caption, [])]
-      : [version("threads", date, time, draft.status, draft.caption.split("\n\n")[0] ?? draft.caption, [])];
+      ? [version("story", date, plus(time, 10), draft.status, null, renders.story), version("instagram", date, time, draft.status, draft.caption, renders.slides, renders.live), version("threads", date, time, draft.status, draft.caption.split("\n\n")[0] ?? draft.caption, renders.threads, renders.live)]
+      : [version("threads", date, time, draft.status, draft.caption.split("\n\n")[0] ?? draft.caption, renders.threads, renders.live)];
     posts.push(withSwitches({
       id: `devshark:${slot}`, brand: "devshark", slotId: slot, date, time, scheduledAt: at(date, time), title: draft.title, headline: coverHeadline(draft.deck),
-      status: draft.status, thumbnail: null, target: { kind: "devshark-studio", draftId: draft.id }, versions,
+      status: draft.status, thumbnail: renders.thumbnail, target: { kind: "devshark-studio", draftId: draft.id }, versions,
     }));
   });
   return { schemaVersion: "publishing-calendar/2", generatedAt: now.toISOString(), from: today, days, connected: PUBLISHING_CONNECTED, unavailable: [], posts };

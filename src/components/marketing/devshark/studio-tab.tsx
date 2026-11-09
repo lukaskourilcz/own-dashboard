@@ -4,6 +4,7 @@ import { useId, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { devsharkStudioRenderRequest } from '@/lib/marketing/design-lab-renders';
 import { qk } from '@/lib/queries/keys';
 import { devsharkStudio } from '@/lib/i18n/sections/devshark-studio';
 import { designStudio } from '@/lib/i18n/sections/design-studio';
@@ -121,7 +122,7 @@ function Editor({ draft, lang, preview }: { draft: DevsharkDraft; lang: Lang; pr
         <textarea id={`${ids}-caption`} className={fieldClass} rows={6} value={value.caption} maxLength={2200} onChange={(event) => setValue((prev) => ({ ...prev, caption: event.target.value }))} /></label>
     </fieldset>
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" disabled={preview || busy !== null} onClick={() => run('render', async () => { const result = await renderDevsharkPreview(value.deck); setRendered({ for: value, slides: result.slides }); })}>{busy === 'render' ? t.rendering : t.render}</Button>
+      <Button variant="outline" disabled={preview || busy !== null} onClick={() => run('render', async () => { const result = await renderDevsharkPreview(devsharkStudioRenderRequest(value).deck); setRendered({ for: value, slides: result.slides }); })}>{busy === 'render' ? t.rendering : t.render}</Button>
       {editable && <Button variant="outline" disabled={!dirty || busy !== null} onClick={() => run('save', async () => { await save({ id: draft.id, title: value.title, caption: value.caption, deck: value.deck }); await refresh(); return t.saved; })}>{busy === 'save' ? t.saving : t.save}</Button>}
       {editable && draft.status !== 'approved' && <Button disabled={dirty || busy !== null} title={dirty ? t.unsavedBeforeApprove : undefined} onClick={() => run('approve', async () => { await decide(draft.id, 'approved'); await refresh(); return t.approved; })}>{t.approve}</Button>}
       {editable && draft.status !== 'rejected' && <Button variant="ghost" disabled={busy !== null} onClick={() => run('reject', async () => { await decide(draft.id, 'rejected'); await refresh(); return t.rejected; })}>{t.reject}</Button>}

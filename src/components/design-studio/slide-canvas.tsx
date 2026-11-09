@@ -5,11 +5,12 @@ import { cn } from '@/lib/utils';
 import { layoutDevsharkSlide, SLIDE_HEIGHT, SLIDE_WIDTH, type StudioBlockKey, type StudioSlide } from '@/lib/design-studio/devshark-layout';
 import type { DevsharkBox, DevsharkDeck, DevsharkSlide } from '@/lib/marketing/devshark-deck';
 import { designStudio } from '@/lib/i18n/sections/design-studio';
+import { DEVSHARK_STUDIO_ASSETS, devsharkStudioSlideSvg } from '@/lib/design-studio/devshark-studio-slide';
 import { BoxOverlay, StudioToolbar, type StudioBlock } from './box-overlay';
 
 /** The brand pictures and fonts the editor draws with: the same files the renderer verifies (public/design-studio). */
-export const STUDIO_BROWSER_ASSETS = { finGreen: '/design-studio/devshark/devshark-fin-clean-green.svg', finInk: '/design-studio/devshark/devshark-fin-clean-ink.svg', logoWhite: '/design-studio/devshark/devshark-logo-horizontal-white.svg' };
-const FONT_FACES = `@font-face{font-family:"Manrope";font-weight:700;src:url(/design-studio/fonts/manrope-700.ttf) format("truetype")}
+export const STUDIO_BROWSER_ASSETS = DEVSHARK_STUDIO_ASSETS;
+export const STUDIO_FONT_FACES = `@font-face{font-family:"Manrope";font-weight:700;src:url(/design-studio/fonts/manrope-700.ttf) format("truetype")}
 @font-face{font-family:"Manrope";font-weight:800;src:url(/design-studio/fonts/manrope-800.ttf) format("truetype")}
 @font-face{font-family:"JetBrains Mono";font-weight:400;src:url(/design-studio/fonts/jetbrains-mono-400.ttf) format("truetype")}`;
 type Lang = 'en' | 'cs';
@@ -59,7 +60,7 @@ export function SlideCanvas({ deck, index, lang, disabled, onChange }: { deck: D
   };
 
   return <div className="min-w-0 space-y-2">
-    <style>{FONT_FACES}</style>
+    <style>{STUDIO_FONT_FACES}</style>
     <StudioToolbar block={selectedBlock} lang={lang} disabled={disabled} onBox={setBox} onAuto={auto}>
       <button type="button" disabled={disabled || editing === null || editing === 'code' || editing === 'kicker'} onMouseDown={(event) => event.preventDefault()} onClick={green}
         className="min-h-9 rounded px-2 text-xs font-semibold text-success hover:bg-surface-hover focus-ring disabled:opacity-40">{t.green}</button>
@@ -73,5 +74,18 @@ export function SlideCanvas({ deck, index, lang, disabled, onChange }: { deck: D
     </BoxOverlay>
     <p className="text-xs text-foreground-muted">{t.howTo}</p>
     {layout.warnings.length > 0 && <ul className="space-y-0.5 text-xs text-warning" aria-live="polite">{layout.warnings.map((warning, at) => <li key={at}>{t.blocks[warning.block]}: {t.warnings[warning.code]}</li>)}</ul>}
+  </div>;
+}
+
+/**
+ * One devShark slide exactly as the Studio shows it, without the editing layer: the publishing calendar draws a concept
+ * the plan has not rendered yet with this (owner request, 9 November 2026).
+ */
+export function DevsharkStudioSlide({ deck, index, label, className }: { deck: Pick<DevsharkDeck, 'cover' | 'slides'>; index: number; label: string; className?: string }) {
+  const svg = useMemo(() => devsharkStudioSlideSvg(deck, index), [deck, index]);
+  // An empty label marks a decorative copy (a card cover next to its title), hidden from assistive technology.
+  return <div {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })} className={cn('relative aspect-[4/5] overflow-hidden [&>svg]:h-full [&>svg]:w-full', className)} data-testid="devshark-studio-slide">
+    <style>{STUDIO_FONT_FACES}</style>
+    <div aria-hidden className="absolute inset-0 [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
   </div>;
 }

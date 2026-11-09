@@ -3,6 +3,7 @@ import type { DneskaiDeck, DneskaiSlideType } from './dneskai-slides';
 import { DNESKAI_KIT_IDS, DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, DneskaiBoxSchema, DNESKAI_EDITABLE_FIELDS } from './dneskai-slides';
 import { DneskaiDeckEditSchema } from './dneskai-deck-edit';
 import { pragueScheduledAt } from './clock';
+import { dneskaiRevisionRenders } from './design-lab-renders';
 import {
   dneskaiJobState, dneskaiPostState, dneskaiRenderAttachFailed, dneskaiStateContext, pragueDate, pragueDayAfter, renderBlocking,
   type DneskaiFieldLimit, type DneskaiPostStateDetail, type DneskaiWorkspaceJob, type DneskaiWorkspacePost, type DneskaiWorkspaceRead,
@@ -119,11 +120,11 @@ export function dneskaiLabKits(post: Pick<DneskaiWorkspacePost, 'deck' | 'assets
 }
 
 export function dneskaiLabSlides(post: Pick<DneskaiWorkspacePost, 'deck' | 'assets' | 'fields' | 'renderReport'>): DneskaiLabSlide[] {
-  // Assets line up with slides only when the render attached one JPEG per slide.
-  const complete = !!post.deck && post.assets.length === post.deck.slides.length;
+  // Assets line up with slides only when the render attached one JPEG per slide; the publishing calendar shares this.
+  const renders = dneskaiRevisionRenders(post).slides;
   return (post.deck?.slides ?? []).map((slide, index) => ({
     index, type: slide.type, variant: slide.variant ?? null,
-    render: complete ? post.assets[index] ?? null : null,
+    render: renders[index] ?? null,
     fields: post.fields[index] ?? [],
     problems: (post.renderReport?.problems ?? []).filter((problem) => problem.slide === index),
   }));

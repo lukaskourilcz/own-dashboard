@@ -25,12 +25,15 @@ import {
   versionLive,
   type PublishingCalendar,
   type PublishingChannel,
+  type PublishingLive,
   type PublishingNetwork,
   type PublishingPost,
   type PublishingSwitch,
   type PublishingVersion,
 } from "@/lib/publishing-calendar";
 import { cn } from "@/lib/utils";
+import { dneskaiWorkspaceApi } from "@/lib/marketing/dneskai-workspace-client";
+import { DevsharkStudioSlide } from "@/components/design-studio/slide-canvas";
 
 type Lang = "en" | "cs";
 
@@ -123,11 +126,14 @@ function PostCard({ post, connected, lang, onOpen }: { post: PublishingPost; con
   const t = strings[lang];
   const live = orderedVersions(post).filter((v) => versionLive(post, v) && connected[networkOfChannel(v.channel)]);
   const list = live.length ? live.map((v) => t.channel[v.channel]).join(", ") : t.nothingShared;
+  // A devShark concept the plan has not rendered yet: its cover as the Studio draws it.
+  const cardDeck = post.thumbnail ? null : post.versions.map((v) => studioDeck(v.live)).find(Boolean) ?? null;
   return <button type="button" onClick={onOpen} aria-label={`${t.open(post.title, post.time)}. ${t.versionsOf(list)}`}
     className="flex w-full min-w-0 items-start gap-3 rounded-md border border-border bg-surface p-2.5 text-left hover:bg-surface-hover focus-ring">
     <span className="relative block h-[60px] w-12 shrink-0 overflow-hidden rounded border border-border bg-surface-inset">
       {post.thumbnail
         ? <Image unoptimized src={post.thumbnail.url} alt="" width={post.thumbnail.width} height={post.thumbnail.height} loading="lazy" sizes="3rem" className="h-full w-full object-cover" />
+        : cardDeck ? <DevsharkStudioSlide deck={cardDeck} index={0} label="" className="h-full w-full" />
         : <span aria-hidden className="flex h-full items-center justify-center text-[11px] font-semibold text-foreground-muted">{t.brand[post.brand].slice(0, 2)}</span>}
     </span>
     <span className="min-w-0 flex-1 space-y-1.5">
@@ -142,10 +148,34 @@ function PostCard({ post, connected, lang, onOpen }: { post: PublishingPost; con
   </button>;
 }
 
+/**
+ * The DNESKAi story the Design Lab draws on demand, drawn here with the Lab's own request and preview route (owner
+ * request, 9 November 2026). In /dev-preview that is the Lab's fixture renderer.
+ */
+function useLiveStory(live: PublishingLive | null | undefined, isPreview: boolean) {
+  const request = live?.kind === "dneskai-story" ? live.request : null;
+  return useQuery({
+    queryKey: [...qk.publishingCalendarLive, isPreview ? "preview" : "live", JSON.stringify(request)],
+    enabled: !!request, staleTime: 5 * 60_000, gcTime: 10 * 60_000, retry: false, refetchOnWindowFocus: false,
+    queryFn: async ({ signal }): Promise<string | null> => {
+      const result = await (await dneskaiWorkspaceApi(isPreview)).renderPreview(request!, signal);
+      return result.status === "rendered" ? result.image : null;
+    },
+  });
+}
+
+/** The deck the devShark Studio would draw for a version the plan has not rendered yet. */
+const studioDeck = (live: PublishingLive | null | undefined) => live?.kind === "devshark-deck" ? live.deck : null;
+
 /** How one version will look: the 9:16 story frame, the slides as a carousel, the Threads text with its picture. */
-function VersionPreview({ version, lang }: { version: PublishingVersion; lang: Lang }) {
+function VersionPreview({ version, title, lang, isPreview }: { version: PublishingVersion; title: string; lang: Lang; isPreview: boolean }) {
   const t = strings[lang];
   const pictures = version.pictures;
+  const story = useLiveStory(pictures.length ? null : version.live, isPreview);
+  const deck = pictures.length ? null : studioDeck(version.live);
+  const missing = <p className="flex h-full items-center justify-center p-3 text-center text-xs text-foreground-muted" role={story.isFetching ? "status" : undefined}>
+    {story.isFetching ? t.rendering : story.isError ? t.renderFailed : t.notRendered}</p>;
+  const shown = version.channel === "threads" ? 1 : 10;
   return <div className="space-y-3">
     <p className="flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
       <span className="font-semibold tabular-nums text-foreground">{t.channel[version.channel]} {t.at(version.time)}</span>
@@ -154,19 +184,24 @@ function VersionPreview({ version, lang }: { version: PublishingVersion; lang: L
     {version.channel === "story"
       ? <div className="mx-auto aspect-[9/16] w-44 overflow-hidden rounded-lg border border-border bg-surface-inset sm:w-52" data-testid="story-frame">
           {pictures[0]
-            // A rendered 9:16 story fills the frame; until it exists, the 4:5 cover sits whole inside it, never cropped.
-            ? <Image unoptimized src={pictures[0].url} alt={pictures[0].alt} width={pictures[0].width} height={pictures[0].height}
-                className={cn("h-full w-full", pictures[0].height / pictures[0].width >= 1.7 ? "object-cover" : "object-contain")} />
-            : <p className="flex h-full items-center justify-center p-3 text-center text-xs text-foreground-muted">{t.notRendered}</p>}
+            ? <Image unoptimized src={pictures[0].url} alt={pictures[0].alt} width={pictures[0].width} height={pictures[0].height} className="h-full w-full object-cover" data-testid="story-image" />
+            : story.data
+              // eslint-disable-next-line @next/next/no-img-element -- the Design Lab's own render, a data URL; nothing to optimise
+              ? <img src={story.data} alt={t.storyAlt(title)} className="h-full w-full object-cover" data-testid="story-image" />
+              : missing}
         </div>
-      : pictures.length === 0
-        ? <p className="rounded-md border border-dashed border-border-strong px-3 py-4 text-xs text-foreground-muted">{t.notRendered}</p>
+      : pictures.length === 0 && !deck
+        ? <div className="rounded-md border border-dashed border-border-strong px-3 py-4">{missing}</div>
         : <ul role="list" tabIndex={0} aria-label={t.channel[version.channel]} data-testid="version-slides"
             className={cn("flex w-0 min-w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain rounded-md pb-2 focus-ring", version.channel === "threads" && "max-w-xs")}>
-            {(version.channel === "threads" ? pictures.slice(0, 1) : pictures).map((picture, index) => <li key={`${picture.url}-${index}`} className="w-52 shrink-0 snap-start sm:w-60">
-              <Image unoptimized src={picture.url} alt={picture.alt || t.slideOf(index + 1, pictures.length)} width={picture.width} height={picture.height} loading="lazy" sizes="15rem"
-                className="h-auto w-full rounded border border-border bg-surface-inset" />
-            </li>)}
+            {pictures.length
+              ? pictures.slice(0, shown).map((picture, index) => <li key={`${picture.url}-${index}`} className="w-52 shrink-0 snap-start sm:w-60">
+                <Image unoptimized src={picture.url} alt={picture.alt || t.slideOf(index + 1, pictures.length)} width={picture.width} height={picture.height} loading="lazy" sizes="15rem"
+                  className="h-auto w-full rounded border border-border bg-surface-inset" />
+              </li>)
+              : deck!.slides.slice(0, shown).map((_, index) => <li key={index} className="w-52 shrink-0 snap-start sm:w-60">
+                <DevsharkStudioSlide deck={deck!} index={index} label={t.slideOf(index + 1, deck!.slides.length)} className="rounded border border-border" />
+              </li>)}
           </ul>}
     {version.channel !== "story" && <p className="whitespace-pre-line rounded-md border border-border bg-surface-inset p-3 text-sm break-words" data-testid="version-caption">
       {version.caption?.trim() || <span className="text-foreground-muted">{t.noCaption}</span>}
@@ -174,7 +209,7 @@ function VersionPreview({ version, lang }: { version: PublishingVersion; lang: L
   </div>;
 }
 
-function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed }: { post: PublishingPost; connected: PublishingCalendar["connected"]; lang: Lang; onClose: () => void;
+function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed, isPreview }: { post: PublishingPost; connected: PublishingCalendar["connected"]; lang: Lang; onClose: () => void; isPreview: boolean;
   onSwitch: (input: PublishingSwitch) => void; saving: boolean; failed: boolean }) {
   const t = strings[lang];
   const versions = useMemo(() => new Map(post.versions.map((v) => [v.channel, v])), [post]);
@@ -223,7 +258,7 @@ function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed }
           <Switch checked={!current.off} disabled={saving || !connected[networkOfChannel(current.channel)]} aria-label={t.shareVersion(t.channel[current.channel])} data-testid="version-switch"
             onCheckedChange={(on) => onSwitch({ brand: post.brand, slotId: post.slotId, channel: current.channel, off: !on })} />
         </label>}
-        {current ? <VersionPreview version={current} lang={lang} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
+        {current ? <VersionPreview version={current} title={post.title} lang={lang} isPreview={isPreview} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
       </div>
       {post.target && <div className="mt-4 flex justify-end">
         <Button type="button" variant="outline" onClick={() => { const target = post.target!; onClose(); openTarget(target, selected); }}>
@@ -299,7 +334,7 @@ export function PublishingCalendarPanel({ isPreview = false }: { isPreview?: boo
           </Card>)}
         </div>
         {openPost && <PostDialog key={openPost.id} post={openPost} connected={calendar.connected} lang={lang} onClose={() => { mutation.reset(); setOpen(null); }}
-          onSwitch={onSwitch} saving={mutation.isPending} failed={mutation.isError} />}
+          onSwitch={onSwitch} saving={mutation.isPending} failed={mutation.isError} isPreview={isPreview} />}
       </>}
   </section>;
 }
