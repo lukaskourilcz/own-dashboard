@@ -20,6 +20,8 @@ export const DNESKAI_ILLUSTRATION_TARGET = 400;
 /** Pictures a topic holds at most, so every topic of the set is covered before any one fills up. */
 export const DNESKAI_ILLUSTRATION_PER_TOPIC = 30;
 export const DNESKAI_ILLUSTRATION_DAILY_USD = 2;
+/** The shorter side a library picture needs, so a full-bleed slide may crop and zoom it up to 1.6× without the render refusing it. */
+export const DNESKAI_ILLUSTRATION_MIN_SIDE = 1300;
 const LOOK = { model: 'claude-sonnet-5-5', inputPerMillionUsd: 2, outputPerMillionUsd: 10, reserveUsd: 0.006 } as const;
 
 /** The DNESKAi topic set with the searches that illustrate it (English: Pexels searches in English). */
@@ -150,9 +152,15 @@ export async function addDneskaiIllustrations(db: Database, env: Environment, in
     if (spent + LOOK.reserveUsd > settings.dailyUsd) { result.code = 'illustrations-daily-cap'; break; }
     let jpeg: Buffer;
     try {
-      const image = await fetcher(photo.src.large2x, { redirect: 'error', signal: timeout(20_000, input.signal) });
-      if (!image.ok || new URL(photo.src.large2x).hostname !== 'images.pexels.com') continue;
+      // The original scaled by Pexels to 2048 px: `large2x` is often too small for a full-bleed slide once cropped.
+      const url = new URL(photo.src.original);
+      if (url.hostname !== 'images.pexels.com') continue;
+      url.search = new URLSearchParams({ auto: 'compress', cs: 'tinysrgb', w: '2048', h: '2048', fit: 'max' }).toString();
+      const image = await fetcher(url.toString(), { redirect: 'error', signal: timeout(25_000, input.signal) });
+      if (!image.ok) continue;
       jpeg = await sharp(new Uint8Array(await image.arrayBuffer())).rotate().resize(2048, 2048, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 88, mozjpeg: true }).toBuffer();
+      const size = await sharp(jpeg).metadata();
+      if (Math.min(size.width ?? 0, size.height ?? 0) < DNESKAI_ILLUSTRATION_MIN_SIDE) continue;
     } catch { continue; }
     const sha256 = createHash('sha256').update(jpeg).digest('hex');
     const meta = await sharp(jpeg).metadata();

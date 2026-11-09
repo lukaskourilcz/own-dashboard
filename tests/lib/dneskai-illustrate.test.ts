@@ -36,3 +36,13 @@ describe('fitting photographs on every DNESKAi slide (9 November 2026)', () => {
     expect(rankDneskaiIllustrations(rows, { topics: ['banking'], keywords: ['payment'] }, new Set(['1'.repeat(64)])).map((row) => row.id)).toEqual(['2', '4']);
   });
 });
+
+describe('library pictures large enough for a full-bleed slide (9 November 2026)', () => {
+  it('never offers a picture whose shorter side is under 1300 px', () => {
+    const rows = [
+      { id: 's', sha256: 's'.repeat(64), topic: 'banking', tags: ['payment'], uses: 0, width: 732, height: 1300 },
+      { id: 'l', sha256: 'l'.repeat(64), topic: 'banking', tags: ['payment'], uses: 5, width: 1365, height: 2048 },
+    ];
+    expect(rankDneskaiIllustrations(rows, { topics: ['banking'], keywords: ['payment'] }, new Set()).map((row) => row.id)).toEqual(['l']);
+  });
+});

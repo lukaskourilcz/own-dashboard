@@ -7,7 +7,7 @@ import { DneskaiBriefSchema, type DneskaiBriefMedia } from './dneskai-brief';
 import { supabaseMediaObjectStore, type DneskaiMediaDatabase } from './dneskai-media';
 import { inspectDneskaiImage } from './dneskai-media-image';
 import { dneskaiMediaCapabilities } from './dneskai-media-plan';
-import { DNESKAI_ILLUSTRATION_BUCKET, DNESKAI_ILLUSTRATION_TOPICS } from './dneskai-illustrations';
+import { DNESKAI_ILLUSTRATION_BUCKET, DNESKAI_ILLUSTRATION_MIN_SIDE, DNESKAI_ILLUSTRATION_TOPICS } from './dneskai-illustrations';
 import { isDneskaiClosingSlide } from './dneskai-closing';
 import type { DneskaiDeck, DneskaiSlide } from './dneskai-slides';
 import type { LoadDneskaiMediaBytes } from './dneskai-ports';
@@ -98,12 +98,14 @@ async function assess(revision: ContentRevision, pictures: Array<{ sha256: strin
   } catch { return { assessment: null, costUsd: LOOK.reserveUsd }; }
 }
 
-type LibraryRow = { id: string; sha256: string; topic: string; tags: string[]; uses: number };
+type LibraryRow = { id: string; sha256: string; topic: string; tags: string[]; uses: number; width?: number; height?: number };
 /** Library pictures best first: most shared keywords, then a fitting topic, then the least used. */
 export function rankDneskaiIllustrations(rows: readonly LibraryRow[], wanted: { topics: readonly string[]; keywords: readonly string[] }, exclude: ReadonlySet<string>): LibraryRow[] {
   const words = new Set(wanted.keywords.map((word) => word.toLowerCase().trim()));
   const score = (row: LibraryRow) => row.tags.filter((tag) => words.has(tag) || [...words].some((word) => tag.includes(word) || word.includes(tag))).length * 2 + (wanted.topics.includes(row.topic) ? 3 : 0);
-  return rows.filter((row) => !exclude.has(row.sha256) && score(row) > 0).sort((a, b) => score(b) - score(a) || a.uses - b.uses || a.sha256.localeCompare(b.sha256));
+  // Too small a picture would be refused by the render once cropped (`image-low-resolution`).
+  const large = (row: LibraryRow) => row.width === undefined || row.height === undefined || Math.min(row.width, row.height) >= DNESKAI_ILLUSTRATION_MIN_SIDE;
+  return rows.filter((row) => !exclude.has(row.sha256) && large(row) && score(row) > 0).sort((a, b) => score(b) - score(a) || a.uses - b.uses || a.sha256.localeCompare(b.sha256));
 }
 
 export type DneskaiIllustrateResult = { code: string; deck: DneskaiDeck | null; costUsd: number; replaced: number };
@@ -119,11 +121,21 @@ export async function illustrateDneskaiPost(db: Database, owner: string, input: 
   if (!env.ANTHROPIC_API_KEY || env.MARKETING_AI_CONSENT !== 'true') return { code: 'illustrate-unavailable', deck: null, costUsd: 0, replaced: 0 };
   const shas = [...new Set(deck.slides.filter((slide) => !isDneskaiClosingSlide(slide)).flatMap((slide) => slide.images.map((image) => image.assetSha256)))].slice(0, 8);
   const pictures: Array<{ sha256: string; bytes: Buffer }> = [];
-  for (const sha256 of shas) { try { pictures.push({ sha256, bytes: await input.loadMedia(sha256) }); } catch { /* a missing picture is replaced below */ } }
+  // A picture too small for a full-bleed slide (shorter side under 900 px) is replaced like a refused one.
+  const small = new Set<string>();
+  for (const sha256 of shas) {
+    try {
+      const bytes = await input.loadMedia(sha256);
+      const size = await sharp(bytes).metadata();
+      if (Math.min(size.width ?? 0, size.height ?? 0) < 900) small.add(sha256);
+      pictures.push({ sha256, bytes });
+    } catch { /* a missing picture is replaced below */ }
+  }
   const { assessment, costUsd } = await assess(revision, pictures, env.ANTHROPIC_API_KEY, signal, input.fetchImpl);
   if (!assessment) return { code: 'illustrate-look-failed', deck: null, costUsd, replaced: 0 };
   const refused = new Set(assessment.pictures.filter((item) => !item.on_topic || item.other_company_brand).map((item) => pictures[item.index - 1]?.sha256).filter((sha): sha is string => !!sha));
   for (const sha256 of shas) if (!pictures.some((picture) => picture.sha256 === sha256)) refused.add(sha256);
+  for (const sha256 of small) refused.add(sha256);
   const needing = dneskaiSlidesNeedingPicture(deck, refused);
   if (!needing.length) return { code: 'illustrate-nothing-to-do', deck: null, costUsd, replaced: 0 };
 
@@ -132,7 +144,7 @@ export async function illustrateDneskaiPost(db: Database, owner: string, input: 
   const briefRow = briefs?.data?.[0] as { id: string; brief: unknown; lead_candidate_id: string } | undefined;
   const brief = briefRow ? DneskaiBriefSchema.safeParse(briefRow.brief) : null;
   if (!briefRow || !brief?.success) return { code: 'illustrate-brief-missing', deck: null, costUsd, replaced: 0 };
-  const library = await db.from('dneskai_illustrations').select('id,sha256,topic,tags,uses').eq('status', 'ready').limit(2000);
+  const library = await db.from('dneskai_illustrations').select('id,sha256,topic,tags,uses,width,height').eq('status', 'ready').limit(2000);
   if (library.error) throw new Error('illustrations-unavailable');
   const used = new Set(deck.slides.flatMap((slide) => slide.images.map((image) => image.assetSha256)));
   const ranked = rankDneskaiIllustrations((library.data ?? []) as LibraryRow[], assessment, used);
