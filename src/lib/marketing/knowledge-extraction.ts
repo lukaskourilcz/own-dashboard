@@ -71,6 +71,10 @@ export async function extractKnowledge(source: KnowledgeSource, dependencies: { 
   }
 }
 export async function createClaudeKnowledgeModel(config: { apiKey: string; model: string; pricing: KnowledgeModel["pricing"] }): Promise<KnowledgeModel> {
+  return createClaudeStructuredModel(config, KnowledgeExtractionSchema, "atomic_knowledge");
+}
+/** One structured Claude call on the shared marketing profile: no retries, no tools, measured usage. IG Kolekce uses its own schema. */
+export async function createClaudeStructuredModel(config: { apiKey: string; model: string; pricing: KnowledgeModel["pricing"] }, schema: z.ZodType, name: string): Promise<KnowledgeModel> {
   if (!config.apiKey || !/^claude-[a-z0-9.-]+$/.test(config.model)) throw new Error("knowledge-provider-configuration-required");
   if (process.env.LANGSMITH_TRACING === "true" || process.env.LANGCHAIN_TRACING_V2 === "true") throw new Error("knowledge-unsafe-native-tracing");
   const { ChatAnthropic } = await import("@langchain/anthropic");
@@ -80,10 +84,10 @@ export async function createClaudeKnowledgeModel(config: { apiKey: string; model
   return { model: config.model, pricing: config.pricing, async invoke(input) {
     const fields = { apiKey: config.apiKey, model: config.model, maxTokens: input.maxOutputTokens, maxRetries: 0, clientOptions: { maxRetries: 0 }, ...claudeCallFields(profile) };
     const model = new ChatAnthropic(fields as ConstructorParameters<typeof ChatAnthropic>[0]);
-    // Structured outputs take the SDK-transformed schema; the Zod schema still validates the answer in extractKnowledge.
+    // Structured outputs take the SDK-transformed schema; the Zod schema still validates the answer in the caller.
     const structured = profile.structured === "tool"
-      ? model.withStructuredOutput(KnowledgeExtractionSchema, { name: "atomic_knowledge", includeRaw: true })
-      : model.withStructuredOutput(transformJSONSchema(z.toJSONSchema(KnowledgeExtractionSchema)), { name: "atomic_knowledge", includeRaw: true, method: "jsonSchema" });
+      ? model.withStructuredOutput(schema as z.ZodObject, { name, includeRaw: true })
+      : model.withStructuredOutput(transformJSONSchema(z.toJSONSchema(schema)), { name, includeRaw: true, method: "jsonSchema" });
     const result = await structured.invoke([["system", input.system], ["human", input.prompt]], { signal: input.signal, callbacks: [] });
     const usage = isAIMessage(result.raw) ? result.raw.usage_metadata : undefined;
     return { extraction: result.parsed, usage: usage ? { inputTokens: usage.input_tokens, outputTokens: usage.output_tokens } : null };

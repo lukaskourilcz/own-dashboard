@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import {
+  Bookmark,
   BriefcaseBusiness,
   CalendarClock,
   CalendarDays,
@@ -119,6 +120,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { value: "tools", icon: Wrench },
       { value: "links", icon: Network },
       { value: "ig-tips", icon: Lightbulb },
+      { value: "ig-collection", icon: Bookmark },
       { value: "references", icon: Terminal },
     ],
   },

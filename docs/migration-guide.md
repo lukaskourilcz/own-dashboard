@@ -1075,3 +1075,16 @@ or WebP, at most 20 MB) and `public.heydarlink_ambient_imports`, service role on
 `20261109050000_dneskai_finish_day_cap.sql` redefines `marketing_dneskai_finish`: the `picked` selection takes at most
 four minus the briefs the target day already has. Before, a run with one brief picked four more, `selected_count` became
 5 against its check (0 to 4) and every tick rolled back. Applied in production on 9 November 2026 to unblock collection.
+
+`20261109120000_ig_collection.sql` (IG Kolekce, `docs/ig-kolekce.md`) adds `author`, `collections`, `media`, `digest`,
+`collection_status` (`queued` by default; existing `inaccessible` sources become `restricted`), `collection_error`,
+`processed_at` and `ai_link_id` to `marketing_knowledge_sources`. It backfills every Instagram shortcode the owner's
+`ai_links` already name (`url` or `source_urls`, ideas and links) as a `done` source linked to that row, with its
+`tip_summary` as the digest, so those posts are never scraped again. It also creates `marketing_collection_settings` (one row per owner: the
+SHA-256 of the share token, the import high-water mark, the last import and last run). The owner may select their own
+settings row except the token hash; every write goes through service-role functions:
+`marketing_collection_import` (dedup by shortcode against the collection and the owner's `ai_links`, high-water mark
+from Instagram exports only),
+`marketing_collection_requeue`, `marketing_collection_claim` (queued → scraping once) and `marketing_collection_finish`
+(digest plus procedures through `marketing_import_knowledge` in one transaction). Nothing runs on its own: the owner
+starts every scrape and summary. Additive.

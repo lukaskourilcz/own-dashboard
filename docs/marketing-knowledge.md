@@ -1,5 +1,7 @@
 # Saved sources and atomic knowledge
 
+The owner-facing Saved collection, its export import, share Shortcut and on-click processing are described in [IG Kolekce](ig-kolekce.md) (Czech).
+
 Instagram knowledge remains canonical `ai_links.record_type = 'idea'`. The importer adds owner-only source and evidence sidecars; it does not create another tip library. Existing IDs, authored notes, calendar references and project associations remain intact. Normalization carries the current owned project/prompt/tool IDs into metadata and marks legacy evidence `legacy-unverified`. A legacy multi-tip note remains one provisional item until its actual procedure boundaries are reviewed; normalization does not pretend to split unverified content.
 
 ## Capture and dates

@@ -32,6 +32,7 @@ export const qk = {
   subscriptionAllocations: ["subscriptionAllocations"] as const,
   competitors: ["competitors"] as const,
   aiLinks: ["aiLinks"] as const,
+  igCollection: ["ig-collection"] as const,
   aiCategories: ["aiCategories"] as const,
   projectLinks: ["projectLinks"] as const,
   tools: ["tools"] as const,
