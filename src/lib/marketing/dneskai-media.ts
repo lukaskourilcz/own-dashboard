@@ -412,10 +412,13 @@ async function collectCandidate(db: DneskaiMediaDatabase, owner: string, project
   return { candidateId, status, assets, downloaded: counters.downloaded, reused: counters.reused, skipped: skipped.map(({ position, code }) => ({ position, code })) };
 }
 
-/** AI illustrations stored in the last 24 hours; an unreadable count stops new ones. */
+/** Illustrations generated on demand in the last 24 hours; library reuse does not spend this budget. */
 async function dneskaiIllustrationsToday(db: DneskaiMediaDatabase, owner: string): Promise<number> {
   try {
-    const made = await db.from('marketing_media_assets').select('id', { count: 'exact', head: true }).eq('user_id', owner).eq('origin_kind', 'generated').gte('fetched_at', new Date(Date.now() - 86_400_000).toISOString());
+    const made = await db.from('marketing_media_assets').select('id', { count: 'exact', head: true })
+      .eq('user_id', owner).eq('origin_kind', 'generated')
+      .not('origin_url', 'like', '%/storage/v1/object/authenticated/dneskai-illustrations/%')
+      .gte('fetched_at', new Date(Date.now() - 86_400_000).toISOString());
     return made.error ? Number.POSITIVE_INFINITY : made.count ?? 0;
   } catch { return Number.POSITIVE_INFINITY; }
 }

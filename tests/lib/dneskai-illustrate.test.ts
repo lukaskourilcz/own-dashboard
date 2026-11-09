@@ -38,11 +38,13 @@ describe('fitting photographs on every DNESKAi slide (9 November 2026)', () => {
 });
 
 describe('library pictures large enough for a full-bleed slide (9 November 2026)', () => {
-  it('never offers a picture whose shorter side is under 1300 px', () => {
+  it('retains the 1300 px minimum for stock and accepts full-size Codex portraits', () => {
     const rows = [
       { id: 's', sha256: 's'.repeat(64), topic: 'banking', tags: ['payment'], uses: 0, width: 732, height: 1300 },
       { id: 'l', sha256: 'l'.repeat(64), topic: 'banking', tags: ['payment'], uses: 5, width: 1365, height: 2048 },
+      { id: 'c', sha256: 'c'.repeat(64), topic: 'banking', tags: ['payment'], uses: 1, width: 1080, height: 1350, source: 'codex' },
+      { id: 't', sha256: 't'.repeat(64), topic: 'banking', tags: ['payment'], uses: 0, width: 960, height: 1200, source: 'codex' },
     ];
-    expect(rankDneskaiIllustrations(rows, { topics: ['banking'], keywords: ['payment'] }, new Set()).map((row) => row.id)).toEqual(['l']);
+    expect(rankDneskaiIllustrations(rows, { topics: ['banking'], keywords: ['payment'] }, new Set()).map((row) => row.id)).toEqual(['c', 'l']);
   });
 });
