@@ -1,0 +1,38 @@
+import { describe, expect, it, vi } from 'vitest';
+vi.mock('server-only', () => ({}));
+import { dneskaiIllustratedSlide, dneskaiReuseCrop, dneskaiSlidesNeedingPicture, rankDneskaiIllustrations } from '@/lib/marketing/dneskai-illustrate';
+import { dneskaiClosingSlide } from '@/lib/marketing/dneskai-closing';
+
+const a = 'a'.repeat(64), b = 'b'.repeat(64);
+describe('fitting photographs on every DNESKAi slide (9 November 2026)', () => {
+  it('asks for a picture on a photo-less or refused slide, never on the closing slide', () => {
+    const deck = { slides: [
+      { type: 'cover-photo' as const, headline: 'H', images: [{ slot: 'image-1', assetSha256: a }] },
+      { type: 'statement' as const, headline: 'Q', images: [] },
+      { type: 'figure' as const, headline: 'F', images: [{ slot: 'image-1', assetSha256: b }] },
+      dneskaiClosingSlide(),
+    ] };
+    expect(dneskaiSlidesNeedingPicture(deck as never, new Set())).toEqual([1]);
+    expect(dneskaiSlidesNeedingPicture(deck as never, new Set([b]))).toEqual([1, 2]);
+  });
+  it('turns a statement into a figure with the picture, and keeps a reused picture recognisably different', () => {
+    const slide = dneskaiIllustratedSlide({ type: 'statement', variant: 'accent', headline: 'Q', body: 'n', images: [] } as never, { slot: 'image-1', assetSha256: a });
+    expect(slide).toMatchObject({ type: 'figure', headline: 'Q', body: 'n', images: [{ slot: 'image-1', assetSha256: a }] });
+    expect('variant' in slide).toBe(false);
+    const crop = dneskaiReuseCrop(a, 'r1');
+    expect(crop.zoom).toBeGreaterThanOrEqual(1.2); expect(crop.zoom).toBeLessThanOrEqual(1.6);
+    expect(crop.focal.x).toBeGreaterThanOrEqual(0.3); expect(crop.focal.x).toBeLessThanOrEqual(0.7);
+    expect(dneskaiReuseCrop(a, 'r1')).toEqual(crop);
+    expect(dneskaiReuseCrop(a, 'r2')).not.toEqual(crop);
+  });
+  it('ranks library pictures by shared keywords, then topic, then the least used', () => {
+    const rows = [
+      { id: '1', sha256: '1'.repeat(64), topic: 'banking', tags: ['credit card', 'payment'], uses: 3 },
+      { id: '2', sha256: '2'.repeat(64), topic: 'banking', tags: ['coins'], uses: 0 },
+      { id: '3', sha256: '3'.repeat(64), topic: 'space', tags: ['rocket'], uses: 0 },
+      { id: '4', sha256: '4'.repeat(64), topic: 'office', tags: ['credit card', 'payment', 'laptop'], uses: 1 },
+    ];
+    expect(rankDneskaiIllustrations(rows, { topics: ['banking'], keywords: ['payment', 'credit card'] }, new Set()).map((row) => row.id)).toEqual(['1', '4', '2']);
+    expect(rankDneskaiIllustrations(rows, { topics: ['banking'], keywords: ['payment'] }, new Set(['1'.repeat(64)])).map((row) => row.id)).toEqual(['2', '4']);
+  });
+});
