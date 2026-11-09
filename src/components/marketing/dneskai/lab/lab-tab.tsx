@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { dneskaiLab as copy } from '@/lib/i18n/sections/dneskai-lab';
 import { dneskaiWorkspace } from '@/lib/i18n/sections/dneskai-workspace';
 import { createDeckDraft, setDraftKit, dneskaiEditRequest, dneskaiScheduleExpired, dneskaiSlidePixelsKey, draftProblems, DNESKAI_CAPTION_MAX, type DeckDraft } from '@/lib/marketing/dneskai-deck-editor';
+import { DNESKAI_EMPHASIS_PALETTE } from '@/lib/marketing/dneskai-palette';
 import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfileCovers, dneskaiLabPost, dneskaiLabQueue, dneskaiMissedSlot, dneskaiNextFreeSlot, dneskaiTakenSlots, DNESKAI_OFFERED_KITS, type DneskaiKit, type DneskaiLabDay, type DneskaiLabPost, type DneskaiApproveManyResult, type DneskaiPreviewResult } from '@/lib/marketing/dneskai-lab';
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
@@ -186,7 +187,7 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   // length) is shown as a render-only preview; an unchanged one keeps showing the saved, approvable JPEG.
   const savedSlides = post.deck?.slides ?? [];
   const stageSlides: DneskaiStageSlide[] = draft.slides.map((item, index) => {
-    const unchanged = draft.kit === lab.kit && draft.slides.length === savedSlides.length && item.from === index && !!savedSlides[index] && dneskaiSlidePixelsKey(item.slide) === dneskaiSlidePixelsKey(savedSlides[index]!);
+    const unchanged = draft.kit === lab.kit && draft.emphasis === post.deck?.emphasis && draft.slides.length === savedSlides.length && item.from === index && !!savedSlides[index] && dneskaiSlidePixelsKey(item.slide) === dneskaiSlidePixelsKey(savedSlides[index]!);
     const saved = unchanged ? lab.slides[index] : undefined;
     return { index, type: item.slide.type, render: saved?.render ?? null, problems: saved?.problems ?? [], draft: unchanged ? null : item.from === null ? 'added' : 'changed', alt: item.slide.alt };
   });
@@ -369,6 +370,17 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
         <DneskaiKitTiles kits={lab.kits} chosen={draft.kit} onChoose={chooseKit} lang={props.lang} />
         <fieldset disabled={props.guest || busy || !['review', 'returned'].includes(post.status)} className="min-w-0 space-y-5">
           <legend className="sr-only">{t.post.title}</legend>
+          {post.deck && <div className="space-y-1">
+            <label htmlFor={`${id}-emphasis`} className="text-xs font-medium">{t.emphasis.label}</label>
+            <div className="flex items-center gap-2">
+              {draft.emphasis && <span aria-hidden="true" className="size-5 shrink-0 rounded-sm border border-border" style={{ backgroundColor: draft.emphasis }} />}
+              <select id={`${id}-emphasis`} value={draft.emphasis ?? ''} className="min-h-11 w-full rounded-md border border-border bg-surface px-2 text-sm focus-ring"
+                onChange={(event) => setDraft({ ...draft, emphasis: DNESKAI_EMPHASIS_PALETTE.find(({ hex }) => hex === event.target.value)?.hex })}>
+                <option value="">{t.emphasis.default}</option>
+                {DNESKAI_EMPHASIS_PALETTE.map(({ id: color, hex, label }) => <option key={color} value={hex}>{props.lang === 'cs' ? label : t.emphasis.colors[color]}</option>)}
+              </select>
+            </div>
+          </div>}
           <DneskaiSlideInspector key={slide} post={post} draft={draft} index={slide} onDraft={(next) => { setDraft(next); setFit({ status: 'checking', result: null }); }} fit={fit} previews={previews} mediaState={mediaState} lang={props.lang} firstFieldRef={(element) => { fieldRef.current = element; }} onSlide={onSlide} onNotice={setMessage} />
           <CountedField id={`${id}-caption`} label={t.post.caption} value={draft.caption} max={DNESKAI_CAPTION_MAX} multiline rows={5} lang={props.lang} onChange={(caption) => setDraft({ ...draft, caption })} />
           {post.deck?.format === 'carousel' && <DneskaiFormatSwitch value={draft.format} onChange={(format) => setDraft({ ...draft, format })} preview={props.preview} lang={props.lang} />}

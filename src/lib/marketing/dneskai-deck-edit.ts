@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideLayoutSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
+import { DNESKAI_OFFERED_KIT_IDS, DNESKAI_RENDERABLE_KIT_IDS, DneskaiDeckSchema, DneskaiEmphasisSchema, DneskaiKitIdSchema, DneskaiSlideImageSchema, DneskaiSlideLayoutSchema, DneskaiSlideTypeSchema, DneskaiSlideVariantSchema, dneskaiKitOf, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
 import {
   DNESKAI_INSERT_SHAPES, dneskaiCoverInset, DNESKAI_PLACED_FIELDS, dneskaiInsertablePictures, dneskaiPictureFitsShape, dneskaiShapeId, dneskaiShapePictureCounts,
   dneskaiSlideMoves, dneskaiSlideShape, type DneskaiPoolPicture, type DneskaiSlideShape,
@@ -45,7 +45,11 @@ export const DneskaiSlideInsertSchema = z.strictObject({
 });
 export const DneskaiDeckEditEntrySchema = z.union([DneskaiSlideEditSchema, DneskaiSlideInsertSchema]);
 /** `kit` switches the whole post to another kit (kits are per post); absent keeps the deck's kit. */
-export const DneskaiDeckEditSchema = z.strictObject({ kit: DneskaiKitIdSchema.optional(), slides: z.array(DneskaiDeckEditEntrySchema).min(1).max(10) });
+export const DneskaiDeckEditSchema = z.strictObject({
+  kit: DneskaiKitIdSchema.optional(),
+  emphasis: DneskaiEmphasisSchema.nullable().optional(),
+  slides: z.array(DneskaiDeckEditEntrySchema).min(1).max(10),
+});
 export type DneskaiDeckEdit = z.infer<typeof DneskaiDeckEditSchema>;
 export type DneskaiSlideEditEntry = z.infer<typeof DneskaiSlideEditSchema>;
 export type DneskaiSlideInsert = z.infer<typeof DneskaiSlideInsertSchema>["insert"];
@@ -177,8 +181,9 @@ export function applyDneskaiDeckEdit(deck: DneskaiDeck, value: DneskaiDeckEdit, 
   if (deck.format === "carousel" && (slides.length < 2 || slides.length > 10)) return fail("deck-edit-slide-count");
   if (deck.format === "single-image" && slides.length !== 1) return fail("deck-edit-slide-count");
   // Editorial is written by leaving `kit` out, so a deck switched back to it hashes as it did before.
-  const { kit: _previous, ...rest } = deck;
+  const { kit: _previous, emphasis: previousEmphasis, ...rest } = deck;
   void _previous;
-  const parsed = DneskaiDeckSchema.safeParse({ ...rest, ...(kit !== "editorial" ? { kit } : {}), slides });
+  const emphasis = edit.data.emphasis === undefined ? previousEmphasis : edit.data.emphasis;
+  const parsed = DneskaiDeckSchema.safeParse({ ...rest, ...(kit !== "editorial" ? { kit } : {}), ...(emphasis ? { emphasis } : {}), slides });
   return parsed.success ? parsed.data : fail("deck-edit-invalid");
 }

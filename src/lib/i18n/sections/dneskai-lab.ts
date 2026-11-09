@@ -71,6 +71,11 @@ const en = {
     onStage: 'Preview on the stage',
     unavailableNotice: (name: string) => `${name} cannot be rendered yet. The post keeps its current kit.`,
   },
+  emphasis: {
+    label: 'Keyword colour',
+    default: 'Kit default',
+    colors: { icy: 'Ice blue', violet: 'Violet', pink: 'Pink', coral: 'Coral', amber: 'Amber', lime: 'Lime', mint: 'Mint', cyan: 'Turquoise', yellow: 'Lemon', lilac: 'Lilac' },
+  },
   slide: {
     title: (n: number, type: string) => `Slide ${n} · ${type}`,
     fields: { headline: 'Headline', body: 'Text', kicker: 'Kicker', credit: 'Credit' },
@@ -333,6 +338,11 @@ const cs: typeof en = {
     pick: 'Vyberte pro náhled',
     onStage: 'Náhled na plátně',
     unavailableNotice: (name: string) => `Sadu ${name} zatím nelze vykreslit. Příspěvek si ponechá současnou sadu.`,
+  },
+  emphasis: {
+    label: 'Barva klíčových slov',
+    default: 'Výchozí barva sady',
+    colors: en.emphasis.colors,
   },
   slide: {
     title: (n: number, type: string) => `Slide ${n} · ${type}`,

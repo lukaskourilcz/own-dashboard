@@ -67,6 +67,23 @@ test('Lab saves a new version, shows new pixels, then approves only its hash', a
   await expect(page.getByTestId('dneskai-lab-session')).toContainText('Approved. Scheduled');
 });
 
+test('Lab previews and saves a keyword colour', async ({ page }) => {
+  await gotoPreview(page);
+  await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
+  const lab = page.getByTestId('dneskai-lab');
+  const colour = lab.getByRole('combobox', { name: dneskaiLab.en.emphasis.label });
+  const before = await colour.inputValue();
+  const next = before === '#6ec1ff' ? '#a78bfa' : '#6ec1ff';
+  const preview = page.waitForRequest((request) => request.url().includes('/api/dev-preview/dneskai-preview')
+    && request.postDataJSON()?.deck?.emphasis === next);
+  await colour.selectOption(next);
+  await preview;
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeDisabled();
+  await lab.getByRole('button', { name: dneskaiLab.en.actions.save, exact: true }).click();
+  await expect(page.getByTestId('dneskai-lab-approve')).toBeEnabled();
+  await expect(colour).toHaveValue(next);
+});
+
 test('Approve the day shows exact versions and per-item results', async ({ page }) => {
   await gotoPreview(page); await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
   await page.getByTestId('dneskai-lab-queue').getByRole('button', { name: /Approve the day/ }).last().click();
