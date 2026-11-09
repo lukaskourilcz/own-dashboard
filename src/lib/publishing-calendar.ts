@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { DneskaiPreviewRequestSchema } from "@/lib/marketing/dneskai-lab";
+import { DevsharkDeckSchema } from "@/lib/marketing/devshark-deck";
 
 /**
  * The publishing calendar (owner request, 8 November 2026): what DNESKAi and devShark share in the next three Prague
@@ -29,6 +31,17 @@ const Target = z.discriminatedUnion("kind", [
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const status = z.string().regex(/^[a-z][a-z_-]{0,40}$/);
 
+/**
+ * A version the Design Lab draws on demand rather than from stored JPEGs (owner request, 9 November 2026): the DNESKAi
+ * 9:16 story through the Lab's preview route, or a devShark concept the plan has not rendered yet through the Studio's.
+ * The calendar sends the same request the Lab sends, so it shows the same pixels.
+ */
+const Live = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("dneskai-story"), request: DneskaiPreviewRequestSchema }),
+  z.strictObject({ kind: z.literal("devshark-deck"), deck: DevsharkDeckSchema }),
+]);
+export type PublishingLive = z.infer<typeof Live>;
+
 /** One channel's version of a post, as the platform will show it. */
 export const PublishingVersionSchema = z.strictObject({
   channel: z.enum(PUBLISHING_CHANNELS),
@@ -39,6 +52,8 @@ export const PublishingVersionSchema = z.strictObject({
   caption: z.string().max(2200).nullable(),
   /** The rendered slides (post, Threads) or the 9:16 story frame; empty while not rendered yet. */
   pictures: z.array(Picture).max(10),
+  /** Drawn on demand by the Design Lab's own route when `pictures` is empty; never a stand-in picture. */
+  live: Live.nullable().optional(),
   /** The owner switched this version off: it will not be published (the whole post off turns every version off). */
   off: z.boolean(),
 });
