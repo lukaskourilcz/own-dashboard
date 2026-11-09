@@ -18,6 +18,7 @@ import { dneskaiFitSlide, dneskaiKitRenderable, dneskaiLabOrder, dneskaiLabProfi
 import { dneskaiWorkspaceApi, dneskaiWorkspaceKeys, DneskaiWorkspaceRequestError } from '@/lib/marketing/dneskai-workspace-client';
 import { formatDneskaiDay, formatDneskaiDayTime, type DneskaiWorkspaceRead } from '@/lib/marketing/dneskai-workspace';
 import { cn } from '@/lib/utils';
+import { dneskaiStoryPreviewRequest } from '@/lib/marketing/design-lab-renders';
 import { CountedField } from '../counted-field';
 import { DneskaiCodeText } from '../code-text';
 import { DNESKAI_TONE_TINTS, DneskaiStateChip, dneskaiStateText, dneskaiStateTint } from '../state-chip';
@@ -199,7 +200,8 @@ function LabSession({ lab, slide: requested, onSlide, onDirty, onChoose, onBatch
   const remembered = previewKey ? previewMemory.has(previewKey) : true;
   // The story view (8 November 2026): the draft's cover drawn as the native 1080×1920 story it goes out as. Every
   // cover edit (headline, photo, crop, kit) changes the key, so the story follows the draft.
-  const storyDeck = request?.deck ?? (post.deck ? { ...(post.deck.kit ? { kit: post.deck.kit } : {}), slides: post.deck.slides.map((_, from) => ({ from })) } : undefined);
+  // The publishing calendar draws a post's story with the same request (`dneskaiStoryPreviewRequest`).
+  const storyDeck = dneskaiStoryPreviewRequest(post, request?.deck)?.deck;
   const storyKey = view === 'story' && !props.guest && storyDeck && !invalidDraft ? JSON.stringify({ deck: storyDeck, slide: 0, format: 'instagram-story' }) : null;
   const story: DneskaiStagePreview | null = props.guest || !post.deck ? null
     : invalidDraft ? { slide: 0, status: 'unavailable', image: null, code: 'deck-edit-invalid', blocks: [] }
