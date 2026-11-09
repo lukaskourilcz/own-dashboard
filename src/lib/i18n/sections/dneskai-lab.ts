@@ -258,6 +258,10 @@ const en = {
     changed: (count: number) => count === 1 ? '1 topic changed state meanwhile, so the action skipped it.' : `${count} topics changed state meanwhile, so the action skipped them.`,
     failed: 'The change did not go through. The list shows the saved state.',
     unavailable: 'Topics could not be loaded.',
+    off: 'Topics are switched off on the server (DNESKAI_TOPICS_ENABLED).',
+    noProject: 'No DNESKAi project is connected, so there are no topics to review.',
+    open: 'Topics',
+    openLabel: 'Open Topics, where proposed titles are approved or rejected',
   },
 };
 
@@ -514,6 +518,10 @@ const cs: typeof en = {
     changed: (count: number) => count === 1 ? 'U 1 námětu se mezitím změnil stav, akce se na něj nepoužila.' : `U ${count} námětů se mezitím změnil stav, akce se na ně nepoužila.`,
     failed: 'Změna neprošla. Seznam ukazuje uložený stav.',
     unavailable: 'Náměty se nepodařilo načíst.',
+    off: 'Náměty jsou na serveru vypnuté (DNESKAI_TOPICS_ENABLED).',
+    noProject: 'Není připojený žádný projekt DNESKAi, takže tu nejsou žádné náměty ke kontrole.',
+    open: 'Náměty',
+    openLabel: 'Otevřít Náměty, kde se navržené titulky schvalují nebo zamítají',
   },
 };
 

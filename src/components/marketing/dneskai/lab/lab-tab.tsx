@@ -5,7 +5,7 @@ import { DneskaiFormatSwitch } from './format-switch';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
-import { RefreshCw } from 'lucide-react';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -23,7 +23,6 @@ import { DneskaiCodeText } from '../code-text';
 import { DNESKAI_TONE_TINTS, DneskaiStateChip, dneskaiStateText, dneskaiStateTint } from '../state-chip';
 import { DneskaiKitTiles } from './kit-tiles';
 import { DneskaiEngagementEditor } from './engagement-editor';
-import { DneskaiTopicsList } from './topics-list';
 import { DneskaiSlideInspector, type DneskaiFitState } from './slide-inspector';
 import { DneskaiLabStage, type DneskaiStagePreview, type DneskaiStageSlide, type DneskaiStageView } from './stage';
 
@@ -33,6 +32,12 @@ function remember(post: string, slide: number) {
   const url = new URL(window.location.href);
   url.searchParams.set('projectTab', 'dneskai-review'); url.searchParams.set('labPost', post); url.searchParams.set('labSlide', String(slide));
   window.history.replaceState(window.history.state, '', url);
+}
+
+/** Opens the Náměty section inside the shell (its History API listener switches the tab). */
+function openTopics() {
+  window.history.pushState(null, '', '/topics');
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
 /** The queue and the edit session share a revision identity. A saved successor remounts the draft. */
@@ -67,6 +72,11 @@ export function DneskaiLabTab(props: Props) {
   return <section className="space-y-4" data-testid="dneskai-lab">
     <div className="flex items-center justify-end gap-3">
       <h2 className="sr-only">{t.title}</h2>
+      {/* Náměty moved to its own section (owner request, 9 November 2026); the Lab keeps a way there. */}
+      <button type="button" onClick={openTopics} aria-label={t.topics.openLabel} data-testid="dneskai-lab-topics-link"
+        className="mr-auto inline-flex min-h-11 items-center gap-1 rounded-sm text-sm font-medium text-primary underline-offset-2 hover:underline focus-ring md:min-h-8">
+        {t.topics.open}<ArrowRight aria-hidden className="h-3.5 w-3.5" />
+      </button>
       <Tooltip content={props.refreshing ? dneskaiWorkspace[props.lang].refreshing : dneskaiWorkspace[props.lang].refresh}>
         <Button variant="ghost" size="icon" aria-label={props.refreshing ? dneskaiWorkspace[props.lang].refreshing : dneskaiWorkspace[props.lang].refresh} aria-busy={props.refreshing} disabled={props.refreshing || dirty} onClick={props.onRefresh} data-testid="dneskai-lab-refresh">
           <RefreshCw aria-hidden className={cn(props.refreshing && 'motion-safe:animate-spin')} />
@@ -75,7 +85,6 @@ export function DneskaiLabTab(props: Props) {
     </div>
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {props.preview && <p className="border-l-2 border-information pl-3 text-xs text-foreground-muted">{props.guest ? t.publicTour : dneskaiWorkspace[props.lang].preview}</p>}
-    <DneskaiTopicsList projectId={props.projectId} lang={props.lang} preview={props.preview} />
     <div className="grid min-w-0 gap-4 xl:grid-cols-[13rem_minmax(0,1fr)]">
       <nav onKeyDown={(event) => {
         if (event.altKey || event.ctrlKey || event.metaKey || !active) return;

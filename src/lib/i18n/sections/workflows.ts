@@ -6,7 +6,7 @@ export const WORKFLOW_AREAS = {
   clients: ['opportunities', 'clients', 'career'],
   finance: ['invoices', 'money', 'accounts', 'transactions', 'subscriptions', 'categories'],
   knowledge: ['notes', 'prompts', 'tools', 'links', 'ig-tips', 'ig-collection'],
-  marketing: ['marketing', 'schedule'],
+  marketing: ['marketing', 'schedule', 'topics'],
   settings: ['settings'],
 } as const satisfies Record<string, readonly NavTab[]>;
 

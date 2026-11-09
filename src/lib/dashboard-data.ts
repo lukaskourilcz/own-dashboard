@@ -90,6 +90,8 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   // Both read their own data: the plans through /api/publishing-calendar, the backlog through the owner's session.
   schedule: [],
   backlog: [],
+  // Náměty finds the DNESKAi project in the projects list, then reads its topics through /api/marketing/dneskai/topics.
+  topics: ["projects"],
   // IG Kolekce reads its saved posts through /api/marketing/collection.
   "ig-collection": [],
   // A project workspace renders every related record, including the
