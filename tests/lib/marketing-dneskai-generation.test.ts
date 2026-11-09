@@ -8,7 +8,7 @@ import { DEFAULT_GENERATION_BUDGET, claudeCallProfile, createClaudeMarketingMode
 import { MARKETING_HUMANIZER_POLICY_FINGERPRINT } from "@/lib/marketing/humanizer";
 import { MARKETING_DECK_CONTENT_VERSION, parseContentRevision } from "@/lib/marketing/contracts";
 import { DNESKAI_GENERATION_KITS, DneskaiDeckSchema } from "@/lib/marketing/dneskai-slides";
-import { DNESKAI_CLOSING_SHA256, dneskaiClosingSlide } from "@/lib/marketing/dneskai-closing";
+import { DNESKAI_CLOSING_SHA256 } from "@/lib/marketing/dneskai-closing";
 import { validateDneskaiDeck, type DneskaiSlideRenderProblem } from "@/lib/marketing/dneskai-render";
 import { dneskaiEvidencePublishers } from "@/lib/marketing/dneskai-publishers";
 import { ACCOUNT, BRIEF_NOW, briefFixture, briefInput, briefPacket, briefPictures, validCopy, type BriefPictures } from "./marketing-dneskai-generation-fixture";
@@ -360,17 +360,17 @@ describe("caption assembly by code (BRAND-02, owner rules of 22 October 2026)", 
 });
 
 describe("deck assembly by code", () => {
-  it("keeps the written slides, adds code's closing slide and nothing else: no sources slide and no credit", () => {
+  it("keeps the written slides and nothing else: no closing slide (the plan adds it by its switch), no sources slide and no credit", () => {
     const deck = buildDneskaiDeck(validCopy(pictures), offerFor());
     expect(DneskaiDeckSchema.parse(deck)).toEqual(deck);
     expect(deck.format).toBe("carousel");
-    expect(deck.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split", "figure"]);
-    expect(deck.slides.at(-1)).toEqual(dneskaiClosingSlide());
+    expect(deck.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split"]);
+    expect(deck.slides.some((slide) => slide.images.some((image) => image.assetSha256 === DNESKAI_CLOSING_SHA256))).toBe(false);
     expect(deck.slides.some((slide) => slide.type === "sources")).toBe(false);
     expect(deck.slides.every((slide) => !("credit" in slide) && !("sources" in slide))).toBe(true);
-    expect(deck.slides.map((slide) => slide.images.map((image) => image.assetSha256))).toEqual([[pictures.hero.sha256], [pictures.figure.sha256], [], [pictures.post.sha256], [DNESKAI_CLOSING_SHA256]]);
+    expect(deck.slides.map((slide) => slide.images.map((image) => image.assetSha256))).toEqual([[pictures.hero.sha256], [pictures.figure.sha256], [], [pictures.post.sha256]]);
     // The written words pass through trimmed and unchanged.
-    expect(deck.slides.slice(0, -1).map((slide) => [slide.headline, slide.body ?? null, slide.kicker ?? null, slide.alt])).toEqual(
+    expect(deck.slides.map((slide) => [slide.headline, slide.body ?? null, slide.kicker ?? null, slide.alt])).toEqual(
       validCopy(pictures).slides.map((slide) => [slide.headline, slide.body ?? null, slide.kicker ?? null, slide.alt]));
   });
   it("picks the style at random among the generation kits, the same for the same copy (8 November 2026)", () => {
@@ -470,8 +470,8 @@ describe("generation from a brief", () => {
       templateVersion: DNESKAI_DECK_TEMPLATE_VERSION, promptVersion: MARKETING_BRIEF_PROMPT_ID, model: "claude-sonnet-5-5", knowledgeIds: [], assets: [],
       sources: [{ sourceId: packet.sourceId, sourceRevision: packet.sourceRevision, contentHash: packet.contentHash }] });
     expect(revision.deck).toEqual(draft.deck);
-    expect(draft.deck!.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split", "figure"]);
-    expect(draft.deck!.slides.filter((slide) => slide.images.length)).toHaveLength(4);
+    expect(draft.deck!.slides.map((slide) => slide.type)).toEqual(["cover-photo", "figure", "statement", "split"]);
+    expect(draft.deck!.slides.filter((slide) => slide.images.length)).toHaveLength(3);
     expect(draft.deck!.slides.every((slide) => !("credit" in slide))).toBe(true);
     expect(revision.caption).toBe([validCopy(pictures).caption, "#dneskai #ai #zpravy #adobe #lightroom #upravyfotek"].join("\n\n"));
     expect(draft.slides).toEqual([]);

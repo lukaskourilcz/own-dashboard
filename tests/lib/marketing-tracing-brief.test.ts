@@ -69,9 +69,9 @@ describe("redacted brief traces (#122)", () => {
       event_id_hash: createHash("sha256").update(brief.eventId).digest("hex"), member_hash_hash: traceIdentifierHash(brief.memberHash), media_count: 3 });
     const finished = sdk.updateRun.mock.calls.at(-1)![1].extra.metadata;
     expect(finished).toMatchObject({ status: "review", attempts: 2, input_tokens: 6000, output_tokens: 3000, estimated_cost_usd: 0.042, issue_codes: [], retry_reasons: ["unknown-asset"],
-      format: "carousel", deck_media_count: 4 });
+      format: "carousel", deck_media_count: 3 });
     // The written slides only: no sources slide is appended (owner rule, 22 October 2026).
-    expect(finished.slide_types).toEqual({ "cover-photo": 1, figure: 2, statement: 1, split: 1 });
+    expect(finished.slide_types).toEqual({ "cover-photo": 1, figure: 1, statement: 1, split: 1 });
     expect(sdk.createRun.mock.calls[1]![0].extra.metadata).toMatchObject({ stage: "generation", attempt: 1, issue_codes: ["unknown-asset"] });
     for (const payload of payloads()) assertRedacted(payload);
     // Belt and braces: none of the brief's or the post's own words, links, credits or raw ids appear anywhere.

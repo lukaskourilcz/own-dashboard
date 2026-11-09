@@ -54,6 +54,8 @@ const CODES = {
   'illustrate-unavailable': ['wait', 'The photo check needs the Claude key and AI consent.', 'Kontrola fotek potřebuje klíč Claude a souhlas s AI.'],
   'illustrate-no-deck': ['wait', 'The post has no slides to check.', 'Příspěvek nemá slidy ke kontrole.'],
   'illustrate-error': ['wait', 'The photo check failed; the post keeps its pictures.', 'Kontrola fotek selhala; příspěvek si nechává své fotky.'],
+  'plan-closing-added': ['wait', 'The closing slide was added to a planned post (its switch is on).', 'K naplánovanému příspěvku se přidal závěrečný slide (přepínač je zapnutý).'],
+  'plan-closing-removed': ['wait', 'The closing slide was taken off a planned post (its switch is off).', 'Z naplánovaného příspěvku se odebral závěrečný slide (přepínač je vypnutý).'],
   'render-blocked': ['edit', 'The render found a problem that blocks approval.', 'Vykreslení našlo problém, který brání schválení.'],
   'render-retry-later': ['wait', 'The slides failed to render; the plan tries again in half an hour.', 'Slidy se nepodařilo vykreslit; plán to zkusí znovu za půl hodiny.'],
   // devShark concept generation (7 November 2026).

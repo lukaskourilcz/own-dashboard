@@ -8,7 +8,7 @@ import { pragueMarketingDate } from './weekly-planning';
 import { pragueDayAfter } from './dneskai-workspace';
 import { DNESKAI_GENERATION_KITS, dneskaiGenerationKit, dneskaiKitOf } from './dneskai-slides';
 import { dneskaiEmphasisFor } from './dneskai-palette';
-import { isDneskaiClosingSlide } from './dneskai-closing';
+import { dneskaiClosingSlide, isDneskaiClosingSlide } from './dneskai-closing';
 import { DNESKAI_RESTYLE_ATTEMPTS, DNESKAI_RESTYLE_FAILED, DNESKAI_RESTYLE_QUEUED, DNESKAI_RESTYLE_REQUESTED, dneskaiRestyleJobKey, restyleDneskaiPost } from './dneskai-restyle';
 import { DNESKAI_PLAN_DAYS, DNESKAI_PLAN_INSTAGRAM_TIMES, DNESKAI_PLAN_TIMES, type DneskaiPlanKind, type DneskaiPlanStatus } from './dneskai-plan-view';
 import { dneskaiThreadsTwin, type DneskaiThreadsAccount } from './dneskai-threads';
@@ -21,7 +21,7 @@ import { createDneskaiSlideStorage } from './worker-runtime';
 import { STORY_HEIGHT, STORY_WIDTH, composeStoryFromCover, storyRenderKey } from './story-image';
 import { renderDneskaiStoryJpeg } from './dneskai-render';
 import { synchronizeMarketingSources } from './orchestrator';
-import { illustrateDneskaiPost } from './dneskai-illustrate';
+import { illustrateDneskaiPost, setDneskaiCoverFromLibrary } from './dneskai-illustrate';
 import { DNESKAI_SERIES_START, dneskaiSeriesAssignment, dneskaiSeriesCaption, dneskaiSeriesDeck, dneskaiSeriesHeading, dneskaiSeriesNumbers, dneskaiSeriesOf, dneskaiSeriesSlot, type DneskaiSeries } from './dneskai-series';
 
 /**
@@ -445,6 +445,9 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
   const account = await threadsAccountOf(db, owner);
   const headings = await seriesHeadings(db, owner, project);
   let wiring: Wiring | null = null;
+  // The closing slide's switch, read once a pass; off when the row is missing or unreadable.
+  let closing: Promise<boolean> | null = null;
+  const closingEnabled = () => (closing ??= Promise.resolve(db.from('marketing_dneskai_closing').select('enabled').eq('user_id', owner).maybeSingle()).then((row) => !row.error && row.data?.enabled === true, () => false));
   const wired = () => (wiring ??= { render: getRenderDneskaiDeck(db), loadMedia: getDneskaiMediaLoader(db, owner), listBriefAssetHashes: getBriefAssetHashLister(db, owner), loadBriefPool: getBriefPoolLoader(db, owner) });
   const record = async (slot: DneskaiPlanRow, patch: Partial<DneskaiPlanRow>) => {
     const changed = Object.entries(patch).some(([key, value]) => slot[key as keyof DneskaiPlanRow] !== value);
@@ -489,6 +492,24 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           }
           await record(slot, { status: 'generating' }); break;
         }
+        // The owner's cover pick (`cover-<sha256>[-<rrggbb>]` on the slot, 9 November 2026): that library picture on the
+        // first slide and, when given, the key words in that colour. The version counts as the owner's edit, so the
+        // plan keeps its colour instead of the slot's.
+        const coverPick = /^cover-([0-9a-f]{64})(?:-([0-9a-f]{6}))?$/.exec(slot.code ?? '');
+        if (coverPick && head && (head.status === 'review' || head.status === 'approved') && head.revision.deck) {
+          if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS + 10_000) break;
+          const picked = await setDneskaiCoverFromLibrary(db, owner, { revision: head.revision, sha256: coverPick[1]! });
+          if (!picked.deck) { const patch = { code: picked.code }; await record(slot, patch); Object.assign(slot, patch); break; }
+          const deck = coverPick[2] ? { ...picked.deck, emphasis: `#${coverPick[2]}` } : picked.deck;
+          const revision = parseContentRevision({ ...head.revision, deck, assets: [] });
+          const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
+          await markIllustrationChecked(db, saved.id, 'illustrate-result');
+          const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: saved.id, revision }, { render: wired().render, loadMedia: wired().loadMedia, signal: input.signal });
+          result.rendered++;
+          const patch: Partial<DneskaiPlanRow> = { head_revision_id: saved.id, written_revision_id: head.id, status: rendered.ready ? 'ready' : 'failed', code: rendered.ready ? null : 'render-blocked' };
+          await record(slot, patch); Object.assign(slot, patch);
+          break;
+        }
         // Fitting photographs on every slide (owner request, 9 November 2026): once per post version, behind
         // DNESKAI_ILLUSTRATE_ENABLED, a ready Instagram post whose slot is ahead is checked and its photo-less or
         // off-topic slides take library pictures; the new version is drawn at once and approved on the next pass.
@@ -518,6 +539,28 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
           await markIllustrationChecked(db, head.id, code);
           result.codes[code] = (result.codes[code] ?? 0) + 1;
           continue;
+        }
+        // The closing slide follows its switch in the Design Lab (owner, 9 November 2026; off until the owner turns it
+        // on): a planned carousel gets it or loses it while its slot is ahead, drawn again at once.
+        if (head && (head.status === 'review' || head.status === 'approved') && head.ready && head.revision.deck?.format === 'carousel'
+          && head.revision.account.platform === 'instagram' && Date.parse(dneskaiPlanSlotAt(slot)) > input.now.getTime() + 10 * 60_000) {
+          const closingOn = await closingEnabled();
+          const slides = head.revision.deck.slides;
+          const has = slides.some((item) => isDneskaiClosingSlide(item));
+          const next = closingOn ? [...slides, dneskaiClosingSlide()] : slides.filter((item) => !isDneskaiClosingSlide(item));
+          if (has !== closingOn && next.length >= 2 && next.length <= 10) {
+            if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) { await record(slot, { code: 'plan-render-waiting' }); break; }
+            const revision = parseContentRevision({ ...head.revision, deck: { ...head.revision.deck, slides: next }, assets: [] });
+            const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
+            const rendered = await renderAndAttachDneskaiRevision(db, owner, { revisionId: saved.id, revision }, { render: wired().render, loadMedia: wired().loadMedia, signal: input.signal });
+            result.rendered++;
+            const ownerEdit = !!slot.written_revision_id && head.id !== slot.written_revision_id;
+            const patch: Partial<DneskaiPlanRow> = { head_revision_id: saved.id, written_revision_id: ownerEdit ? slot.written_revision_id : saved.id, status: rendered.ready ? 'ready' : 'failed', code: rendered.ready ? null : 'render-blocked' };
+            await record(slot, patch); Object.assign(slot, patch);
+            const code = closingOn ? 'plan-closing-added' : 'plan-closing-removed';
+            result.codes[code] = (result.codes[code] ?? 0) + 1;
+            break;
+          }
         }
         const twin = slot.threads_revision_id ? await revisionRow(db, owner, slot.threads_revision_id) : null;
         const story = slot.story_revision_id ? await revisionRow(db, owner, slot.story_revision_id) : null;

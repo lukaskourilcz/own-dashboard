@@ -175,3 +175,39 @@ export async function illustrateDneskaiPost(db: Database, owner: string, input: 
   if (!replaced) return { code: 'illustrate-no-fitting-picture', deck: null, costUsd, replaced: 0 };
   return { code: 'illustrate-done', deck: { ...deck, slides }, costUsd, replaced };
 }
+
+/**
+ * The owner's pick for a post's cover (9 November 2026: "a better photo than the robot"): one library picture by its
+ * sha256, added to the post's brief and set on the first slide. Returns the new deck, or a code when it cannot be done.
+ */
+export async function setDneskaiCoverFromLibrary(db: Database, owner: string, input: { revision: ContentRevision; sha256: string }): Promise<{ code: string; deck: DneskaiDeck | null }> {
+  const deck = input.revision.deck;
+  if (!deck || !deck.slides.length) return { code: 'illustrate-no-deck', deck: null };
+  const row = await db.from('dneskai_illustrations').select('id,uses').eq('sha256', input.sha256).eq('status', 'ready').maybeSingle();
+  if (row.error || !row.data) return { code: 'illustrate-no-fitting-picture', deck: null };
+  const source = input.revision.sources[0];
+  const briefs = source ? await db.from('marketing_dneskai_briefs').select('id,brief,lead_candidate_id').eq('user_id', owner).eq('event_id', source.sourceId).eq('member_hash', source.sourceRevision).neq('status', 'skipped').order('updated_at', { ascending: false }).limit(1) : null;
+  const briefRow = briefs?.data?.[0] as { id: string; brief: unknown; lead_candidate_id: string } | undefined;
+  const brief = briefRow ? DneskaiBriefSchema.safeParse(briefRow.brief) : null;
+  if (!briefRow || !brief?.success) return { code: 'illustrate-brief-missing', deck: null };
+  const position = Array.from({ length: 10 }, (_, index) => 40 + index).find((value) => !brief.data.media.some((item) => item.position === value));
+  if (position === undefined) return { code: 'illustrate-no-fitting-picture', deck: null };
+  const download = await db.storage.from(DNESKAI_ILLUSTRATION_BUCKET).download(`${input.sha256}.jpg`);
+  if (download.error || !download.data) return { code: 'illustrate-no-fitting-picture', deck: null };
+  const bytes = new Uint8Array(await download.data.arrayBuffer());
+  const image = await inspectDneskaiImage(bytes);
+  await supabaseMediaObjectStore(db as unknown as DneskaiMediaDatabase).put(`${owner}/${image.sha256}.${image.ext}`, Buffer.from(bytes), image.mime, { ownerId: owner, sha256: image.sha256 });
+  const credit = 'Foto: Pexels';
+  const media: DneskaiBriefMedia = { assetSha256: image.sha256, candidateId: briefRow.lead_candidate_id, position, credit, width: image.width, height: image.height, originKind: 'stock', ...dneskaiMediaCapabilities(image) };
+  if (!brief.data.media.some((item) => item.assetSha256 === image.sha256)) {
+    const added = await db.rpc('marketing_dneskai_restyle_add_picture', { p_owner: owner, p_brief: briefRow.id,
+      p_asset: { sha256: image.sha256, mime: image.mime, width: image.width, height: image.height, bytes: image.bytes, phash: image.phash, originUrl: `https://images.pexels.com/library/${input.sha256}`, originKind: 'stock', credit }, p_media: media });
+    if (added.error) return { code: 'illustrate-error', deck: null };
+  }
+  const slides = deck.slides.map((slide) => structuredClone(slide));
+  const cover = slides[0]!;
+  const rest = cover.images.filter((item) => item.slot !== 'image-1');
+  cover.images = [{ slot: 'image-1', assetSha256: image.sha256 }, ...rest];
+  await db.from('dneskai_illustrations').update({ uses: Number(row.data.uses) + 1, last_used_at: new Date().toISOString() }).eq('id', row.data.id);
+  return { code: 'illustrate-done', deck: { ...deck, slides } };
+}
