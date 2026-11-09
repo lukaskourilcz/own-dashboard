@@ -26,6 +26,7 @@ requires attribution can therefore not feed the library, however good its pictur
   kept out of selection. A daily cost cap stops the paid look.
 - **Selection** takes the least-used ready picture whose tags match the post's topic. A picture may serve several
   posts, but every reuse is drawn differently (another focal point and a 1.2 to 1.6 zoom) so it is not recognisable.
+  Codex illustrations are stored at 1080 × 1350 and use the full frame on reuse. Their generated provenance is retained in the library and the brief.
 - **Relevance**: pictures added to a post from stock or from the library are checked against the post's headline; an
   off-topic picture or one showing a competitor's brand (the Fio post that got a Swedbank tower) is refused.
 

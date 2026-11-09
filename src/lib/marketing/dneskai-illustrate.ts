@@ -98,13 +98,22 @@ async function assess(revision: ContentRevision, pictures: Array<{ sha256: strin
   } catch { return { assessment: null, costUsd: LOOK.reserveUsd }; }
 }
 
-type LibraryRow = { id: string; sha256: string; topic: string; tags: string[]; uses: number; width?: number; height?: number };
+type LibraryRow = { id: string; sha256: string; topic: string; tags: string[]; uses: number; width?: number; height?: number; source?: string };
+type StoredLibraryRow = LibraryRow & { source: string; page_url: string };
+
+function libraryPictureOrigin(row: Pick<StoredLibraryRow, 'source' | 'page_url' | 'sha256'>) {
+  return row.source === 'codex'
+    ? { originKind: 'generated' as const, originUrl: row.page_url, credit: 'Ilustrace: Codex' }
+    : { originKind: 'stock' as const, originUrl: `https://images.pexels.com/library/${row.sha256}`, credit: 'Foto: Pexels' };
+}
 /** Library pictures best first: most shared keywords, then a fitting topic, then the least used. */
-export function rankDneskaiIllustrations(rows: readonly LibraryRow[], wanted: { topics: readonly string[]; keywords: readonly string[] }, exclude: ReadonlySet<string>): LibraryRow[] {
+export function rankDneskaiIllustrations<T extends LibraryRow>(rows: readonly T[], wanted: { topics: readonly string[]; keywords: readonly string[] }, exclude: ReadonlySet<string>): T[] {
   const words = new Set(wanted.keywords.map((word) => word.toLowerCase().trim()));
   const score = (row: LibraryRow) => row.tags.filter((tag) => words.has(tag) || [...words].some((word) => tag.includes(word) || word.includes(tag))).length * 2 + (wanted.topics.includes(row.topic) ? 3 : 0);
   // Too small a picture would be refused by the render once cropped (`image-low-resolution`).
-  const large = (row: LibraryRow) => row.width === undefined || row.height === undefined || Math.min(row.width, row.height) >= DNESKAI_ILLUSTRATION_MIN_SIDE;
+  const large = (row: LibraryRow) => row.source === 'codex'
+    ? (row.width ?? 0) >= 1080 && (row.height ?? 0) >= 1350
+    : row.width === undefined || row.height === undefined || Math.min(row.width, row.height) >= DNESKAI_ILLUSTRATION_MIN_SIDE;
   return rows.filter((row) => !exclude.has(row.sha256) && large(row) && score(row) > 0).sort((a, b) => score(b) - score(a) || a.uses - b.uses || a.sha256.localeCompare(b.sha256));
 }
 
@@ -144,10 +153,10 @@ export async function illustrateDneskaiPost(db: Database, owner: string, input: 
   const briefRow = briefs?.data?.[0] as { id: string; brief: unknown; lead_candidate_id: string } | undefined;
   const brief = briefRow ? DneskaiBriefSchema.safeParse(briefRow.brief) : null;
   if (!briefRow || !brief?.success) return { code: 'illustrate-brief-missing', deck: null, costUsd, replaced: 0 };
-  const library = await db.from('dneskai_illustrations').select('id,sha256,topic,tags,uses,width,height').eq('status', 'ready').limit(2000);
+  const library = await db.from('dneskai_illustrations').select('id,sha256,topic,tags,uses,width,height,source,page_url').eq('status', 'ready').limit(2000);
   if (library.error) throw new Error('illustrations-unavailable');
   const used = new Set(deck.slides.flatMap((slide) => slide.images.map((image) => image.assetSha256)));
-  const ranked = rankDneskaiIllustrations((library.data ?? []) as LibraryRow[], assessment, used);
+  const ranked = rankDneskaiIllustrations((library.data ?? []) as StoredLibraryRow[], assessment, used);
   const freePositions = Array.from({ length: 10 }, (_, index) => 40 + index).filter((position) => !brief.data.media.some((item) => item.position === position));
   const store = supabaseMediaObjectStore(db as unknown as DneskaiMediaDatabase);
   const slides = deck.slides.map((slide) => structuredClone(slide));
@@ -162,12 +171,12 @@ export async function illustrateDneskaiPost(db: Database, owner: string, input: 
     let image;
     try { image = await inspectDneskaiImage(bytes); } catch { continue; }
     try { await store.put(`${owner}/${image.sha256}.${image.ext}`, Buffer.from(bytes), image.mime, { ownerId: owner, sha256: image.sha256 }); } catch { continue; }
-    const credit = 'Foto: Pexels';
-    const media: DneskaiBriefMedia = { assetSha256: image.sha256, candidateId: briefRow.lead_candidate_id, position, credit, width: image.width, height: image.height, originKind: 'stock', ...dneskaiMediaCapabilities(image) };
+    const { originKind, originUrl, credit } = libraryPictureOrigin(pick);
+    const media: DneskaiBriefMedia = { assetSha256: image.sha256, candidateId: briefRow.lead_candidate_id, position, credit, width: image.width, height: image.height, originKind, ...dneskaiMediaCapabilities(image) };
     const added = await db.rpc('marketing_dneskai_restyle_add_picture', { p_owner: owner, p_brief: briefRow.id,
-      p_asset: { sha256: image.sha256, mime: image.mime, width: image.width, height: image.height, bytes: image.bytes, phash: image.phash, originUrl: `https://images.pexels.com/library/${pick.sha256}`, originKind: 'stock', credit }, p_media: media });
+      p_asset: { sha256: image.sha256, mime: image.mime, width: image.width, height: image.height, bytes: image.bytes, phash: image.phash, originUrl, originKind, credit }, p_media: media });
     if (added.error) continue;
-    const crop = pick.uses > 0 ? dneskaiReuseCrop(image.sha256, input.revisionKey) : undefined;
+    const crop = pick.uses > 0 && pick.source !== 'codex' ? dneskaiReuseCrop(image.sha256, input.revisionKey) : undefined;
     slides[index] = dneskaiIllustratedSlide(slides[index]!, { slot: 'image-1', assetSha256: image.sha256, ...(crop ? { crop } : {}) });
     await db.from('dneskai_illustrations').update({ uses: pick.uses + 1, last_used_at: new Date().toISOString() }).eq('id', pick.id);
     replaced++;
@@ -183,7 +192,7 @@ export async function illustrateDneskaiPost(db: Database, owner: string, input: 
 export async function setDneskaiCoverFromLibrary(db: Database, owner: string, input: { revision: ContentRevision; sha256: string }): Promise<{ code: string; deck: DneskaiDeck | null }> {
   const deck = input.revision.deck;
   if (!deck || !deck.slides.length) return { code: 'illustrate-no-deck', deck: null };
-  const row = await db.from('dneskai_illustrations').select('id,uses').eq('sha256', input.sha256).eq('status', 'ready').maybeSingle();
+  const row = await db.from('dneskai_illustrations').select('id,uses,source,page_url').eq('sha256', input.sha256).eq('status', 'ready').maybeSingle();
   if (row.error || !row.data) return { code: 'illustrate-no-fitting-picture', deck: null };
   const source = input.revision.sources[0];
   const briefs = source ? await db.from('marketing_dneskai_briefs').select('id,brief,lead_candidate_id').eq('user_id', owner).eq('event_id', source.sourceId).eq('member_hash', source.sourceRevision).neq('status', 'skipped').order('updated_at', { ascending: false }).limit(1) : null;
@@ -197,11 +206,11 @@ export async function setDneskaiCoverFromLibrary(db: Database, owner: string, in
   const bytes = new Uint8Array(await download.data.arrayBuffer());
   const image = await inspectDneskaiImage(bytes);
   await supabaseMediaObjectStore(db as unknown as DneskaiMediaDatabase).put(`${owner}/${image.sha256}.${image.ext}`, Buffer.from(bytes), image.mime, { ownerId: owner, sha256: image.sha256 });
-  const credit = 'Foto: Pexels';
-  const media: DneskaiBriefMedia = { assetSha256: image.sha256, candidateId: briefRow.lead_candidate_id, position, credit, width: image.width, height: image.height, originKind: 'stock', ...dneskaiMediaCapabilities(image) };
+  const { originKind, originUrl, credit } = libraryPictureOrigin({ ...row.data, sha256: input.sha256 });
+  const media: DneskaiBriefMedia = { assetSha256: image.sha256, candidateId: briefRow.lead_candidate_id, position, credit, width: image.width, height: image.height, originKind, ...dneskaiMediaCapabilities(image) };
   if (!brief.data.media.some((item) => item.assetSha256 === image.sha256)) {
     const added = await db.rpc('marketing_dneskai_restyle_add_picture', { p_owner: owner, p_brief: briefRow.id,
-      p_asset: { sha256: image.sha256, mime: image.mime, width: image.width, height: image.height, bytes: image.bytes, phash: image.phash, originUrl: `https://images.pexels.com/library/${input.sha256}`, originKind: 'stock', credit }, p_media: media });
+      p_asset: { sha256: image.sha256, mime: image.mime, width: image.width, height: image.height, bytes: image.bytes, phash: image.phash, originUrl, originKind, credit }, p_media: media });
     if (added.error) return { code: 'illustrate-error', deck: null };
   }
   const slides = deck.slides.map((slide) => structuredClone(slide));
