@@ -1098,3 +1098,8 @@ status, cost, use count) and the pg_cron job `dneskai-illustrations-tick` (`1-59
 
 `20261109140000_dneskai_illustration_checks.sql` adds `public.dneskai_illustration_checks` (service role only): one row per
 DNESKAi post version the plan checked for fitting photographs (`DNESKAI_ILLUSTRATE_ENABLED`), with the outcome code.
+
+## DNESKAi closing slide settings, 9 November 2026
+
+`20261109150000_dneskai_closing_settings.sql` adds `public.marketing_dneskai_closing` (own-only RLS): whether the plan
+adds the closing slide to planned posts (off by default) and its headline, body and handle. Additive.

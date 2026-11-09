@@ -3,7 +3,6 @@ import { transformJSONSchema } from "@anthropic-ai/sdk/lib/transform-json-schema
 import { contentHash } from "./hashes";
 import type { DneskaiBrief, DneskaiBriefMedia } from "./dneskai-brief";
 import { DNESKAI_SLIDES_VERSION, DneskaiDeckSchema, dneskaiGenerationKit, type DneskaiDeck, type DneskaiSlide } from "./dneskai-slides";
-import { dneskaiClosingSlide } from "./dneskai-closing";
 import { DNESKAI_PLACED_FIELDS, DNESKAI_RENDERER_VERSION, type DneskaiSlideRenderProblem } from "./dneskai-render";
 import { DNESKAI_TEXT_LIMITS, dneskaiTemplateId, type DneskaiTemplateId } from "./dneskai-slide-layout";
 import { marketingHumanizerInstructions } from "./humanizer";
@@ -589,10 +588,11 @@ export function buildDneskaiDeck(copy: DneskaiCopy, offer: DneskaiBriefOffer): D
     };
   });
   const topic = dneskaiTopicName(copy.topic ?? "");
-  // Owner decisions of 8 November 2026: a style picked at random among the generation kits (stable for the same copy),
-  // and every carousel ends with code's closing slide.
+  // Owner decisions of 8 November 2026: a style picked at random among the generation kits (stable for the same copy).
+  // The closing slide is no longer added here (owner, 9 November 2026): the plan adds it to planned posts only while
+  // its switch in the Design Lab is on (`marketing_dneskai_closing`).
   const kit = dneskaiGenerationKit([copy.title, ...copy.slides.map((slide) => slide.headline)].join("\n"));
-  const closed = copy.format === "carousel" ? [...slides, dneskaiClosingSlide()] : slides;
+  const closed = slides;
   // The key words take the colour of the post's place in the plan (owner request, 8 November 2026).
   const emphasis = dneskaiEmphasisFor(offer.brief.scheduledAt);
   return DneskaiDeckSchema.parse({ schemaVersion: DNESKAI_SLIDES_VERSION, format: copy.format, kit, emphasis, ...(topic ? { topic } : {}), slides: closed });
