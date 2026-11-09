@@ -446,8 +446,10 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
   const headings = await seriesHeadings(db, owner, project);
   let wiring: Wiring | null = null;
   // The closing slide's switch, read once a pass; off when the row is missing or unreadable.
-  let closing: Promise<boolean> | null = null;
-  const closingEnabled = () => (closing ??= Promise.resolve(db.from('marketing_dneskai_closing').select('enabled').eq('user_id', owner).maybeSingle()).then((row) => !row.error && row.data?.enabled === true, () => false));
+  type ClosingSetting = { enabled: boolean; words: { headline: string; body: string; handle: string } | null };
+  let closing: Promise<ClosingSetting> | null = null;
+  const closingSetting = () => (closing ??= Promise.resolve(db.from('marketing_dneskai_closing').select('enabled,headline,body,handle').eq('user_id', owner).maybeSingle())
+    .then((row): ClosingSetting => row.error || !row.data ? { enabled: false, words: null } : { enabled: row.data.enabled === true, words: { headline: String(row.data.headline), body: String(row.data.body), handle: String(row.data.handle) } }, () => ({ enabled: false, words: null })));
   const wired = () => (wiring ??= { render: getRenderDneskaiDeck(db), loadMedia: getDneskaiMediaLoader(db, owner), listBriefAssetHashes: getBriefAssetHashLister(db, owner), loadBriefPool: getBriefPoolLoader(db, owner) });
   const record = async (slot: DneskaiPlanRow, patch: Partial<DneskaiPlanRow>) => {
     const changed = Object.entries(patch).some(([key, value]) => slot[key as keyof DneskaiPlanRow] !== value);
@@ -544,11 +546,16 @@ export async function advanceDneskaiPlan(db: Database, owner: string, project: s
         // on): a planned carousel gets it or loses it while its slot is ahead, drawn again at once.
         if (head && (head.status === 'review' || head.status === 'approved') && head.ready && head.revision.deck?.format === 'carousel'
           && head.revision.account.platform === 'instagram' && Date.parse(dneskaiPlanSlotAt(slot)) > input.now.getTime() + 10 * 60_000) {
-          const closingOn = await closingEnabled();
+          const setting = await closingSetting();
+          const closingOn = setting.enabled;
           const slides = head.revision.deck.slides;
           const has = slides.some((item) => isDneskaiClosingSlide(item));
-          const next = closingOn ? [...slides, dneskaiClosingSlide()] : slides.filter((item) => !isDneskaiClosingSlide(item));
-          if (has !== closingOn && next.length >= 2 && next.length <= 10) {
+          // The owner's words from the Design Lab; a closing slide with other words is written again.
+          const wanted = dneskaiClosingSlide(setting.words ?? undefined);
+          const stale = closingOn && slides.some((item) => isDneskaiClosingSlide(item) && (item.headline !== wanted.headline || item.body !== wanted.body));
+          const kept = slides.filter((item) => !isDneskaiClosingSlide(item));
+          const next = closingOn ? [...kept, wanted] : kept;
+          if ((has !== closingOn || stale) && next.length >= 2 && next.length <= 10) {
             if (result.rendered >= 1 || input.remainingMs() < RENDER_MINIMUM_MS) { await record(slot, { code: 'plan-render-waiting' }); break; }
             const revision = parseContentRevision({ ...head.revision, deck: { ...head.revision.deck, slides: next }, assets: [] });
             const saved = await saveRevision(db, owner, revision, { replacesId: head.id, slides: [] });
