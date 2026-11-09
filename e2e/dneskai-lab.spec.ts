@@ -347,8 +347,14 @@ for (const [lang, width] of [['en', 1280], ['cs', 1280], ['en', 360], ['cs', 360
   page.on('request', (request) => { if (request.url().includes('/api/marketing/')) writes.push(request.url()); });
   await page.setViewportSize({ width, height: 900 });
   await gotoPreview(page, { lang, theme: lang === 'cs' ? 'dark' : 'light' });
+  // Owner request, 9 November 2026: Náměty is its own section; the Design Lab only links to it.
   await page.goto('/dev-preview?project=dneskai&projectTab=dneskai-review');
-  const topics = page.getByTestId('dneskai-topics');
+  await expect(page.getByTestId('dneskai-lab')).toBeVisible();
+  await expect(page.getByTestId('dneskai-lab').getByTestId('dneskai-topics')).toHaveCount(0);
+  await page.getByTestId('dneskai-lab-topics-link').click();
+  await expect(page).toHaveURL(/\/topics$/);
+  await expect(page.getByRole('heading', { level: 1, name: t.title }).first()).toBeVisible();
+  const topics = page.getByTestId('dneskai-topics-panel').getByTestId('dneskai-topics');
   await expect(topics).toBeVisible();
   await expect(topics.getByRole('list', { name: t.listLabel(t.groups.news) })).toBeVisible();
   // Owner decision, 6 November 2026: the pause of new topics is stated where the proposed ones are reviewed.
