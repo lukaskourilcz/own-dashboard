@@ -21,17 +21,19 @@ for (const lang of ["en", "cs"] as const) {
       await expect(button).toBeDisabled();
       await expect(button).toContainText(lang === "cs" ? "Zatím nepropojeno" : "Not connected yet");
     }
-    await expect(panel.getByText("typeof null")).toHaveCount(1);
+    // The card's cover is the Studio's SVG, which draws the headline too, so the count is on the card buttons.
+    const cards = panel.getByRole("button", { name: /typeof null/ });
+    await expect(cards).toHaveCount(1);
     // One card per post: typeof null goes out as a story, a post and on Threads, and shows once.
     const instagram = toolbar.getByRole("button", { name: /^Instagram/ });
     const threads = toolbar.getByRole("button", { name: /^Threads/ });
     await instagram.click();
     await expect(instagram).toHaveAttribute("aria-pressed", "false");
-    await expect(panel.getByText("typeof null")).toHaveCount(1);
+    await expect(cards).toHaveCount(1);
     await threads.click();
-    await expect(panel.getByText("typeof null")).toHaveCount(0);
+    await expect(cards).toHaveCount(0);
     await instagram.click();
-    await expect(panel.getByText("typeof null")).toHaveCount(1);
+    await expect(cards).toHaveCount(1);
     await threads.click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     const scan = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="publishing-calendar"]').withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
