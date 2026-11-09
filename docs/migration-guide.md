@@ -1095,3 +1095,6 @@ starts every scrape and summary. Additive.
 `public.dneskai_illustrations` (source id, page URL, photographer, licence, topic, sha256, Claude's tags and flags,
 status, cost, use count) and the pg_cron job `dneskai-illustrations-tick` (`1-59/5`), which posts a signed tick to
 `/api/marketing/dneskai/illustrations/tick`. The route does nothing until `DNESKAI_ILLUSTRATIONS_ENABLED=true`.
+
+`20261109140000_dneskai_illustration_checks.sql` adds `public.dneskai_illustration_checks` (service role only): one row per
+DNESKAi post version the plan checked for fitting photographs (`DNESKAI_ILLUSTRATE_ENABLED`), with the outcome code.
