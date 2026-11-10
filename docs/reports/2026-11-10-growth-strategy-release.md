@@ -61,11 +61,35 @@ Local logs, outside source control:
 - `/tmp/devshark-strategy-baseline-rest.log`
 - `/tmp/devshark-strategy-render-traces.log`
 
-## Rollout still required
+## Production rollout — owner authorization on 10 November 2026
 
-The working branch is pushed with GitHub-attributed author identity. Production migration and deployment
-have not occurred. This checkout has no linked Supabase project or database connection. Apply only the
-reviewed `20261110210000_marketing_strategy.sql` through the established migration process, verify owner and
-stranger access plus an idempotent unapproved handoff, then deploy the application. Review the existing
-full-suite failures before release. Do not run a blanket migration push over unrelated pending migrations.
-No paid Apify run, provider budget, runner reservation or pipeline switch has been changed.
+The owner explicitly authorized deployment. The signed-in Supabase dashboard was reached through Chrome
+using its existing GitHub login. Supabase MCP tools were not exposed to this agent session. The native
+management query endpoint was used inside the browser; session credentials were never exported.
+
+Preflight confirmed both Strategy tables and the migration-history entry were absent, and the required
+canonical tables, private schema, tab constraint and two brand projects existed. Only the exact reviewed
+`20261110210000_marketing_strategy.sql` was applied, together with its history entry in one transaction,
+with a five-second lock timeout and 30-second statement timeout. Migration SHA-256:
+`ff0b4a3af5117d1966889a2df4ce563d8798de45145ea03487f7631df4cb52ea`.
+
+A production rollback-only smoke transaction verified the owner's draft/topic handoffs, duplicate-call
+idempotency, draft/proposed state and stranger read/write denial. The returned check confirmed both new
+tables have RLS and zero smoke links were retained. No unrelated pending migration was applied.
+
+PR #321 merged at 21:37:38 UTC as `dcc427b536e87614385569986f45d47362a3d8dc`, preserving the individual
+GitHub-attributed commits. Vercel completed production deployment `C3utpgXZ3UvnUvqri2hq8fdDw2Wh` at 21:39:20 UTC
+(GitHub deployment `7695016918`). The Vercel dashboard reported Ready / Production / Current and the
+production domain `https://own-dashboard-tau.vercel.app` served the new Strategy. The known broader E2E limitations above remain explicit; a green
+Vercel build does not establish a green full test suite.
+
+No paid Apify run, provider budget, runner reservation, schedule or pipeline switch changed.
+
+### Live production verification
+
+Both brand Strategy workspaces rendered through the signed-in Chrome session without alert banners.
+The DNESKAi Apify panel showed its research brief, and devShark exposed all 25 idea details. Authenticated
+Strategy API reads returned HTTP 200 for both projects: 5 loaded devShark and 33 loaded DNESKAi publication
+receipts, with zero Strategy links and zero manual results. These are bounded operational reads, not audience
+metrics or total post counts. The shared publishing calendar returned HTTP 200 with 21 loaded posts;
+an unauthenticated Strategy read returned HTTP 401. No live idea was approved or published during verification.

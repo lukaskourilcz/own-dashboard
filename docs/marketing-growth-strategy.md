@@ -224,6 +224,7 @@ variant; 20% better primary rate with no deterioration in secondary outcomes is 
 These thresholds do not establish statistical significance or 500 distinct people. Keep zero-denominator,
 missing-metric, unmatched, different-format and different-age rows out of comparisons.
 
-Deploy the application with migration `20261110210000_marketing_strategy.sql` after review. This report does not
-claim a production migration, deployment, profile edit or social publication. Exact validation outcomes live in
+The owner authorized production rollout on 10 November. Migration `20261110210000_marketing_strategy.sql`
+was applied transactionally and PR #321 merged as `dcc427b5`, triggering the Vercel production deployment.
+No profile edit or social publication occurred. Exact validation and rollout outcomes live in
 the [release record](reports/2026-11-10-growth-strategy-release.md).

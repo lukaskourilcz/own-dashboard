@@ -1126,8 +1126,11 @@ creates only `draft` concepts or `proposed` topics. The snapshot trigger rejects
 brands, unconfirmed receipts, invalid counts and future observations. Missing metrics remain JSON null.
 No budget, schedule, account, approval or publishing switch changes. No existing rows are rewritten.
 
-Prepared locally; this task did not apply the migration to a linked/production database. Apply through the usual
-reviewed migration workflow before deploying the new write actions. Verify owner/stranger reads, idempotent
-creation, proposed/draft status and a measured-zero snapshot. Roll back application access before dropping
+Applied to production on 10 November 2026 after the owner authorized deployment, using the signed-in Supabase
+dashboard management connection in Chrome. The exact file and its migration-history entry committed in one
+transaction (SHA-256 `ff0b4a3af5117d1966889a2df4ce563d8798de45145ea03487f7631df4cb52ea`).
+Production smoke checks verified owner handoffs, duplicate-call idempotency, proposed/draft status and stranger
+read/write denial; all smoke inserts rolled back, leaving zero verification links. Both new tables have RLS.
+Measured-zero behavior is covered by the isolated database tests. Roll back application access before dropping
 the new functions/tables; export snapshots first. Restore the previous tab constraint only after removing
 `strategy` from stored hidden-tab arrays. Existing marketing drafts and topics remain canonical records.
