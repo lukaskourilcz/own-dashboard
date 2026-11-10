@@ -1,0 +1,462 @@
+{
+  "reviewedAt": "2026-11-10",
+  "common": {
+    "boundary": {
+      "en": "Research checked 10 November 2026 in signed-in Chrome, both repositories and public primary pages. All four social accounts and live plans were verified. Native profiles showed devShark: 4 posts / 5 followers; DNESKAi: 10 posts / 8 followers. Two very young DNESKAi Insights reads cannot establish a winning format. devShark native Insights, follower cohorts and complete competitor feeds remain unavailable.",
+      "cs": "Výzkum z 10. listopadu 2026 v přihlášeném Chromu, obou repozitářích a veřejných primárních stránkách. Potvrzeny čtyři sociální účty a živé plány. Nativní profily ukázaly devShark: 4 příspěvky / 5 sledujících; DNESKAi: 10 příspěvků / 8 sledujících. Dva velmi mladé snímky Insights u DNESKAi neurčují vítězný formát. Insights devSharku, skupiny sledujících a úplné profily konkurence nejsou dostupné."
+    },
+    "screenshots": {
+      "en": "The five attachments describe seven useful workstreams: strategy, competitor research, ideas, production, repurposing, publishing and performance review. The advertised 4.35M views in 15 days has no verifiable dataset here and is not a forecast or target.",
+      "cs": "Pět příloh popisuje sedm užitečných oblastí: strategii, konkurenci, náměty, výrobu, nové zpracování, publikování a vyhodnocení. Tvrzení o 4,35 milionu zobrazení za 15 dní nemá ověřitelná data a není prognózou ani cílem."
+    },
+    "production": {
+      "en": "Use original code examples, photographed objects, licensed photos and redacted screen captures. No face, personal footage, cloned voice or fabricated testimonial is needed. Keep evidence and image rights in internal records. A branded identity and clear teaching create continuity.",
+      "cs": "Používejte vlastní příklady kódu, fotografie předmětů, licencované snímky a anonymizované ukázky obrazovky. Tvář, osobní záběry, klonovaný hlas ani smyšlená reference nejsou potřeba. Důkazy a práva k obrázkům zůstávají uvnitř systému. Kontinuitu drží značka a srozumitelná výuka."
+    },
+    "workflow": {
+      "en": "Strategy idea → unapproved concept/topic → Design Lab edit and render → exact owner approval → existing calendar and guarded publisher → publication receipt → native Insights snapshot → weekly decision. Adding an idea creates no paid call and grants no publication approval.",
+      "cs": "Námět ze Strategie → neschválený koncept/téma → úprava a vykreslení v Design Labu → schválení přesné verze → stávající kalendář a chráněné publikování → záznam zveřejnění → snímek z nativních Insights → týdenní rozhodnutí. Přidání námětu nic neplatí ani neschvaluje publikaci."
+    },
+    "cadence": {
+      "en": "Treat current times as hypotheses in Europe/Prague. Keep the existing schedule while collecting a 14-day baseline; compare time slots only after topic and format are balanced. Use channel switches to reduce a weak slot after review, rather than adding volume.",
+      "cs": "Současné časy v Europe/Prague berte jako hypotézu. Prvních 14 dní držte plán a sbírejte výchozí data; časy porovnávejte až při vyvážených tématech a formátech. Slabší slot po vyhodnocení omezte přepínačem kanálu místo přidávání objemu."
+    },
+    "routine": {
+      "en": "Daily: check failed and ambiguous publications first. Read audience questions in the native apps and prepare useful brand replies; review each before sending. Twice weekly: batch examples and edit covers. Weekly: compare same-age results, choose one experiment and schedule follow-ups. Keep engagement relevant; never mass-follow, buy interactions or send unsolicited DMs.",
+      "cs": "Denně nejprve zkontrolujte selhaná a nejasná zveřejnění. V nativních aplikacích projděte dotazy a připravte užitečné odpovědi značky; každou před odesláním zkontrolujte. Dvakrát týdně připravte příklady a titulky. Týdně porovnejte stejně stará měření, vyberte jeden test a naplánujte pokračování. Reagujte věcně; nenakupujte interakce, hromadně nesledujte účty a neposílejte nevyžádané zprávy."
+    },
+    "measurement": {
+      "en": "Record native Insights with the actual publication time and capture time: feed/Threads at about 72 hours and seven days; Stories before expiry at about 24 hours. Blank means unknown, zero means measured zero. Compare shares and saves per 1,000 reached accounts on Instagram; replies per 1,000 views on Threads. Story reply rate uses reached accounts. Never compare reach with views.",
+      "cs": "Zapisujte nativní Insights se skutečným časem zveřejnění i odečtu: feed/Threads přibližně po 72 hodinách a sedmi dnech; Stories před vypršením přibližně po 24 hodinách. Prázdné pole je neznámá hodnota, nula je naměřená nula. Na Instagramu porovnávejte sdílení a uložení na 1 000 zasažených účtů, na Threads odpovědi na 1 000 zobrazení. U Stories počítejte odpovědi z dosahu. Dosah a zobrazení neslučujte."
+    },
+    "decision": {
+      "en": "Use at least four matched posts per variant with the same platform, format and age window. Aim for 500 reached accounts/views per variant before making a directional decision. Keep a candidate only if its primary rate improves by at least 20% and secondary outcomes do not deteriorate. These are working thresholds, not statistical significance. Low samples remain inconclusive; inspect medians and individual posts.",
+      "cs": "Použijte nejméně čtyři srovnatelné příspěvky na variantu se stejnou sítí, formátem a věkovým oknem. Před orientačním rozhodnutím mířte na 500 zasažených účtů/zobrazení na variantu. Kandidáta ponechte, pokud hlavní míra vzroste nejméně o 20 % a vedlejší výsledky se nezhorší. Jde o pracovní prahy, ne statistickou významnost. Malý vzorek zůstává neprůkazný; sledujte mediány i jednotlivé příspěvky."
+    },
+    "competitors": {
+      "en": "The links below are editorial website references, not a ranking of Instagram accounts. The separate Apify section analyzes a partial 241-row developer sample: only 26 recent in-scope posts, including two carousels. Its public counts cannot establish reach, saves or a winning format. No Czech AI competitor cohort has been analyzed. Qualify active, comparable accounts before collecting more posts; compare age and format, and write original lessons rather than copying artwork or scripts.",
+      "cs": "Odkazy níže jsou redakční webové reference, nikoli žebříček instagramových účtů. Samostatná sekce Apify analyzuje částečný vývojářský vzorek 241 řádků: jen 26 čerstvých relevantních příspěvků, včetně dvou carouselů. Veřejné počty neurčují dosah, uložení ani vítězný formát. Skupina českých AI konkurentů zatím analyzována není. Před dalším sběrem ověřit aktivní srovnatelné účty, porovnávat stejné stáří a formát a psát původní výuku bez kopírování grafiky či scénářů."
+    }
+  },
+  "sources": [
+    {
+      "id": "ig-ranking",
+      "title": "Instagram Ranking Explained",
+      "url": "https://about.instagram.com/blog/announcements/instagram-ranking-explained",
+      "kind": "platform",
+      "finding": {
+        "en": "Meta describes separate ranking systems: Explore predicts saves and shares; Stories emphasize viewing and engagement history. This supports useful feed posts and relationship-focused Stories, without guaranteeing reach.",
+        "cs": "Meta popisuje oddělené řazení: Explore předvídá uložení a sdílení; Stories vycházejí z historie sledování a reakcí. Proto mají příspěvky přinášet užitek a Stories budovat vztah. Dosah to nezaručuje."
+      }
+    },
+    {
+      "id": "threads-guidance",
+      "title": "Meta: Find Your Community With New Threads Educational Insights (2024)",
+      "url": "https://about.fb.com/news/2024/10/find-your-community-with-new-threads-educational-insights/",
+      "kind": "platform",
+      "finding": {
+        "en": "Meta reports that replies account for almost half of Threads views and recommends original Threads content. Its frequency observations are correlations, not promises for these accounts.",
+        "cs": "Meta uvádí, že odpovědi tvoří téměř polovinu zobrazení na Threads, a doporučuje vlastní obsah pro tuto síť. Souvislost frekvence a dosahu není příslibem výsledků našich účtů."
+      }
+    },
+    {
+      "id": "threads-insights",
+      "title": "Meta: Threads profile links and Insights (2025 updates)",
+      "url": "https://about.fb.com/news/2025/03/new-threads-features-more-personalized-experience-you-control/",
+      "kind": "platform",
+      "finding": {
+        "en": "Native Insights supports views, interactions, follower growth and discovery sources; link visits and bio links support a measurable route to practice. Availability must be checked in each account.",
+        "cs": "Nativní Insights nabízí zobrazení, interakce, růst sledujících a zdroje objevování. Návštěvy odkazů pomohou měřit cestu k procvičování. Dostupnost je nutné ověřit u konkrétního účtu."
+      }
+    },
+    {
+      "id": "javascript-info",
+      "title": "The Modern JavaScript Tutorial",
+      "url": "https://javascript.info/",
+      "kind": "reference",
+      "finding": {
+        "en": "The public tutorial organizes concepts and exercises into a progression. Adapt that sequence into predict → explain → apply; a short solved example can lead to an exercise on devShark.",
+        "cs": "Veřejný tutoriál řadí pojmy a úlohy do postupné výuky. Převzít lze postup odhad → vysvětlení → použití; krátký řešený příklad může vést k úloze na devSharku."
+      }
+    },
+    {
+      "id": "web-dev",
+      "title": "web.dev Learn",
+      "url": "https://web.dev/learn",
+      "kind": "reference",
+      "finding": {
+        "en": "Dedicated courses cover HTML, CSS, accessibility and performance. Opportunity: turn one practical browser behavior into a compact visual explanation with a runnable example.",
+        "cs": "Samostatné kurzy pokrývají HTML, CSS, přístupnost a výkon. Příležitost: krátké vizuální vysvětlení jednoho chování prohlížeče s příkladem, který jde spustit."
+      }
+    },
+    {
+      "id": "freecodecamp",
+      "title": "freeCodeCamp publication",
+      "url": "https://www.freecodecamp.org/news/",
+      "kind": "reference",
+      "finding": {
+        "en": "The publication uses explicit task and course titles. Borrow outcome clarity, then narrow the social post to one problem instead of compressing a whole handbook.",
+        "cs": "Publikace používá konkrétní názvy úloh a kurzů. Převzít lze jasný výsledek; příspěvek má řešit jeden problém místo shrnutí celé příručky."
+      }
+    },
+    {
+      "id": "ai-odbornici",
+      "title": "AI v Česku → AI odborníci",
+      "url": "https://aiodbornici.cz/",
+      "kind": "reference",
+      "finding": {
+        "en": "The public site offers Czech guides, an AI dictionary and workplace safety lessons. DNESKAi can connect a daily news event to a small Czech workplace task. The former aivcesku.cz address redirects here.",
+        "cs": "Veřejný web nabízí české návody, slovník AI a bezpečnost v práci. DNESKAi může spojit denní zprávu s malým úkolem z české kanceláře. Původní aivcesku.cz přesměrovává sem."
+      }
+    },
+    {
+      "id": "ai-detem",
+      "title": "AI dětem",
+      "url": "https://aidetem.cz/",
+      "kind": "reference",
+      "finding": {
+        "en": "Public teaching materials explain AI through structured activities. Adapt the teaching discipline for adult beginners with a task, example and limitation; keep the brand voice independent.",
+        "cs": "Veřejné materiály učí AI pomocí strukturovaných aktivit. Pro dospělé začátečníky lze převzít úkol, ukázku a omezení. DNESKAi si ponechá vlastní hlas."
+      }
+    }
+  ],
+  "brands": {
+    "devshark": {
+      "positioning": {
+        "en": "One useful web-development challenge a day, with the explanation and a next step you can practise. Teach in English for junior and intermediate developers worldwide. Narrow each post to one behavior; use deeper debugging examples to earn repeat visits.",
+        "cs": "Jeden užitečný úkol z webového vývoje denně, s vysvětlením a dalším krokem k procvičení. Obsah v angličtině pro juniory a mírně pokročilé po celém světě. Každý příspěvek řeší jedno chování; hlubší ladění dává důvod se vracet."
+      },
+      "profile": {
+        "en": "Suggested display name: devShark | JavaScript & web dev. Bio: “Predict the output. Understand the why. Practise JavaScript, CSS and React with short challenges. Start free ↓”. Pin: start here, a solved challenge, and a practice walkthrough. Link to an existing free lesson with platform-specific UTM tags; do not claim an AI feature.",
+        "cs": "Navržené jméno: devShark | JavaScript & web dev. Bio: „Predict the output. Understand the why. Practise JavaScript, CSS and React with short challenges. Start free ↓“. Připnout: úvod, řešenou úlohu a ukázku procvičování. Odkazovat na existující bezplatnou lekci s UTM podle sítě; neslibovat AI funkci."
+      },
+      "cadence": {
+        "en": "Current plan: Instagram + Threads at 16:00; a second Threads post at 19:00, with a cover-derived Story 10 minutes after Instagram. Wednesday/Friday prefer marked strong concepts. Prioritize one tested carousel and one different Threads angle; global audience timing needs country data before moving slots.",
+        "cs": "Současný plán: Instagram + Threads v 16:00; druhý Threads v 19:00 a Story z titulního slidu 10 minut po Instagramu. Středa/pátek preferují silné koncepty. Prioritou je otestovaný carousel a jiný úhel na Threads; posun pro globální publikum vyžaduje data o zemích."
+      },
+      "audit": [
+        {
+          "en": "Native profile: 4 posts and 5 followers at the audit. The visible bio promotes a 55% Premium offer and links to /premium. Check that the offer is still accurate; test a free practice destination and a clear teaching promise for new visitors before a subscription pitch.",
+          "cs": "Nativní profil při auditu: 4 příspěvky a 5 sledujících. Viditelné bio propaguje 55% nabídku Premium a odkazuje na /premium. Ověřte platnost nabídky; u nových návštěvníků otestujte bezplatné procvičení a jasný vzdělávací příslib před nabídkou předplatného."
+        },
+        {
+          "en": "Chrome: 10 concepts and 10 plan slots loaded. The “typeof null” carousel, Story and Threads version have published statuses in the three-day calendar. Existing “Center a div with CSS grid” has a failed Threads version. Calendar status is operational evidence, not engagement.",
+          "cs": "Chrome načetl 10 konceptů a 10 slotů plánu. Carousel „typeof null“, Story a Threads mají ve třídenním kalendáři stav publikováno. „Center a div with CSS grid“ má selhanou verzi Threads. Stav kalendáře dokládá provoz, ne reakce publika."
+        },
+        {
+          "en": "The quiz asks “Guess before you swipe” on Threads, where there is no useful self-contained answer in the text. Write the result and a short why in a native conversation, then ask a real follow-up. Current mirroring remains the fallback until a separate version can be reviewed.",
+          "cs": "Kvíz vyzývá na Threads „Guess before you swipe“, ale samotný text nedává odpověď. Nativní konverzace má nabídnout výsledek a krátké proč a navázat věcným dotazem. Zrcadlení zůstává náhradní cestou, dokud nepůjde samostatnou verzi schválit."
+        },
+        {
+          "en": "Several queued captions frame mistakes as junior/senior status. Test a supportive, specific challenge against the teasing baseline. Useful disagreement and a clear explanation should carry the brand.",
+          "cs": "Některé připravené popisky spojují chybu se statusem junior/senior. Proti škádlivé výchozí variantě otestujte podpůrnou konkrétní výzvu. Značku má nést užitečná diskuse a jasné vysvětlení."
+        },
+        {
+          "en": "Technical QA: the floating-point draft uses Number.EPSILON without a scale caveat; the reverse-words example needs an empty-input test; “403 means the server knows who you are” is too absolute. Check runnable edge cases and HTTP semantics before reusing these lessons.",
+          "cs": "Technická kontrola: koncept desetinných čísel používá Number.EPSILON bez upozornění na měřítko; obrácení slov potřebuje test prázdného vstupu; „403 znamená, že server ví, kdo jste“ je příliš absolutní. Před dalším použitím ověřte okrajové vstupy a význam HTTP."
+        },
+        {
+          "en": "Stories currently repeat a cover. Use them as recall cues: challenge in the feed, next-day explanation and one practice step. Native polls or links require manual Instagram editing; the current image publisher adds no interactive stickers.",
+          "cs": "Stories nyní opakují titulní slide. Využijte je k vybavení znalostí: úloha ve feedu, další den vysvětlení a jeden krok k procvičení. Nativní ankety a odkazy vyžadují ruční úpravu v Instagramu; současný obrazový publisher interaktivní prvky nevkládá."
+        },
+        {
+          "en": "Asset review: the published typeof-null cover uses legible green/ink type and consistent fin artwork; its 9:16 Story repeats the same question with large empty areas. Keep the identity, but test a subsequent answer or recall cue rather than changing decoration.",
+          "cs": "Kontrola podkladů: zveřejněný titulek typeof-null používá čitelnou zelenou/tmavou typografii a konzistentní ploutev; Story 9:16 opakuje stejnou otázku s velkou volnou plochou. Identitu zachovejte a otestujte navazující odpověď nebo připomenutí místo změny dekorace."
+        }
+      ],
+      "pillars": [
+        {
+          "label": {
+            "en": "Predict and explain",
+            "cs": "Odhad a vysvětlení"
+          },
+          "percent": 40
+        },
+        {
+          "label": {
+            "en": "Debug a real mistake",
+            "cs": "Ladění skutečné chyby"
+          },
+          "percent": 30
+        },
+        {
+          "label": {
+            "en": "Build or practise",
+            "cs": "Tvorba a procvičování"
+          },
+          "percent": 20
+        },
+        {
+          "label": {
+            "en": "Interview reasoning",
+            "cs": "Uvažování u pohovoru"
+          },
+          "percent": 10
+        }
+      ],
+      "formats": [
+        {
+          "en": "Carousel: short problem cover → runnable example and choices → answer with mechanism → edge case → one relevant practice step. Keep code legible at phone size; run the exact snippet.",
+          "cs": "Carousel: krátké zadání → spustitelný příklad a možnosti → odpověď s mechanismem → okrajový případ → relevantní procvičení. Kód musí být čitelný na telefonu; spusťte přesně zveřejněnou ukázku."
+        },
+        {
+          "en": "Threads: make the post useful without swiping. Use the 19:00 slot for a different example or a reasoned follow-up. Answer relevant public discussions as devShark through reviewed replies.",
+          "cs": "Threads: příspěvek musí fungovat bez listování. Slot 19:00 použijte pro jiný příklad nebo promyšlené doplnění. V relevantních veřejných diskusích odpovídejte za devShark schválenými reakcemi."
+        },
+        {
+          "en": "Faceless video is a later optional test: a real browser/code demo with captions and no presenter. The current concept → calendar path publishes static slides and Stories; it has no ready video production handoff. Finish static baseline first.",
+          "cs": "Video bez tváře je pozdější volitelný test: skutečná ukázka kódu/prohlížeče s titulky. Současná cesta koncept → kalendář publikuje statické slidy a Stories; hotové předání pro výrobu videa nemá. Nejprve změřte statický základ."
+        }
+      ],
+      "experiments": [
+        {
+          "id": "hook",
+          "title": {
+            "en": "Concrete challenge vs status teasing",
+            "cs": "Konkrétní výzva vs škádlení"
+          },
+          "a": {
+            "en": "Current junior/senior challenge tone",
+            "cs": "Současný tón junior/senior"
+          },
+          "b": {
+            "en": "“What breaks when this list reorders?” with the same lesson",
+            "cs": "„What breaks when this list reorders?“ u stejné lekce"
+          },
+          "metric": "shares",
+          "channel": "instagram"
+        },
+        {
+          "id": "threads",
+          "title": {
+            "en": "Native answer vs caption mirror",
+            "cs": "Nativní odpověď vs zrcadlený popisek"
+          },
+          "a": {
+            "en": "Caption-mirrored post",
+            "cs": "Zrcadlený popisek"
+          },
+          "b": {
+            "en": "Self-contained output + why; review a different evening concept",
+            "cs": "Samostatný výsledek + vysvětlení; jiný večerní koncept ke kontrole"
+          },
+          "metric": "replies",
+          "channel": "threads"
+        },
+        {
+          "id": "story",
+          "title": {
+            "en": "Recall cue vs announcement",
+            "cs": "Vybavení znalostí vs oznámení"
+          },
+          "a": {
+            "en": "Existing automatic cover Story",
+            "cs": "Současná automatická Story z titulku"
+          },
+          "b": {
+            "en": "A next-day worked answer, prepared as a separate reviewed asset",
+            "cs": "Řešená odpověď další den jako samostatný schválený podklad"
+          },
+          "metric": "replies",
+          "channel": "story"
+        }
+      ],
+      "references": [
+        "javascript-info",
+        "web-dev",
+        "freecodecamp"
+      ]
+    },
+    "dneskai": {
+      "positioning": {
+        "en": "Practical AI education in Czech: understand what changed and try one useful thing today. Start with Czech knowledge workers, freelancers and curious beginners. Use local examples and explain jargon; attach a concrete task to relevant news.",
+        "cs": "Praktické vzdělávání o AI v češtině: pochopit změnu a dnes si zkusit jednu užitečnou věc. Začněte u českých kancelářských profesí, živnostníků a zvídavých začátečníků. Používejte místní příklady, vysvětlujte pojmy a ke vhodné zprávě připojte konkrétní úkol."
+      },
+      "profile": {
+        "en": "Suggested display name: DNESKAi | AI srozumitelně. Bio: “AI novinky a návody česky. Pochopte změnu. Vyzkoušejte jeden postup. Bez zbytečného žargonu.” Pin: start here, a practical walkthrough, and Slovník AI. Use Highlights for Začít, Návody and Slovník; native app setup is manual.",
+        "cs": "Navržené jméno: DNESKAi | AI srozumitelně. Bio: „AI novinky a návody česky. Pochopte změnu. Vyzkoušejte jeden postup. Bez zbytečného žargonu.“ Připnout: úvod, praktický návod a Slovník AI. Výběry: Začít, Návody a Slovník; nastavení v aplikaci je ruční."
+      },
+      "cadence": {
+        "en": "Current plan: Instagram + Threads at 08:00, 12:30 and 19:00; Threads-only at 21:00; each feed post can produce a Story 10 minutes later. Chrome loaded 67 slots (14 news, 53 education), not 67 publications. Six recurring series begin 16 November. Preserve those slots while testing clearer Czech workplace outcomes.",
+        "cs": "Současný plán: Instagram + Threads v 08:00, 12:30 a 19:00; samotný Threads ve 21:00; z feedu může vzniknout Story o 10 minut později. Chrome načetl 67 slotů (14 zpráv, 53 vzdělávacích), nikoli 67 zveřejnění. Šest pravidelných sérií začíná 16. listopadu. Sloty držte a testujte jasnější užitek pro českou praxi."
+      },
+      "audit": [
+        {
+          "en": "Native profile: 10 posts and 8 followers. At 19:45 UTC, Fal Insights displayed 2 views, 1 viewer and zero saves/shares/follows around six hours after publication (13:35:38 UTC). GSA, about one hour old, showed zero post interactions and unavailable audience counts. Keep unknown metrics blank; these early observations cannot rank topics.",
+          "cs": "Nativní profil: 10 příspěvků a 8 sledujících. V 19:45 UTC ukázaly Insights Fal 2 zobrazení, 1 diváka a nulu u uložení/sdílení/sledování asi šest hodin po zveřejnění (13:35:38 UTC). GSA staré asi hodinu ukázalo nulu u interakcí příspěvku a nedostupné počty publika. Neznámé metriky nechte prázdné; z těchto časných snímků nelze řadit témata."
+        },
+        {
+          "en": "Live calendar includes published Alexa, Fal, Apple age-rating and Google Drive security stories. The visible Threads sample leads with US institutions, funding and vendor announcements; few openings explain what a Czech beginner can do next.",
+          "cs": "Živý kalendář obsahuje zveřejněné zprávy o Alexe, Fal, věkovém hodnocení Applu a zabezpečení Disku Google. Viditelný vzorek Threads otevírá americkými institucemi, financováním a oznámeními dodavatelů; úvody málo ukazují další krok pro českého začátečníka."
+        },
+        {
+          "en": "Chrome shows all four social accounts verified and the DNESKAi plan enabled. The three-day calendar includes a failed “OpenAI dots” Threads version, ambiguous GSA Threads delivery, and an older skipped malware slot. Resolve ambiguous receipts before retrying; do not resend blindly.",
+          "cs": "Chrome ukazuje čtyři ověřené účty a zapnutý plán DNESKAi. Třídenní kalendář obsahuje selhaný Threads „OpenAI dots“, nejasné doručení GSA na Threads a starší přeskočený malware slot. Nejasné záznamy ověřte před opakováním; neposílejte znovu naslepo."
+        },
+        {
+          "en": "In the latest 100 revisions/publications, only 72 receipts could be matched to loaded revisions: this is a partial operational sample. It contains 7 DNESKAi Instagram, 4 Threads and 8 Story published statuses. It cannot establish lifetime totals or content performance.",
+          "cs": "Z posledních 100 verzí/zveřejnění šlo přiřadit jen 72 záznamů k načteným verzím: jde o dílčí provozní vzorek. Obsahuje 7 instagramových, 4 Threads a 8 Story stavů publikováno u DNESKAi. Neurčuje celkové součty ani výkon obsahu."
+        },
+        {
+          "en": "Keep the photo-led Spotlight/Plakát identity and numbered series. Lead a practical lesson with the result (“Z porady udělejte seznam úkolů”), then show a fictional Czech example. Retain actor attribution and limits without turning public slides into research notes.",
+          "cs": "Držte fotografický styl Spotlight/Plakát a číslované série. Praktickou lekci otevřete výsledkem („Z porady udělejte seznam úkolů“) a ukažte smyšlený český příklad. Zachovejte připsání tvrzení aktérovi a omezení, aniž by veřejné slidy nahrazovaly výzkumné poznámky."
+        },
+        {
+          "en": "Current rules permit carousels and classic photo posts, not Reels. The cover contains only a headline, with the code-written series exception; no public source slides, credits or page counts. The current generator is stricter than the older skill: at most 7 hashtags. Keyword DMs remain education-only and need a real promised resource.",
+          "cs": "Současná pravidla dovolují carousely a klasické fotografie, nikoli Reels. Titulní slide obsahuje jen nadpis s výjimkou série psané kódem; žádné veřejné zdroje, kredity ani počty stran. Generátor je přísnější než starší skill: nejvýše 7 hashtagů. Klíčová slova do zpráv patří jen ke vzdělávání a musí vést ke skutečně slíbenému materiálu."
+        },
+        {
+          "en": "Asset review: the Fal carousel has a readable photographic cover, restrained purple emphasis and clear hierarchy. Its title leads with company valuation. Keep the layout and test an opening that explains inference or a relevant practical consequence without inventing an outcome.",
+          "cs": "Kontrola podkladů: carousel Fal má čitelný fotografický titulek, střídmé fialové zvýraznění a jasnou hierarchii. Nadpis začíná hodnotou firmy. Layout zachovejte a testujte úvod vysvětlující inferenci nebo relevantní praktický dopad bez vymyšleného výsledku."
+        }
+      ],
+      "pillars": [
+        {
+          "label": {
+            "en": "Practical Czech workflows",
+            "cs": "Praktické české postupy"
+          },
+          "percent": 40
+        },
+        {
+          "label": {
+            "en": "AI concepts and limitations",
+            "cs": "Pojmy a omezení AI"
+          },
+          "percent": 30
+        },
+        {
+          "label": {
+            "en": "News with a concrete impact",
+            "cs": "Zprávy s konkrétním dopadem"
+          },
+          "percent": 20
+        },
+        {
+          "label": {
+            "en": "Reader questions and recaps",
+            "cs": "Dotazy a opakování"
+          },
+          "percent": 10
+        }
+      ],
+      "formats": [
+        {
+          "en": "Carousel: photo + one outcome headline → fictional Czech example → steps → result and one limitation → existing optional promo. Keep the required photo order and internal evidence. Create topics as proposed; approve only after the evidence and resource are ready.",
+          "cs": "Carousel: fotografie + jeden výsledkový nadpis → smyšlený český příklad → postup → výsledek a jedno omezení → stávající volitelné promo. Držte pořadí fotografií i interní podklady. Témata zakládejte jako navržená; schvalujte až s podklady a slíbeným materiálem."
+        },
+        {
+          "en": "Threads: preserve the current first-paragraph, no-hashtag contract. Write that paragraph to contain both the update and a relevant consequence. Use the 21:00 native slot for a separate educational angle; independent captions or topic tags need a future reviewed contract change.",
+          "cs": "Threads: dodržte současný první odstavec bez hashtagů. Do něj napište novinku i relevantní dopad. Slot 21:00 využijte pro samostatný vzdělávací úhel; nezávislé popisky a tagy vyžadují budoucí schválenou změnu kontraktu."
+        },
+        {
+          "en": "Stories: the automatic cover is an announcement, not proof of learning or a discovery engine. Reuse one lesson as a next-day reminder and a small task. Polls, question stickers and Highlights need native Instagram work and a separately reviewed asset.",
+          "cs": "Stories: automatický titulek je oznámení, nikoli důkaz učení nebo motor objevování. Lekci využijte jako připomínku další den s malým úkolem. Ankety, otázkové samolepky a Výběry vyžadují nativní Instagram a samostatně zkontrolovaný podklad."
+        }
+      ],
+      "experiments": [
+        {
+          "id": "hook",
+          "title": {
+            "en": "Useful outcome vs vendor headline",
+            "cs": "Praktický výsledek vs titulek o firmě"
+          },
+          "a": {
+            "en": "Vendor or product first",
+            "cs": "Nejprve firma nebo produkt"
+          },
+          "b": {
+            "en": "A concrete Czech task first, keeping the same evidence",
+            "cs": "Nejprve konkrétní český úkol při stejných podkladech"
+          },
+          "metric": "saves",
+          "channel": "instagram"
+        },
+        {
+          "id": "threads",
+          "title": {
+            "en": "Consequence vs announcement",
+            "cs": "Dopad vs oznámení"
+          },
+          "a": {
+            "en": "First paragraph describes the announcement",
+            "cs": "První odstavec popisuje oznámení"
+          },
+          "b": {
+            "en": "First paragraph includes a useful consequence; no new CTA or topic tag",
+            "cs": "První odstavec obsahuje užitečný dopad; žádná nová výzva ani tag"
+          },
+          "metric": "replies",
+          "channel": "threads"
+        },
+        {
+          "id": "story",
+          "title": {
+            "en": "Small task vs repeated cover",
+            "cs": "Malý úkol vs opakovaný titulek"
+          },
+          "a": {
+            "en": "Existing automatic cover Story",
+            "cs": "Současná automatická Story z titulku"
+          },
+          "b": {
+            "en": "One safe fictional task in a separately reviewed reminder",
+            "cs": "Jeden bezpečný smyšlený úkol v samostatně schválené připomínce"
+          },
+          "metric": "replies",
+          "channel": "story"
+        }
+      ],
+      "references": [
+        "ai-odbornici",
+        "ai-detem"
+      ]
+    }
+  },
+  "phases": [
+    {
+      "days": "1–7",
+      "title": {
+        "en": "Baseline and reliability",
+        "cs": "Výchozí data a spolehlivost"
+      },
+      "body": {
+        "en": "Resolve failed and ambiguous receipts. Record account baselines and native post snapshots. Audit bio, pinned lessons and destination links. Queue three useful examples per brand and review their exact assets.",
+        "cs": "Vyřešte selhané a nejasné záznamy. Zapište výchozí stav účtů a nativní snímky příspěvků. Projděte bio, připnuté lekce a cílové odkazy. Připravte tři užitečné příklady na značku a zkontrolujte přesné podklady."
+      }
+    },
+    {
+      "days": "8–14",
+      "title": {
+        "en": "Test the opening",
+        "cs": "Test úvodu"
+      },
+      "body": {
+        "en": "Run hook A/B on comparable topics. Keep schedule and format stable. For DNESKAi fit the 16 November series start into the baseline, marking series separately. Record production minutes as well as audience response.",
+        "cs": "Testujte úvod A/B na srovnatelných tématech. Držte časy a formát. U DNESKAi označte start sérií 16. listopadu odděleně od výchozího vzorku. Zapisujte výrobní čas i reakce publika."
+      }
+    },
+    {
+      "days": "15–21",
+      "title": {
+        "en": "Repurpose with a new task",
+        "cs": "Nové zpracování s jiným úkolem"
+      },
+      "body": {
+        "en": "Choose candidates from measured same-age saves/shares, not likes alone. Turn a lesson into a different example and a native Threads follow-up. Recheck evidence before reuse; do not duplicate the same cover and text.",
+        "cs": "Kandidáty vybírejte ze stejně starých měření uložení a sdílení, nejen z lajků. Lekci změňte na jiný příklad a nativní doplnění na Threads. Před použitím ověřte podklady; neopakujte stejný titulek a text."
+      }
+    },
+    {
+      "days": "22–30",
+      "title": {
+        "en": "Review and allocate effort",
+        "cs": "Vyhodnocení a rozdělení práce"
+      },
+      "body": {
+        "en": "Complete seven-day snapshots, compare matched variants and mark inconclusive samples. Keep one promising series, revise one weak format and decide whether a slot deserves fewer posts. Set the next 30-day plan from observed outcomes and production cost.",
+        "cs": "Doplňte sedmidenní snímky, porovnejte varianty a označte neprůkazné vzorky. Ponechte jednu nadějnou sérii, přepracujte slabý formát a rozhodněte o omezení slabého slotu. Dalších 30 dní plánujte podle výsledků a ceny výroby."
+      }
+    }
+  ]
+}

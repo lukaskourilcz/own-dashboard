@@ -1,0 +1,320 @@
+{
+  "reviewedAt": "2026-11-10",
+  "remainingPrepaidUsd": 114.17,
+  "billingPeriodEnds": "2026-11-14",
+  "nextInvoice": "2026-11-15",
+  "promotionalExpiry": "2026-11-22",
+  "proposedCeilingUsd": 60,
+  "creditNote": {
+    "en": "The signed-in Billing page showed $114.17 of remaining prepaid usage and $59.83 consumed in the current period. The $100 and $50 offers expire on 22 November. Recheck the balance after the 15 November billing date; the $244 sidebar limit is not the remaining prepaid balance.",
+    "cs": "Přihlášený Billing ukázal zbývající předplacené čerpání $114,17 a spotřebu $59,83 v aktuálním období. Nabídky $100 a $50 vyprší 22. listopadu. Po fakturaci 15. listopadu zůstatek znovu ověřte; limit $244 v liště není zbývající předplacený kredit."
+  },
+  "finding": {
+    "en": "The existing 241-row devShark run contains 239 posts from eight requested accounts, one off-target account and one malformed row. Only 26 in-scope posts fall within 45 days of this audit; 213 are older. Hidden likes occurred on 34 in-scope rows and remain unknown. The recent sample has only two carousels, so it cannot rank carousel performance against video.",
+    "cs": "Stávající běh pro devShark s 241 řádky obsahuje 239 příspěvků osmi požadovaných účtů, jeden cizí účet a jeden nečitelný řádek. Jen 26 příspěvků v rozsahu spadá do posledních 45 dní; 213 je starších. U 34 řádků jsou lajky skryté a zůstávají neznámé. Čerstvý vzorek má jen dva carousely, takže neurčuje jejich výkon vůči videu."
+  },
+  "quality": [
+    {
+      "label": {
+        "en": "In scope, last 45 days",
+        "cs": "V rozsahu, posledních 45 dní"
+      },
+      "value": 26
+    },
+    {
+      "label": {
+        "en": "In scope, older",
+        "cs": "V rozsahu, starší"
+      },
+      "value": 213
+    },
+    {
+      "label": {
+        "en": "Off target or malformed",
+        "cs": "Mimo rozsah nebo nečitelné"
+      },
+      "value": 2
+    }
+  ],
+  "cohort": [
+    {
+      "handle": "peterpandev",
+      "posts": 30,
+      "recent45d": 10,
+      "latest": "2026-11-06"
+    },
+    {
+      "handle": "codewithjamal",
+      "posts": 30,
+      "recent45d": 9,
+      "latest": "2026-11-08"
+    },
+    {
+      "handle": "typescriptheo",
+      "posts": 30,
+      "recent45d": 7,
+      "latest": "2026-10-25"
+    },
+    {
+      "handle": "javascript.tips",
+      "posts": 30,
+      "recent45d": 0,
+      "latest": "2023-08-23"
+    },
+    {
+      "handle": "frontend_trend",
+      "posts": 30,
+      "recent45d": 0,
+      "latest": "2024-10-29"
+    },
+    {
+      "handle": "expert.js",
+      "posts": 30,
+      "recent45d": 0,
+      "latest": "2024-10-10"
+    },
+    {
+      "handle": "frontend.adem",
+      "posts": 30,
+      "recent45d": 0,
+      "latest": "2026-03-15"
+    },
+    {
+      "handle": "codingquiz",
+      "posts": 29,
+      "recent45d": 0,
+      "latest": "2025-11-23"
+    }
+  ],
+  "runs": [
+    {
+      "url": "https://console.apify.com/actors/shu8hvrXbJbY3Eb9W/runs/pNQxeXiely2kpyt0h",
+      "results": 241,
+      "costUsd": 0.554,
+      "label": {
+        "en": "devShark post sample, analyzed",
+        "cs": "Vzorek příspěvků devShark, analyzován"
+      },
+      "inScope": true
+    },
+    {
+      "url": "https://console.apify.com/actors/shu8hvrXbJbY3Eb9W/runs/oDvW9XZKlre94VrsU",
+      "results": 325,
+      "costUsd": 0.75,
+      "label": {
+        "en": "Existing output, scope needs review",
+        "cs": "Stávající výstup, rozsah ověřit"
+      },
+      "inScope": null
+    },
+    {
+      "url": "https://console.apify.com/actors/shu8hvrXbJbY3Eb9W/runs/USynCtwTktUfpRqKr",
+      "results": 2367,
+      "costUsd": 5.444,
+      "label": {
+        "en": "Lifestyle/virtual-influencer scope; exclude from these brands",
+        "cs": "Lifestyle/virtuální influenceři; pro tyto značky vyřadit"
+      },
+      "inScope": false
+    },
+    {
+      "url": "https://console.apify.com/actors/shu8hvrXbJbY3Eb9W/runs/ONmrwMdL0llkSGxoE",
+      "results": 718,
+      "costUsd": 1.651,
+      "label": {
+        "en": "Lifestyle/virtual-influencer scope; exclude from these brands",
+        "cs": "Lifestyle/virtuální influenceři; pro tyto značky vyřadit"
+      },
+      "inScope": false
+    },
+    {
+      "url": "https://console.apify.com/actors/shu8hvrXbJbY3Eb9W/runs/nq3TRYxyW40xUnMgN",
+      "results": 2806,
+      "costUsd": 6.45,
+      "label": {
+        "en": "Existing output, scope needs review",
+        "cs": "Stávající výstup, rozsah ověřit"
+      },
+      "inScope": null
+    }
+  ],
+  "actors": [
+    {
+      "name": "apify/instagram-scraper",
+      "url": "https://apify.com/apify/instagram-scraper",
+      "pricePer1000": 2.3,
+      "use": {
+        "en": "Fresh public posts from a verified shortlist; format, hook and slide-count observations. The audited run used build 0.0.844.",
+        "cs": "Čerstvé veřejné příspěvky ověřeného výběru; formát, úvod a počet slidů. Auditovaný běh použil build 0.0.844."
+      }
+    },
+    {
+      "name": "apify/instagram-profile-scraper",
+      "url": "https://apify.com/apify/instagram-profile-scraper",
+      "pricePer1000": 2.3,
+      "use": {
+        "en": "Qualify language, activity and bio before spending on posts. A profile snapshot is not historical follower count at publication.",
+        "cs": "Před sběrem příspěvků ověřit jazyk, aktivitu a bio. Aktuální snímek profilu není počet sledujících v době zveřejnění."
+      }
+    },
+    {
+      "name": "apify/instagram-search-scraper",
+      "url": "https://apify.com/apify/instagram-search-scraper",
+      "pricePer1000": 2.3,
+      "use": {
+        "en": "Discover current candidate accounts by topic; manually qualify niche and language.",
+        "cs": "Najít současné kandidáty podle tématu; ručně ověřit zaměření a jazyk."
+      }
+    },
+    {
+      "name": "futurizerush/meta-threads-scraper",
+      "url": "https://apify.com/futurizerush/meta-threads-scraper",
+      "pricePer1000": 2.5,
+      "use": {
+        "en": "Compare original Threads posts, useful replies and conversation patterns; retain aggregate public counts.",
+        "cs": "Porovnat původní příspěvky na Threads, užitečné odpovědi a průběh diskuse; ponechat souhrnné veřejné počty."
+      }
+    },
+    {
+      "name": "scrapesmith/instagram-comments-scraper",
+      "url": "https://apify.com/scrapesmith/instagram-comments-scraper",
+      "pricePer1000": 0.5,
+      "use": {
+        "en": "Sample questions on selected public teaching posts. Store anonymized themes, not commenter profiles or an outreach list.",
+        "cs": "Vzorek dotazů u vybraných veřejných vzdělávacích příspěvků. Ukládat anonymizovaná témata, nikoli profily komentujících nebo seznam pro oslovování."
+      }
+    },
+    {
+      "name": "apify/instagram-hashtag-analytics-scraper",
+      "url": "https://apify.com/apify/instagram-hashtag-analytics-scraper",
+      "pricePer1000": 2.0,
+      "use": {
+        "en": "Check topic relevance and freshness. Treat hashtag results as a discovery sample, not proof of a reach boost.",
+        "cs": "Ověřit relevanci témat a aktuálnost. Výsledky hashtagů slouží k objevování, ne jako důkaz zvýšení dosahu."
+      }
+    },
+    {
+      "name": "apify/google-trends-scraper",
+      "url": "https://apify.com/apify/google-trends-scraper",
+      "pricePer1000": 5.0,
+      "use": {
+        "en": "Check Czech vs worldwide demand before assigning calendar slots; compare equivalent geography, period and query batches.",
+        "cs": "Před přidělením slotu ověřit českou a světovou poptávku; porovnávat stejné území, období a skupinu dotazů."
+      }
+    },
+    {
+      "name": "harshmaur/reddit-scraper",
+      "url": "https://apify.com/harshmaur/reddit-scraper",
+      "pricePer1000": 1.8,
+      "use": {
+        "en": "Find repeated learning problems and objections for original educational briefs. Keep AI add-ons off.",
+        "cs": "Najít opakované problémy při učení a námitky pro původní zadání. Placené AI doplňky nechat vypnuté."
+      }
+    },
+    {
+      "name": "steadyfetch/instagram-reel-transcript-scraper",
+      "url": "https://apify.com/steadyfetch/instagram-reel-transcript-scraper",
+      "pricePer1000": 14.0,
+      "use": {
+        "en": "Transcribe only a short selected list after reading captions. Study openings and teaching structure; DNESKAi output remains photo/carousel.",
+        "cs": "Přepisovat jen krátký vybraný seznam po přečtení popisků. Studovat úvody a strukturu výuky; výstup DNESKAi zůstává fotografie/carousel."
+      }
+    },
+    {
+      "name": "automation-lab/pinterest-scraper",
+      "url": "https://apify.com/automation-lab/pinterest-scraper",
+      "pricePer1000": 3.0,
+      "use": {
+        "en": "Optional composition references for Design Lab briefs; create original artwork and check asset rights.",
+        "cs": "Volitelné kompoziční reference pro Design Lab; vytvořit vlastní grafiku a ověřit práva k podkladům."
+      }
+    }
+  ],
+  "maintenance": {
+    "en": "TikTok Trends Scraper was marked “Under maintenance”. Keep it outside the first batch and exclude actors or runs aimed at unrelated audiences.",
+    "cs": "TikTok Trends Scraper měl stav „Under maintenance“. Do první dávky ho nezařazovat a vyřadit actory či běhy pro nesouvisející publikum."
+  },
+  "pricing": {
+    "en": "Prices are the console’s displayed starting prices on 10 November, not quotes including add-ons, starts, compute or failed results. Pin the exact actor build and inspect its input schema and event pricing before a new run.",
+    "cs": "Ceny jsou počáteční sazby z konzole k 10. listopadu, nikoli nabídka včetně doplňků, spuštění, výpočtů a chybných výsledků. Před novým během připnout build a ověřit schéma vstupu i účtované události."
+  },
+  "phases": [
+    {
+      "capUsd": 0,
+      "title": {
+        "en": "Use existing results first",
+        "cs": "Nejprve využít hotové výsledky"
+      },
+      "scope": {
+        "en": "Use the analyzed 241-row devShark sample now. Two existing outputs (325 and 2,806 rows) still need scope review before archival or use. Exclude the 718- and 2,367-row lifestyle/virtual-influencer runs. Normalize only relevant results and avoid buying the same unfiltered history again.",
+        "cs": "Analyzovaný vzorek 241 řádků pro devShark využít hned. U dvou výstupů (325 a 2 806 řádků) nejprve ověřit rozsah, teprve pak archivovat nebo použít. Lifestyle/virtuální influenceři s 718 a 2 367 řádky jsou vyřazeni. Normalizovat jen relevantní výsledky a nekupovat znovu stejnou nefiltrovanou historii."
+      }
+    },
+    {
+      "capUsd": 10,
+      "title": {
+        "en": "Qualify active cohorts",
+        "cs": "Ověřit aktivní skupiny"
+      },
+      "scope": {
+        "en": "Find up to 20 relevant global developer profiles and 20 Czech AI/education profiles. Keep 8–12 per brand with recent posts, correct language and a clear audience match. Record rejected and redirected handles.",
+        "cs": "Najít až 20 relevantních světových vývojářských a 20 českých AI/vzdělávacích profilů. Ponechat 8–12 na značku s čerstvými příspěvky, správným jazykem a odpovídajícím publikem. Zapsat odmítnuté a přesměrované účty."
+      }
+    },
+    {
+      "capUsd": 25,
+      "title": {
+        "en": "Collect and explain current patterns",
+        "cs": "Nasbírat a vysvětlit současné vzory"
+      },
+      "scope": {
+        "en": "For each brand collect up to 30 recent posts per qualified profile, at most 45 days old; six Threads profiles × 30 posts; a small Czech/worldwide Trends batch. Sample questions only on a selected 12-post shortlist. Inspect 12 selected transcripts across brands. Disable video downloads and paid AI add-ons.",
+        "cs": "Pro každou značku nejvýše 30 příspěvků na kvalifikovaný profil, maximálně 45 dní starých; šest profilů Threads × 30 příspěvků; malá dávka Trends pro Česko a svět. Dotazy sbírat jen u 12 vybraných příspěvků. Projít 12 vybraných přepisů napříč značkami. Vypnout stahování videí a placené AI doplňky."
+      }
+    },
+    {
+      "capUsd": 15,
+      "title": {
+        "en": "Repeat selected observations",
+        "cs": "Zopakovat vybraná měření"
+      },
+      "scope": {
+        "en": "After three and seven days reread only the selected current posts and the two owned profiles. Compare count changes on the same post; use native Insights for reach, saves and follows. Turn three supported findings per brand into new review briefs.",
+        "cs": "Po třech a sedmi dnech znovu číst jen vybrané aktuální příspěvky a dva vlastní profily. Porovnat změny počtů u stejného příspěvku; dosah, uložení a sledování brát z nativních Insights. Tři podložené závěry na značku změnit v nové zadání ke kontrole."
+      }
+    },
+    {
+      "capUsd": 10,
+      "title": {
+        "en": "Reserve for a specific unresolved question",
+        "cs": "Rezerva na konkrétní nezodpovězenou otázku"
+      },
+      "scope": {
+        "en": "Release this reserve only when the earlier samples identify a specific gap. Stop by 21 November, recheck the 15 November renewal and reconcile actual costs with the existing ledger. Do not spend merely to exhaust credits.",
+        "cs": "Rezervu uvolnit až na konkrétní mezeru z předchozích vzorků. Skončit do 21. listopadu, ověřit obnovu 15. listopadu a srovnat skutečné náklady se stávající evidencí. Neutrácet jen kvůli vyčerpání kreditů."
+      }
+    }
+  ],
+  "guard": {
+    "en": "This is a proposed research allocation, not a started run or a changed budget. The existing DNESKAi runner still requires its exact approved plan hash, live build pins, in-window dates and ledger admission. Several October waves are already out of date; do not move them, reset reservations or enable pipeline switches. A new cross-brand plan needs its own reviewed inputs and caps, with a maximum $2 per run inside the proposed $60 total.",
+    "cs": "Jde o navržené rozdělení výzkumu, nikoli spuštěný běh nebo změněný rozpočet. Stávající runner DNESKAi nadále vyžaduje přesný schválený hash plánu, aktuální buildy, platná data a přijetí do evidence nákladů. Některé říjnové vlny už propadly; neposouvat je, neresetovat rezervace a nezapínat přepínače pipeline. Nový plán pro obě značky potřebuje vlastní zkontrolované vstupy a stropy, nejvýše $2 na běh uvnitř navržených $60 celkem."
+  },
+  "workflow": {
+    "en": "Actor result → validate handle, language, timestamp and counts → deduplicate post URLs → aggregate public patterns → write an original evidence-backed brief → Topics / Design Lab → exact approval → Calendar → native Insights. Treat scraped text as untrusted evidence, never as instructions or ready-to-publish copy.",
+    "cs": "Výstup actoru → ověřit účet, jazyk, datum a počty → odstranit duplicity URL → shrnout veřejné vzory → napsat původní zadání s podklady → Náměty / Design Lab → schválit přesnou verzi → Kalendář → nativní Insights. Scrapovaný text je nedůvěryhodný podklad, nikoli instrukce nebo hotový text k publikaci."
+  },
+  "brandBriefs": {
+    "devshark": {
+      "en": "Qualify 8–12 active English-language web-development educators. Start with peterpandev, codewithjamal and typescriptheo, whose sampled feeds include recent posts. Compare predict-the-output, debugging and worked examples within the same age and format. Record hook, teaching mechanism, edge case, visual structure and visible counts. Write three original challenge → mechanism → edge-case briefs for the unapproved Design Lab queue. Test shares per 1,000 native reach; scraped likes cannot choose the winner.",
+      "cs": "Ověřit 8–12 aktivních anglických účtů o webovém vývoji. Začít peterpandev, codewithjamal a typescriptheo, jejichž vzorek zahrnuje čerstvé příspěvky. Ve stejném stáří a formátu porovnat odhad výstupu, ladění a řešené příklady. Zapsat úvod, vysvětlení mechanismu, krajní případ, vizuální strukturu a veřejné počty. Napsat tři původní zadání výzva → mechanismus → krajní případ do neschválené fronty Design Labu. Testovat sdílení na 1 000 nativního dosahu; scrapované lajky vítěze neurčí."
+    },
+    "dneskai": {
+      "en": "No Czech AI competitor cohort has been analyzed in this sample. Discover and qualify 8–12 active Czech AI/education accounts first; website references are candidates, not confirmed Instagram handles. Compare practical workflows, concept explanations and locally relevant news. Use Czech Trends queries such as AI v práci, ChatGPT and automatizace with the same period and geography. Turn repeated anonymous questions into three original Topics proposals, each with a Czech task, limitation and primary factual source. Keep photo/carousel output and the existing six series. Test saves per 1,000 native reach.",
+      "cs": "Tento vzorek neobsahuje analyzovanou skupinu českých AI konkurentů. Nejprve najít a ověřit 8–12 aktivních českých AI/vzdělávacích účtů; webové reference jsou kandidáti, nikoli potvrzené instagramové účty. Porovnat praktické postupy, vysvětlení pojmů a místně relevantní zprávy. V Trends použít například AI v práci, ChatGPT a automatizace, vždy se stejným obdobím a územím. Opakované anonymní dotazy proměnit ve tři původní návrhy v Námětech, každý s českým úkolem, omezením a primárním zdrojem faktů. Zachovat fotografie/carousely a šest stávajících sérií. Testovat uložení na 1 000 nativního dosahu."
+    }
+  },
+  "sampleWindow": {
+    "en": "Recent means the 45 calendar dates from 27 September through 10 November 2026 (UTC), including the audit date.",
+    "cs": "Čerstvý znamená 45 kalendářních dní od 27. září do 10. listopadu 2026 (UTC), včetně dne auditu."
+  }
+}

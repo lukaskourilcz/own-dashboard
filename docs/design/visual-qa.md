@@ -1,5 +1,9 @@
 # OwnDashboard visual QA
 
+Latest scoped addition: [10 November 2026 growth Strategy release evidence](../reports/2026-11-10-growth-strategy-release.md)
+records Chrome checks for both brand Strategies and Apify, six widths, EN/CS, light/dark, axe, keyboard,
+review handoffs, offline states and known full-suite failures. The historical report below is unchanged.
+
 Date: 2026-07-27
 
 > Note (2026-07-29, commit `268062b`): the natural-language Quick Add control and its mobile fixed-position button were removed. The "mobile Quick Add clearance" checks and the "Quick Add control positioned above [safe-area navigation]" constraint referenced below no longer apply. The remainder of this report reflects the state on 2026-07-27.

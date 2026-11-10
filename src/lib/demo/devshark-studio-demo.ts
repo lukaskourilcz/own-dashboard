@@ -18,6 +18,11 @@ const read = () => (store ??= structuredClone(INITIAL));
 
 export const demoDevsharkStudio = {
   async load(): Promise<DevsharkDraftsRead> { return structuredClone(read()); },
+  async create(input: { title: string; caption: string; deck: DevsharkDeck }) {
+    const id = crypto.randomUUID();
+    read().drafts.unshift({ ...structuredClone(input), id, origin: 'concept', status: 'draft', decided_at: null, created_at: new Date().toISOString() });
+    return id;
+  },
   /** A saved edit returns the concept to review, as `marketing_devshark_save` does. */
   async save(input: { id: string; title: string; caption: string; deck: DevsharkDeck }) {
     const draft = read().drafts.find((item) => item.id === input.id);

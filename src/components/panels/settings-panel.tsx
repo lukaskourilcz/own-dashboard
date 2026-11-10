@@ -1,6 +1,7 @@
 "use client";
 
 import { devsharkStudio } from '@/lib/i18n/sections/devshark-studio';
+import { marketingStrategy } from '@/lib/i18n/sections/marketing-strategy';
 import {
   Bell,
   Coins,
@@ -311,6 +312,7 @@ export function SettingsPanel({
       "dneskai-today": dneskaiLabels.today,
       "dneskai-promo": dneskaiLabels.promo,
       "devshark-studio": devsharkStudio[lang].title,
+      strategy: marketingStrategy[lang].tab,
     } satisfies Record<ProjectTabId, string>;
     return labels[tab];
   };

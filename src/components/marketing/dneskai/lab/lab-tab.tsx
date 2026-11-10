@@ -1,4 +1,5 @@
 'use client';
+import { StrategyLink } from '@/components/marketing/strategy/strategy-link';
 
 import { DneskaiAudioPicker } from './audio-picker';
 import { DneskaiFormatSwitch } from './format-switch';
@@ -83,13 +84,14 @@ export function DneskaiLabTab(props: Props) {
     return () => window.removeEventListener('popstate', onPop);
   }, [dirty]);
   return <section className="space-y-4" data-testid="dneskai-lab">
-    <div className="flex items-center justify-end gap-3">
+    <div className="flex flex-wrap items-center justify-end gap-3">
       <h2 className="sr-only">{t.title}</h2>
       {/* Náměty moved to its own section (owner request, 9 November 2026); the Lab keeps a way there. */}
       <button type="button" onClick={openTopics} aria-label={t.topics.openLabel} data-testid="dneskai-lab-topics-link"
         className="mr-auto inline-flex min-h-11 items-center gap-1 rounded-sm text-sm font-medium text-primary underline-offset-2 hover:underline focus-ring md:min-h-8">
         {t.topics.open}<ArrowRight aria-hidden className="h-3.5 w-3.5" />
       </button>
+      <StrategyLink brand="dneskai" lang={props.lang} disabled={dirty} />
       <Tooltip content={props.refreshing ? dneskaiWorkspace[props.lang].refreshing : dneskaiWorkspace[props.lang].refresh}>
         <Button variant="ghost" size="icon" aria-label={props.refreshing ? dneskaiWorkspace[props.lang].refreshing : dneskaiWorkspace[props.lang].refresh} aria-busy={props.refreshing} disabled={props.refreshing || dirty} onClick={props.onRefresh} data-testid="dneskai-lab-refresh">
           <RefreshCw aria-hidden className={cn(props.refreshing && 'motion-safe:animate-spin')} />

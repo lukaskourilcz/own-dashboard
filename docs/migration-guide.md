@@ -1114,3 +1114,20 @@ either stock or generated pictures to briefs and keeps the existing owner checks
 
 `20261109204711_dneskai_promo_tab.sql` adds `dneskai-promo` to the allowed values of
 `user_preferences.hidden_project_tabs`. It leaves existing preferences and access policies intact.
+
+
+## Brand growth Strategy (10 November 2026)
+
+`20261110210000_marketing_strategy.sql` adds the hideable `strategy` project tab and two owner-only tables:
+`marketing_strategy_links` maps each reviewed idea to its canonical devShark concept or DNESKAi topic;
+`marketing_strategy_results` stores attributed native-Insights snapshots against an existing publication receipt.
+The `marketing_strategy_draft` owner function checks project/brand ownership, serializes duplicate clicks and
+creates only `draft` concepts or `proposed` topics. The snapshot trigger rejects foreign projects, mismatched
+brands, unconfirmed receipts, invalid counts and future observations. Missing metrics remain JSON null.
+No budget, schedule, account, approval or publishing switch changes. No existing rows are rewritten.
+
+Prepared locally; this task did not apply the migration to a linked/production database. Apply through the usual
+reviewed migration workflow before deploying the new write actions. Verify owner/stranger reads, idempotent
+creation, proposed/draft status and a measured-zero snapshot. Roll back application access before dropping
+the new functions/tables; export snapshots first. Restore the previous tab constraint only after removing
+`strategy` from stored hidden-tab arrays. Existing marketing drafts and topics remain canonical records.

@@ -82,6 +82,7 @@ describe("synchronized user preferences", () => {
       ...PROJECT_WORKSPACE_TABS,
       ...DNESKAI_PROJECT_TABS,
       "devshark-studio",
+      "strategy",
     ]);
     expect(DNESKAI_PROJECT_TABS.every(isDneskaiProjectTab)).toBe(true);
     expect(PROJECT_WORKSPACE_TABS.some(isDneskaiProjectTab)).toBe(false);
@@ -98,7 +99,7 @@ describe("synchronized user preferences", () => {
   });
 
   it("constrains hidden project tabs to exactly the workspace tabs", () => {
-    expect(latestTabCheck).toBe("20261109204711_dneskai_promo_tab.sql");
+    expect(latestTabCheck).toBe("20261110210000_marketing_strategy.sql");
     expect(checkedTabs(tabCheckSql)).toEqual([...PROJECT_TAB_IDS]);
     expect(checkedTabs(tabCheckSql)).not.toContain("operations");
     expect(checkedTabs(tabCheckSql)).toContain("competition");

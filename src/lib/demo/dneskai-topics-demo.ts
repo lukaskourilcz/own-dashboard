@@ -54,6 +54,14 @@ export const demoDneskaiTopicsApi: DneskaiTopicsApi = {
       const next = move(topic, topic.status, { title: action.title, keyword: action.keyword });
       return { ok: true, results: [{ id: next.id, status: next.status }] };
     }
+    if (action.action === 'create') {
+      const now = new Date().toISOString();
+      const topic: DneskaiTopic = { id: crypto.randomUUID(), kind: action.kind, title: action.title ?? action.url!,
+        sourceKind: 'manual', source: { label: null, url: action.url ?? null }, summary: null, keyword: action.keyword ?? null,
+        verdict: null, status: 'proposed', proposedFor: now.slice(0, 10), approvedAt: null, createdAt: now, updatedAt: now };
+      read().groups[topic.kind].proposed.unshift(topic);
+      return { ok: true, results: [{ id: topic.id, status: topic.status }] };
+    }
     return { ok: true, results: [] };
   },
 };
