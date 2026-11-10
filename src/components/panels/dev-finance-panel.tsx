@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import { format, parseISO } from "date-fns";
 import { CircleDollarSign, CreditCard, FolderKanban, Handshake, PieChart, Receipt, Wallet } from "lucide-react";
+import { ProjectCostOverview } from "@/components/finance/project-cost-evidence";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -49,7 +50,8 @@ function Legend({ data, currency }: { data: { name: string; value: number }[]; c
  * hosting spend, its split between own projects and client work,
  * the per-project and per-vendor breakdown, and what was paid month by month.
  */
-export function DevFinancePanel({ subscriptions, allocations, transactions, projects, projectCosts, crons, displayCurrency, setDisplayCurrency, onOpenSubscriptions, onOpenProject }: {
+export function DevFinancePanel({ subscriptions, allocations, transactions, projects, projectCosts, crons, displayCurrency, setDisplayCurrency, onOpenSubscriptions, onOpenProject, isPreview = false }: {
+  isPreview?: boolean;
   subscriptions: Subscription[];
   allocations: SubscriptionAllocation[];
   transactions: Transaction[];
@@ -101,6 +103,8 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
           </div>
         }
       />
+
+      <ProjectCostOverview projects={projects} input={{ subscriptions, allocations, transactions, projectCosts, crons, currency: displayCurrency, preview: isPreview }} onOpenProject={onOpenProject} />
 
       {!hasSpend ? (
         <Card><CardContent className="py-8"><EmptyState icon={Wallet} title={f.noDevSpend} description={f.noDevSpendHint} action={<Button size="sm" onClick={onOpenSubscriptions}>{f.manageSubscriptions}</Button>} /></CardContent></Card>
@@ -279,7 +283,7 @@ export function DevFinancePanel({ subscriptions, allocations, transactions, proj
                         <p className="truncate text-sm">{tx.note || tx.category || sub?.name || project?.name}</p>
                         <p className="truncate text-[11px] text-foreground-subtle">{sub ? f.settles(sub.name) : project?.name ?? tx.category ?? ""}</p>
                       </div>
-                      <span className="shrink-0 text-sm tabular">{formatCurrency(tx.amount, tx.currency)}</span>
+                      <span className="shrink-0 text-sm tabular">{tx.kind === "income" ? "−" : ""}{formatCurrency(tx.amount, tx.currency)}</span>
                     </li>
                   );
                 })}
