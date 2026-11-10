@@ -2,7 +2,7 @@
 
 For a one-page overview of the current app and every outside system it uses, read [the system map](docs/SYSTEM-MAP.md) first.
 
-Project Strategy connects the dated devShark/DNESKAi content audit, faceless growth plans, idea handoffs, calendar and manual native-Insights results. See [growth strategy](docs/marketing-growth-strategy.md) for its evidence, ownership boundaries and rollout.
+Project Strategy connects the dated devShark/DNESKAi content audit, faceless growth plans, idea handoffs, calendar, scoped Apify research and manual native-Insights results. See [growth strategy](docs/marketing-growth-strategy.md) for its evidence, ownership boundaries and rollout.
 
 ## Product model
 

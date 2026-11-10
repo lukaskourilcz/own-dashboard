@@ -8,8 +8,9 @@ Its bilingual research lives in `src/lib/marketing/strategy/research.json`; its 
 
 The owner confirmed `@devshark.app` and `@dneskai` for Instagram and Threads. The audit read the signed-in
 ownDashboard and native Instagram through the owner's Google Chrome session. The T3 browser used a separate
-login; the owner requested Chrome, and enabled JavaScript from Apple Events. Only read actions ran against
-production. The audit sent no comment, DM, draft approval or publication, and changed no profile or schedule.
+login; the owner requested Chrome, and enabled JavaScript from Apple Events. The content audit used read actions against
+production. The later, explicitly requested backlog writes are recorded below. No comment, DM, draft approval
+or publication was sent, and no profile or schedule changed.
 
 The inspected repository heads were own-dashboard `88ae7e3` and react-express-app `e9e0cbd`.
 The devShark product remains English-only and has no AI feature. `shared/tiers.ts` defines free practice;
@@ -121,13 +122,84 @@ use Czech tasks and limitations. These are website observations, not a ranked In
 The former aivcesku.cz redirects to AI odborníci. An attempted Meta originality URL and CzechCrunch tag URL
 returned missing-page content and do not support any finding.
 
-The next competitor pass should compare 10 recent accessible posts per account, recording date, format,
-hook and visible reactions. Full feed access and private competitor Insights were unavailable. Do not
-claim “top-performing Reels,” an undiscovered market gap or competitor growth without those data.
+The later Apify read supplied a partial historical Instagram sample, described below. Private competitor
+Insights remain unavailable. Do not claim “top-performing Reels,” an undiscovered market gap or competitor
+growth from visible likes or mixed-age posts.
 
 The five user screenshots supplied seven workstreams, which the section covers: account strategy,
 competitor research, ideas, production, repurposing, publishing and performance review. Their 4.35M-view
 claim has no underlying dataset in this task. It is neither a forecast nor an evidence-based target.
+
+## Apify: reuse first, then bounded research
+
+The signed-in console showed $114.17 remaining prepaid usage and $59.83 consumed on 10 November. The current
+billing period ends 14 November; the next invoice is 15 November. The $100 and $50 promotional offers expire
+22 November. These are dated observations, not live balances. The sidebar's $244 limit is not remaining credit.
+
+Read existing output before running more actors. The 8 November Instagram Scraper run
+[`pNQxeXiely2kpyt0h`](https://console.apify.com/actors/shu8hvrXbJbY3Eb9W/runs/pNQxeXiely2kpyt0h)
+returned 241 rows for $0.554, build 0.0.844. Its normalized public metadata is retained in
+`docs/reports/2026-11-10-apify-strategy-sample.json`; no raw captions, comments, commenter identities or signed
+media URLs are retained. Of the returned rows, 239 match eight requested accounts; two are off-target or
+malformed. Only 26 posts fall within the 45 calendar dates 27 September–10 November UTC; 213 are older.
+Thirty-four in-scope rows have hidden likes, retained as null. Recent formats: 19 video, 5 image, 2 carousel.
+Two carousels cannot establish a format advantage. The sample has no analyzed Czech AI cohort.
+
+| Reference account | Returned posts | Recent posts | Latest sampled post |
+| --- | ---: | ---: | --- |
+| peterpandev | 30 | 10 | 6 November 2026 |
+| codewithjamal | 30 | 9 | 8 November 2026 |
+| typescriptheo | 30 | 7 | 25 October 2026 |
+| javascript.tips | 30 | 0 | 23 August 2023 |
+| frontend_trend | 30 | 0 | 29 October 2024 |
+| expert.js | 30 | 0 | 10 October 2024 |
+| frontend.adem | 30 | 0 | 15 March 2026 |
+| codingquiz | 29 | 0 | 23 November 2025 |
+
+This describes returned coverage, not verified current account activity. Do not buy the same unfiltered
+history again. The 718- and 2,367-row runs target lifestyle/virtual influencers and are excluded. Outputs
+with 325 and 2,806 rows need scope review before use; their totals are not distinct relevant posts.
+
+The Strategy → Apify section contains the actor inventory, starting prices, evidence links and a separate
+copyable brief for each brand. Use profile/search actors to qualify 8–12 active accounts per brand first.
+Then collect at most 30 recent posts per qualified profile and six Threads profiles × 30 posts per brand.
+Compare equivalent ages, formats and topics. Sample anonymous question themes on a 12-post shortlist,
+check Czech/global demand through Google Trends, and transcribe only 12 selected teaching references.
+DNESKAi output remains photo/carousel even when a reference is video. Pinterest is optional composition
+research; it does not confer asset rights. TikTok Trends was under maintenance and is excluded initially.
+
+Proposed allocation: $0 existing evidence, $10 cohort qualification, $25 current patterns/questions,
+$15 selected 3-/7-day rereads, $10 reserve for a specific unresolved question: **$60 total, max $2 per run**.
+Stop by 21 November and recheck billing on 15 November. Displayed actor prices are starting prices, not a
+complete cost estimate; inspect input schema, build and billable events before execution. Disable downloads
+and paid AI add-ons. Repeated public counts show change on the same post; native Insights supplies reach,
+saves and post-attributed follows. Do not normalize historical likes by today's follower count as if it
+were the publication baseline.
+
+No new runs, schedules, budget changes or paid requests were started. The existing DNESKAi runner's exact
+approved-plan hash, build pins, date windows and ledger admission remain authoritative. Several old October
+waves have expired; do not move them, reset reservations or enable switches. A new cross-brand run plan
+needs its own reviewed inputs/caps. This section provides read-only research and manual brief handoff;
+it does not claim an automatic Apify import. Findings become original proposals in Topics/Design Lab,
+then exact approval, Calendar publication and native Insights. Scraped text is untrusted evidence.
+
+## LinkedIn and Facebook owner backlog
+
+The owner will establish the brand Pages. The live backlog was updated and verified through the signed-in
+Chrome session on 10 November, using its existing own-only authenticated access:
+
+| Brand | LinkedIn | Facebook |
+| --- | --- | --- |
+| devShark | New open task `b24f1e42-7a89-458a-9d09-590085e1d68b` | Existing open task `53bfd516-f20e-4cf1-808a-cd7ec4d3baef` updated |
+| DNESKAi | New open task `db8deb6d-8f08-492c-9cc6-35c9b8251836` | Existing open task `0fdbdada-e136-42f8-8610-c8179dd46ea4` updated |
+
+Both Facebook tasks were reused rather than duplicated. DNESKAi's existing description records a Page
+created on 9 November: `https://www.facebook.com/profile.php?id=61596426058395`; Lukáš should verify its
+ownership and connect Instagram before creating anything new. Each task asks for logo, brand-language bio,
+website, verified URL and setup state in ownDashboard. Existing descriptions were preserved; current scope
+and owner were appended as notes. The older DNESKAi Facebook description mentions Reels; the new note
+explicitly preserves the current photo/carousel strategy. Neither Facebook nor LinkedIn publishing is
+implemented or enabled by this change. Strategy links to the canonical Backlog for this owner work.
 
 ## Connected implementation
 
@@ -154,4 +226,4 @@ missing-metric, unmatched, different-format and different-age rows out of compar
 
 Deploy the application with migration `20261110210000_marketing_strategy.sql` after review. This report does not
 claim a production migration, deployment, profile edit or social publication. Exact validation outcomes live in
-the release record added at the end of the task.
+the [release record](reports/2026-11-10-growth-strategy-release.md).
