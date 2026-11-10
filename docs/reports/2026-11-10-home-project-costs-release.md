@@ -41,3 +41,14 @@ Usage is not added to invoice payments, and credits are not treated as expenses.
 - `git diff --check`: passed.
 
 PR: https://github.com/lukaskourilcz/own-dashboard/pull/322. All implementation commits use Lukas <58434653+lukaskourilcz@users.noreply.github.com> and were pushed individually. Deployment verification follows below.
+
+
+## Production rollout — 11 November 2026 (Europe/Prague)
+
+PR #322 was merged with a merge commit, preserving the ten individually authored implementation commits. Production commit `298b91b9e9cd440af27abab6dd3214ea7e2996c1`, Vercel deployment `dpl_HZybaZsQTNRWNTWjY5mjmu1VZfd7`, reached READY and received the `own-dashboard-tau.vercel.app` production alias.
+
+The signed-in Google Chrome session verified two Home lists containing five backlog tasks and five unapplied saved Career positions, one h1 and no removed focus widget. The Money route rendered all four requested projects and shared ownDashboard evidence. Its actual DOM contained the Foxy 100 USD owner-confirmed payment, Higgsfield and the 1,615.60 CZK settlement note. Live database verification confirms Foxy has exactly one 100 USD payment and 127 USD total across the three Starter payments plus that payment.
+
+The authenticated production operating-cost endpoint returned 200 with `private, no-store`. It reported ten devShark drafts with unknown amounts, DNESKAi source usage 0.056012376 USD (9 records), generation estimates 1.367536 USD (40 records) and reserved failed-job caps 0.369982 USD (7 records), kept separate. These are the month-to-date values observed at 23:16 UTC on 10 November, not fixed future totals. An unauthenticated request returned 401 with only `{ "error": "unauthorized" }`. No credentials were exported.
+
+Production billing snapshots remain dated evidence from the audit; opening Finance refreshes the owner-scoped content-production estimates, not provider invoices or service-only image snapshots. The full historical Lab E2E failures remain documented above. Working tree was clean after the release-evidence commit.
