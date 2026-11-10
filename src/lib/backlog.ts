@@ -12,6 +12,7 @@ export type BacklogStatus = (typeof BACKLOG_STATUSES)[number];
 
 export type BacklogItem = {
   id: string;
+  executor?: "me" | "ai";
   project: BacklogProject;
   title: string;
   description: string | null;
@@ -33,8 +34,9 @@ export const BACKLOG_READ_LIMIT = 500;
 export async function fetchBacklogItems(): Promise<BacklogItem[]> {
   const { data, error } = await createClient()
     .from("backlog_items")
-    .select("id,project,title,description,status,source,external_ref,note,note_updated_at,created_at,updated_at")
+    .select("id,project,title,description,status,executor,source,external_ref,note,note_updated_at,created_at,updated_at")
     .order("created_at", { ascending: false })
+    .order("id", { ascending: true })
     .limit(BACKLOG_READ_LIMIT);
   if (error) throw error;
   return (data ?? []) as BacklogItem[];
@@ -43,12 +45,12 @@ export async function fetchBacklogItems(): Promise<BacklogItem[]> {
 export const BACKLOG_NOTE_MAX = 20000;
 
 /** Changes the status, the note, or both in one write (the "Save and hand to an agent" action). */
-export async function updateBacklogItem(id: string, change: { status?: BacklogStatus; note?: string | null }): Promise<BacklogItem> {
+export async function updateBacklogItem(id: string, change: { status?: BacklogStatus; executor?: "me" | "ai"; note?: string | null }): Promise<BacklogItem> {
   const { data, error } = await createClient()
     .from("backlog_items")
     .update(change)
     .eq("id", id)
-    .select("id,project,title,description,status,source,external_ref,note,note_updated_at,created_at,updated_at")
+    .select("id,project,title,description,status,executor,source,external_ref,note,note_updated_at,created_at,updated_at")
     .single();
   if (error) throw error;
   return data as BacklogItem;

@@ -1395,7 +1395,7 @@ function ProjectCard({
         <CardContent className="space-y-5">
           <CostsSection
             project={project}
-            costs={costs}
+            costs={costs.filter((cost) => !cost.cost_type || cost.cost_type === "monthly_estimate")}
             setCosts={setCosts}
             displayCurrency={displayCurrency}
           />

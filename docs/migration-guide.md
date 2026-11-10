@@ -1134,3 +1134,12 @@ read/write denial; all smoke inserts rolled back, leaving zero verification link
 Measured-zero behavior is covered by the isolated database tests. Roll back application access before dropping
 the new functions/tables; export snapshots first. Restore the previous tab constraint only after removing
 `strategy` from stored hidden-tab arrays. Existing marketing drafts and topics remain canonical records.
+
+
+## Home execution queues and project cost evidence (10 November 2026)
+
+`20261110222156_backlog_executor.sql` adds `executor` (`me` / `ai`, default AI) to canonical backlog items. Strategy tasks reuse these rows in Home, Backlog, Tasks and each brand's Strategy; execution ownership does not authorize paid jobs or publication. The 42 owner tasks (21 per brand, 18 AI / 3 JA each) were seeded separately through owner-scoped SQL, reusing four existing channel-setup tasks. The idempotent specification is `scripts/data/2026-11-10-strategy-backlog.sql`.
+
+`20261110222929_project_cost_evidence.sql` extends project costs with `monthly_estimate`, `usage` and `credit`, verified dates, periods and source keys. Usage/credit require a bounded period and provenance; the unique owner/project/source key prevents repeat imports. They contribute neither to recurring commitments nor invoice payments.
+
+`20261110224047_project_cost_evidence_ownership.sql` requires both row ownership and parent project ownership on insert/update. Select/delete remain own-only. All three migrations were applied through Supabase MCP; filenames match the recorded production versions. Financial evidence and payments were imported separately, without embedding account credentials or private invoice URLs in the repository. Shared invoices remain overhead and refunds reduce recorded payments.

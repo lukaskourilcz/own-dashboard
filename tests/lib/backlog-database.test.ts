@@ -60,4 +60,16 @@ describe('backlog_items', () => {
     await expect(db.query("update public.backlog_items set status='waiting' where id=$1", [row!.id])).rejects.toThrow();
     await db.query('reset role');
   });
+  it('persists JA / AI ownership without weakening owner-only access', async () => {
+    await as('authenticated', owner);
+    const row = (await db.query<{ id: string; executor: string }>("insert into public.backlog_items(project,title,executor) values('devShark','Strategy step','ai') returning id,executor")).rows[0]!;
+    expect(row.executor).toBe('ai');
+    await db.query("update public.backlog_items set executor='me' where id=$1", [row.id]);
+    await expect(db.query("update public.backlog_items set executor='other' where id=$1", [row.id])).rejects.toThrow();
+    await as('authenticated', stranger);
+    expect((await db.query('select id from public.backlog_items where id=$1', [row.id])).rows).toEqual([]);
+    expect((await db.query("update public.backlog_items set executor='ai' where id=$1 returning id", [row.id])).rows).toEqual([]);
+    await db.query('reset role');
+  });
+
 });

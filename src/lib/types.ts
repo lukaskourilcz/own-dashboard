@@ -569,6 +569,13 @@ export type ProjectCost = {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  cost_type?: "monthly_estimate" | "usage" | "credit";
+  provider?: string | null;
+  period_start?: string | null;
+  period_end?: string | null;
+  source_key?: string | null;
+  source_url?: string | null;
+  verified_on?: string | null;
 };
 
 // A dashboard-managed cron. AI-API-call crons carry cost info: the estimated

@@ -294,3 +294,12 @@ English, 1280 px, light:
 Czech, 360 px, dark (the fixed phone navigation crosses the element capture):
 
 ![Topics list in Czech at 360 px](screenshots/dneskai-topics-cs-360.png)
+
+
+## Home execution queues and project costs — 10–11 November 2026
+
+Google Chrome ran the authentic fixture preview. The new `home-project-costs.spec.ts` passed English/light and Czech/dark at 360, 430, 768, 1024, 1440 and 1728 px. Home displayed five active backlog rows, one available saved Career position, one h1 and no removed widgets. The Tasks flow filtered JA and AI and changed an executor inline. The finance table named all four requested projects, including explicit missing-project states for heyDarlink/NaviGym in the fixture set. Expanding cost evidence exposed original currencies, renewal state and the disconnected-preview content-cost state. No operating-cost request ran from preview.
+
+Axe found a heading-order issue in the first cost-detail implementation; adding an h2 to each details summary fixed it. The corrected Home and expanded finance surfaces passed axe with no violations and no horizontal document overflow at all six widths. The new tests passed without console errors. Inspected captures were `test-results/home-cs.png` and `test-results/project-costs-cs.png`, both synthetic fixture data. No generated media or visual baselines were changed.
+
+The targeted project navigation, Strategy draft/topic handoffs, publishing switches and Backlog note/status flows passed in desktop and mobile Chrome. An unrelated subscription assertion crossed midnight between fixture build and browser execution; it now checks the explicit date/countdown rather than a build-relative hard-coded day count, and its focused rerun passed. The full E2E result is recorded in `docs/reports/2026-11-10-home-project-costs-release.md`; existing Lab visual, keyword-colour wait and favicon CORS failures must not be reported as a green suite.

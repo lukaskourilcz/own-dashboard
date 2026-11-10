@@ -13,6 +13,7 @@ import { addStrategyIdea, loadStrategy, loadStrategyCalendar, openStrategyHref, 
 import type { StrategyRead } from '@/lib/marketing/strategy/contracts';
 import { cn } from '@/lib/utils';
 import { StrategyResults } from './strategy-results';
+import { BacklogPanel } from '@/components/panels/backlog-panel';
 import { StrategyApify } from './strategy-apify';
 
 type Props = { brand: PublishingBrand; projectId: string; projectSlug: string; lang: StrategyLang; preview?: boolean };
@@ -40,7 +41,7 @@ export function MarketingStrategyTab({ brand, projectId, projectSlug, lang, prev
     ...(brand === 'dneskai' ? [[t.topics, '/topics'], [t.sources, projectHref('sources')]] : []),
     [t.competition, projectHref('competition')], [t.knowledge, projectHref('knowledge')], [t.tips, '/ig-tips'],
     [t.finance, projectHref(brand === 'dneskai' ? 'dneskai-costs' : 'finance')],
-    [t.backlog, '/backlog'],
+    [t.backlog, '/backlog'], [lang === 'cs' ? 'Úkoly JA / AI' : 'Tasks JA / AI', '/tasks'],
   ];
   return <section className="min-w-0 space-y-5" data-testid="marketing-strategy" aria-labelledby={`${ids}-title`}>
     <header className="space-y-2">
@@ -52,6 +53,7 @@ export function MarketingStrategyTab({ brand, projectId, projectSlug, lang, prev
     {(query.isPending || calendar.isPending) && <p role="status" className="text-sm text-foreground-muted">{t.loading}</p>}
     {(query.isError || calendar.isError || calendar.data?.unavailable.includes(brand)) && <div role="alert" className="space-y-2 rounded-md border border-warning/40 bg-warning-soft p-3 text-sm"><p>{t.unavailable}</p><Button variant="outline" size="sm" onClick={() => { void query.refetch(); void calendar.refetch(); }}>{t.retry}</Button></div>}
     {section === 'overview' && <div className="space-y-6">
+      <BacklogPanel isPreview={preview} strategyOnly project={names[brand] as 'devShark' | 'DNESKAi'} />
       <Block title={t.goal}><p>{research.positioning[lang]}</p></Block>
       <Block title={t.audit}><ul className="list-disc space-y-2 pl-5">{research.audit.map((item, index) => <li key={index}>{item[lang]}</li>)}</ul></Block>
       <Block title={t.mix}>

@@ -62,14 +62,14 @@ describe("publishing calendar", () => {
 
 describe("backlog", () => {
   it("shows open and in-progress tasks by default and counts them per project", () => {
-    expect(filterBacklog(PREVIEW_BACKLOG, { project: "all", status: "active" }).map((item) => item.status)).toEqual(["open", "in_progress", "open"]);
+    expect(filterBacklog(PREVIEW_BACKLOG, { project: "all", status: "active" }).map((item) => item.status)).toEqual(["open", "in_progress", "open", "open", "open", "open", "open"]);
     expect(filterBacklog(PREVIEW_BACKLOG, { project: "heyDarlink", status: "done" })).toHaveLength(1);
-    expect(backlogProjectCounts(PREVIEW_BACKLOG, "active")).toEqual({ all: 3, heyDarlink: 0, DNESKAi: 1, devShark: 1, personal: 1 });
+    expect(backlogProjectCounts(PREVIEW_BACKLOG, "active")).toEqual({ all: 7, heyDarlink: 0, DNESKAi: 3, devShark: 3, personal: 1 });
   });
 
   it("keeps a task ready for an agent among the unfinished ones and filters by that status", () => {
     const handed = PREVIEW_BACKLOG.map((item, index) => index === 0 ? { ...item, status: "ready_for_agent" as const } : item);
-    expect(filterBacklog(handed, { project: "all", status: "active" })).toHaveLength(3);
+    expect(filterBacklog(handed, { project: "all", status: "active" })).toHaveLength(7);
     expect(filterBacklog(handed, { project: "all", status: "ready_for_agent" }).map((item) => item.title)).toEqual(["Shorter closing slide on Threads"]);
   });
 

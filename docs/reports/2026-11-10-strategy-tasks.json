@@ -1,0 +1,344 @@
+[
+  {
+    "project": "devShark",
+    "key": "baseline",
+    "title": "Zapsat výchozí stav IG a Threads",
+    "description": "Zapsat počet sledujících, bio, odkazy, typ účtu a datum měření. Oddělit účet od výsledků konkrétních příspěvků; chybějící údaje neuvádět jako nulu.",
+    "executor": "ai",
+    "source": "strategy:devshark:baseline",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "profile",
+    "title": "Připravit a nastavit vzdělávací bio a odkazy",
+    "description": "Připravit jazykově správný příslib, profilovou fotku, odkaz na existující relevantní obsah a UTM pro IG/Threads. Ověřit cílové stránky. Změnu profilu provést v Chrome v dostupné přihlášené relaci.",
+    "executor": "ai",
+    "source": "strategy:devshark:profile",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "cohort",
+    "title": "Kvalifikovat 8–12 aktivních vzdělávacích účtů",
+    "description": "Nejdřív znovu použít existující Apify datasety. U každého účtu ověřit jazyk, publikum, poslední aktivitu a vzdělávací zaměření. Vyřadit lifestyle a smíšené vzorky; uložit důvod výběru do Strategie/konkurence.",
+    "executor": "ai",
+    "source": "strategy:devshark:cohort",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "apify-plan",
+    "title": "Připravit přesný nový plán Apify",
+    "description": "Zapsat actor ID, build, vstupy, okno posledních 45 dní, limity výsledků a stop podmínky. Návrh je max. $60 celkem a $2/run. Zkontrolovat ceny, promo expiraci 22.11. a fakturaci 15.11. Neměnit staré rezervace ani schválené hashe.",
+    "executor": "ai",
+    "source": "strategy:devshark:apify-plan",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "apify-decision",
+    "title": "Schválit konkrétní placený plán Apify",
+    "description": "JA: rozhodnout o přesných vstupech a stropu nového plánu. Samotný štítek AI na dalších úkolech neschvaluje placený běh. Schválení zaznamenat k hashi plánu.",
+    "executor": "me",
+    "source": "strategy:devshark:apify-decision",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "research",
+    "title": "Zpracovat současné vzorce a otázky publika",
+    "description": "Po schválení plánu nejvýš 30 recentních IG příspěvků/účet a 6 Threads účtů × 30 příspěvků. Otázky shrnout anonymně z 12 vybraných postů; ověřit Google Trends a jen 12 relevantních přepisů. Srovnávat stejné stáří/formát; neodvozovat reach z veřejných likes.",
+    "executor": "ai",
+    "source": "strategy:devshark:research",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "briefs",
+    "title": "Převést výzkum do originálních briefů",
+    "description": "Z vybraných námětů ve Strategii vytvořit malou sérii do Topics/Design Lab. Každý brief obsahuje konkrétní vzdělávací výsledek, hook, příklad, vizuální směr a měřitelnou hypotézu. Bez moderátora a bez kopírování konkurence.",
+    "executor": "ai",
+    "source": "strategy:devshark:briefs",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "approval",
+    "title": "Schválit připravené verze pro zveřejnění",
+    "description": "JA: zkontrolovat přesné finální verze, nabídky a případné právní nároky. Schválit je standardním workflow před vložením do publikování; obecná strategie ani kategorie AI nenahrazuje schválení obsahu.",
+    "executor": "me",
+    "source": "strategy:devshark:approval",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "calendar",
+    "title": "Propojit schválené verze s Kalendářem",
+    "description": "Po schválení propojit každý brief a konkrétní verzi Labu s Kalendářem. Zachovat stávající časy, přepínače, rozpočty a publisher. Zkontrolovat potvrzený receipt, neplést plán s publikací.",
+    "executor": "ai",
+    "source": "strategy:devshark:calendar",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "insights",
+    "title": "Doplnit nativní Insights 72 h / 7 dní / Stories 24 h",
+    "description": "Z Chrome opsat skutečné IG/Threads výsledky k potvrzenému receipt ve Strategii. Feed a Threads měřit kolem 72 h a 7 dní, Stories před expirací kolem 24 h. Zapsat missing jako neznámé, nikoli nulu.",
+    "executor": "ai",
+    "source": "strategy:devshark:insights",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "review",
+    "title": "Vyhodnotit srovnatelná pozorování a upravit další briefy",
+    "description": "Porovnat hypotézy na stejně starých příspěvcích a dostatečném vzorku. Vyhodnotit sdílení, uložení, návštěvy profilu a skutečné návštěvy výuky, pokud je produkt měří. Výsledky vrátit do Strategie, briefů a plánu; první malé počty nejsou vítěz formátu.",
+    "executor": "ai",
+    "source": "strategy:devshark:review",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "threads",
+    "title": "Připravit samostatné vzdělávací odpovědi na Threads",
+    "description": "Připravit konkrétní odpovědi a doplňující příklady do relevantních diskusí; bez generického spamu. Připravit vlastní Threads verzi hodnotnou i bez Instagramu. Publikování až v rámci schváleného workflow.",
+    "executor": "ai",
+    "source": "strategy:devshark:threads",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "highlights",
+    "title": "Připravit Highlights a nativní Stories interakce",
+    "description": "V Chrome ověřit možnost Highlights a skutečných anket/otázek; připravit sady Začni tady / Procvičování / FAQ podle jazyka značky. Nenazývat obrázek interaktivní anketou. Zachovat schvalování publikací.",
+    "executor": "ai",
+    "source": "strategy:devshark:highlights",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "channels",
+    "title": "Připravit LinkedIn/Facebook adaptace a propojení",
+    "description": "Po založení stránek připravit originální jazykové varianty, loga, vzdělávací popisy a ověřené URL; doplnit je do projektu. Ověřit propojení Facebook/Instagram. Automatický publisher pro tyto sítě zatím není zaveden.",
+    "executor": "ai",
+    "source": "strategy:devshark:channels",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "identity",
+    "title": "Vyřešit případné ověření identity a vlastnictví účtů",
+    "description": "JA pouze pokud platforma vyžádá osobní identitu, 2FA nebo rozhodnutí o vlastnictví. Běžné nastavení a klikání patří AI; přístupové údaje neukládat do backlogu.",
+    "executor": "me",
+    "source": "strategy:devshark:identity",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "publishing",
+    "title": "Vyřešit neúspěšnou Threads verzi CSS Grid",
+    "description": "Ověřit chybu a stav existujícího receiptu. Opravit příčinu a použít standardní bezpečný recovery; před opakováním ověřit, že příspěvek už nevznikl.",
+    "executor": "ai",
+    "source": "strategy:devshark:publishing",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "claims",
+    "title": "Ověřit Premium nabídku a technické příklady",
+    "description": "Před další publikací ověřit platnost bio s 55% slevou, free-practice cíl, EPSILON a měřítko čísel, reverseWords pro prázdný vstup a přesnost tvrzení o HTTP 403/autentizaci. Opravené verze poslat znovu ke schválení.",
+    "executor": "ai",
+    "source": "strategy:devshark:claims",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "practice-series",
+    "title": "Připravit sérii challenge → vysvětlení → procvičení",
+    "description": "Začít event loopem, mutací polí a nullish defaulty. Spustit příklady v terminálu/prohlížeči, přidat mechanismus a edge case. Mix 40% predict/explain, 30% debugging, 20% build, 10% interview. Zachovat 16:00 IG/Threads a 19:00 Threads jako baseline.",
+    "executor": "ai",
+    "source": "strategy:devshark:practice-series",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "devShark",
+    "key": "story-answer",
+    "title": "Navrhnout Story s řešením a následným vybavením",
+    "description": "Otestovat po challenge vysvětlenou odpověď a následný recall úkol. Použít čitelný code/browser capture a stávající zelenou/ink identitu. Připravit nový koncept v Labu bez přepsání schváleného příspěvku.",
+    "executor": "ai",
+    "source": "strategy:devshark:story-answer",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/devshark?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "baseline",
+    "title": "Zapsat výchozí stav IG a Threads",
+    "description": "Zapsat počet sledujících, bio, odkazy, typ účtu a datum měření. Oddělit účet od výsledků konkrétních příspěvků; chybějící údaje neuvádět jako nulu.",
+    "executor": "ai",
+    "source": "strategy:dneskai:baseline",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "profile",
+    "title": "Připravit a nastavit vzdělávací bio a odkazy",
+    "description": "Připravit jazykově správný příslib, profilovou fotku, odkaz na existující relevantní obsah a UTM pro IG/Threads. Ověřit cílové stránky. Změnu profilu provést v Chrome v dostupné přihlášené relaci.",
+    "executor": "ai",
+    "source": "strategy:dneskai:profile",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "cohort",
+    "title": "Kvalifikovat 8–12 aktivních vzdělávacích účtů",
+    "description": "Nejdřív znovu použít existující Apify datasety. U každého účtu ověřit jazyk, publikum, poslední aktivitu a vzdělávací zaměření. Vyřadit lifestyle a smíšené vzorky; uložit důvod výběru do Strategie/konkurence.",
+    "executor": "ai",
+    "source": "strategy:dneskai:cohort",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "apify-plan",
+    "title": "Připravit přesný nový plán Apify",
+    "description": "Zapsat actor ID, build, vstupy, okno posledních 45 dní, limity výsledků a stop podmínky. Návrh je max. $60 celkem a $2/run. Zkontrolovat ceny, promo expiraci 22.11. a fakturaci 15.11. Neměnit staré rezervace ani schválené hashe.",
+    "executor": "ai",
+    "source": "strategy:dneskai:apify-plan",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "apify-decision",
+    "title": "Schválit konkrétní placený plán Apify",
+    "description": "JA: rozhodnout o přesných vstupech a stropu nového plánu. Samotný štítek AI na dalších úkolech neschvaluje placený běh. Schválení zaznamenat k hashi plánu.",
+    "executor": "me",
+    "source": "strategy:dneskai:apify-decision",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "research",
+    "title": "Zpracovat současné vzorce a otázky publika",
+    "description": "Po schválení plánu nejvýš 30 recentních IG příspěvků/účet a 6 Threads účtů × 30 příspěvků. Otázky shrnout anonymně z 12 vybraných postů; ověřit Google Trends a jen 12 relevantních přepisů. Srovnávat stejné stáří/formát; neodvozovat reach z veřejných likes.",
+    "executor": "ai",
+    "source": "strategy:dneskai:research",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "briefs",
+    "title": "Převést výzkum do originálních briefů",
+    "description": "Z vybraných námětů ve Strategii vytvořit malou sérii do Topics/Design Lab. Každý brief obsahuje konkrétní vzdělávací výsledek, hook, příklad, vizuální směr a měřitelnou hypotézu. Bez moderátora a bez kopírování konkurence.",
+    "executor": "ai",
+    "source": "strategy:dneskai:briefs",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "approval",
+    "title": "Schválit připravené verze pro zveřejnění",
+    "description": "JA: zkontrolovat přesné finální verze, nabídky a případné právní nároky. Schválit je standardním workflow před vložením do publikování; obecná strategie ani kategorie AI nenahrazuje schválení obsahu.",
+    "executor": "me",
+    "source": "strategy:dneskai:approval",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "calendar",
+    "title": "Propojit schválené verze s Kalendářem",
+    "description": "Po schválení propojit každý brief a konkrétní verzi Labu s Kalendářem. Zachovat stávající časy, přepínače, rozpočty a publisher. Zkontrolovat potvrzený receipt, neplést plán s publikací.",
+    "executor": "ai",
+    "source": "strategy:dneskai:calendar",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "insights",
+    "title": "Doplnit nativní Insights 72 h / 7 dní / Stories 24 h",
+    "description": "Z Chrome opsat skutečné IG/Threads výsledky k potvrzenému receipt ve Strategii. Feed a Threads měřit kolem 72 h a 7 dní, Stories před expirací kolem 24 h. Zapsat missing jako neznámé, nikoli nulu.",
+    "executor": "ai",
+    "source": "strategy:dneskai:insights",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "review",
+    "title": "Vyhodnotit srovnatelná pozorování a upravit další briefy",
+    "description": "Porovnat hypotézy na stejně starých příspěvcích a dostatečném vzorku. Vyhodnotit sdílení, uložení, návštěvy profilu a skutečné návštěvy výuky, pokud je produkt měří. Výsledky vrátit do Strategie, briefů a plánu; první malé počty nejsou vítěz formátu.",
+    "executor": "ai",
+    "source": "strategy:dneskai:review",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "threads",
+    "title": "Připravit samostatné vzdělávací odpovědi na Threads",
+    "description": "Připravit konkrétní odpovědi a doplňující příklady do relevantních diskusí; bez generického spamu. Připravit vlastní Threads verzi hodnotnou i bez Instagramu. Publikování až v rámci schváleného workflow.",
+    "executor": "ai",
+    "source": "strategy:dneskai:threads",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "highlights",
+    "title": "Připravit Highlights a nativní Stories interakce",
+    "description": "V Chrome ověřit možnost Highlights a skutečných anket/otázek; připravit sady Začni tady / Procvičování / FAQ podle jazyka značky. Nenazývat obrázek interaktivní anketou. Zachovat schvalování publikací.",
+    "executor": "ai",
+    "source": "strategy:dneskai:highlights",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "channels",
+    "title": "Připravit LinkedIn/Facebook adaptace a propojení",
+    "description": "Po založení stránek připravit originální jazykové varianty, loga, vzdělávací popisy a ověřené URL; doplnit je do projektu. Ověřit propojení Facebook/Instagram. Automatický publisher pro tyto sítě zatím není zaveden.",
+    "executor": "ai",
+    "source": "strategy:dneskai:channels",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "identity",
+    "title": "Vyřešit případné ověření identity a vlastnictví účtů",
+    "description": "JA pouze pokud platforma vyžádá osobní identitu, 2FA nebo rozhodnutí o vlastnictví. Běžné nastavení a klikání patří AI; přístupové údaje neukládat do backlogu.",
+    "executor": "me",
+    "source": "strategy:dneskai:identity",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "publishing",
+    "title": "Prověřit OpenAI dots a nejistý GSA receipt na Threads",
+    "description": "Ověřit failed OpenAI dots a reconciliovat ambiguous GSA proti nativnímu účtu. Neodesílat GSA znovu, dokud není jasný skutečný stav. Opravu provést standardním guarded workflow.",
+    "executor": "ai",
+    "source": "strategy:dneskai:publishing",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "czech-series",
+    "title": "Připravit české praktické náměty a šest sérií",
+    "description": "Převést fiktivní poradu na úkoly, zkrátit email a ukázat chybějící hodnoty v tabulce; zvlášť připravit Drive walkthrough oprávnění. Navázat na šest sérií od 16.11. a mix 40% workflow / 30% pojmy / 20% zprávy / 10% otázky.",
+    "executor": "ai",
+    "source": "strategy:dneskai:czech-series",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "production",
+    "title": "Zkontrolovat pravidla fotek a carouselů před schválením",
+    "description": "Bez Reels a moderátora. Titulek pouze na coveru kromě kódem psaného označení série, žádné zdroje/credits/počty stran veřejně, max. 7 hashtagů. Jediný komentovací keyword přidává kód. Ověřit českou dostupnost, ceny a oprávnění k fotkám interně.",
+    "executor": "ai",
+    "source": "strategy:dneskai:production",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  },
+  {
+    "project": "DNESKAi",
+    "key": "keyword",
+    "title": "Ověřit slíbené keyword materiály a doručení",
+    "description": "Před CTA ověřit, že slíbený vzdělávací materiál skutečně existuje a zpráva ho doručí. První odstavec Threads musí nést užitečný důsledek bez hashtagů a topic tagu. Ověřit stories +10 minut a zachovat stávající 08:00/12:30/19:00/21:00 časy.",
+    "executor": "ai",
+    "source": "strategy:dneskai:keyword",
+    "external_ref": "https://own-dashboard-tau.vercel.app/projects/dneskai?projectTab=strategy"
+  }
+]

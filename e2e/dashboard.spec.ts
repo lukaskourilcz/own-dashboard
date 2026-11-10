@@ -69,25 +69,11 @@ test.describe("dashboard sections", () => {
       await expect(page.locator(".mac-toolbar")).toBeVisible();
       await expect(page.locator("aside").getByText("OwnDashboard", { exact: true })).toBeVisible();
     }
-    await expect(page.getByRole("heading", { level: 2 }).first()).toContainText(
-      "Jan",
-    );
-    // KPI + customize affordance present.
-    await expect(
-      page.getByRole("button", { name: "Customize" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Today's seven" }),
-    ).toBeVisible();
-    await expect(page.getByText("0 of 7 completed")).toBeVisible();
-    await expect(page.getByText("GLOBAL", { exact: true })).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 3, name: "Completion garden" }),
-    ).toBeVisible();
-    await expect(page.getByText(/^Waiting /).first()).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Generate a new seven" }),
-    ).toBeVisible();
+    const home = page.getByTestId("execution-home");
+    await expect(home.getByRole("list", { name: "Backlog tasks" }).getByRole("listitem")).toHaveCount(5);
+    await expect(home.getByRole("list", { name: "Opportunities to apply" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Customize" })).toHaveCount(0);
+    await expect(page.getByText("Completion garden")).toHaveCount(0);
     const sidebar = page.locator("aside");
     if (testInfo.project.name === "desktop") {
       await expect(
@@ -137,7 +123,7 @@ test.describe("dashboard sections", () => {
     }
     await menu.getByRole("button", { name: "Finance" }).click();
     await expect(page.getByRole("tab", { name: "Finance" })).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByText("Supabase", { exact: true })).toBeVisible();
+    await expect(page.getByText("Supabase", { exact: true }).last()).toBeVisible();
     await more.click();
     await menu.getByRole("button", { name: "Communication" }).click();
     await expect(page.getByText("Confirmed the first release scope and the weekly review cadence.")).toBeVisible();
@@ -397,11 +383,12 @@ test.describe("dashboard sections", () => {
     const netflix = page.getByRole("listitem").filter({ hasText: "Netflix" }).filter({ hasText: "Entertainment" });
     await expect(netflix).toContainText("Entertainment");
     await expect(netflix).toContainText("Optional");
-    await expect(netflix).toContainText("in 8d");
+    // Preview dates are fixed when built; the browser may cross local midnight before this test.
+    await expect(netflix).toContainText(/next \d{4}-\d{2}-\d{2} · in \d+d/);
     const figma = page.getByRole("listitem").filter({ hasText: "Figma" });
     await expect(figma).toContainText("Development");
     await expect(figma).toContainText("Useful");
-    await expect(figma).toContainText("in 120d");
+    await expect(figma).toContainText(/next \d{4}-\d{2}-\d{2} · in \d+d/);
   });
 
   test("Money overview marks amounts not yet checked against an invoice", async ({ page }, testInfo) => {
