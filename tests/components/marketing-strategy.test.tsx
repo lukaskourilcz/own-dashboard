@@ -19,7 +19,7 @@ beforeEach(() => {
   resetDemoMarketingStrategy(); resetDemoDevsharkStudio(); resetDemoDneskaiTopics(); resetDemoDneskaiWorkspace();
   host = document.createElement('div'); document.body.append(host); root = createRoot(host); cache = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 });
-afterEach(() => { act(() => root.unmount()); host.remove(); cache.clear(); vi.restoreAllMocks(); });
+afterEach(() => { act(() => root.unmount()); host.remove(); cache.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 const render = async (brand: 'devshark' | 'dneskai', lang: 'en' | 'cs' = 'en', preview = true) => {
   await act(async () => root.render(<QueryClientProvider client={cache}><MarketingStrategyTab brand={brand} projectId={id} projectSlug={brand} lang={lang} preview={preview} /></QueryClientProvider>)); await settle();
 };
@@ -57,5 +57,20 @@ describe('connected strategy workspace', () => {
     expect(host.textContent).toContain(marketingStrategy.en.emptyResults);
     expect(host.textContent).toContain(marketingStrategy.en.noPublications);
     expect(cache.getQueryData([...qk.marketingStrategy, id, 'devshark', 'preview'])).toMatchObject({ results: [], publications: [] });
+  });
+  it('keeps Apify research usable offline, distinguishes the Czech evidence gap and never starts paid work', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+    await render('dneskai', 'cs', false);
+    await click(marketingStrategy.cs.sections.apify);
+    const calls = fetch.mock.calls.length;
+    const clipboard = vi.fn().mockRejectedValue(new Error('clipboard denied'));
+    vi.stubGlobal('navigator', { clipboard: { writeText: clipboard } });
+    await click(marketingStrategy.cs.apify.copy);
+    expect(host.textContent).toContain('neobsahuje analyzovanou skupinu českých AI konkurentů');
+    expect(host.textContent).toContain('26 / 241');
+    expect(host.textContent).toContain('213 / 241');
+    expect(host.textContent).toContain(marketingStrategy.cs.apify.copyFailed);
+    expect(host.querySelector('pre')!.textContent).toContain('nejvýše $2 na běh');
+    expect(fetch.mock.calls.length).toBe(calls);
   });
 });

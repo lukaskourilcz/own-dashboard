@@ -44,6 +44,17 @@ test('Strategy reflows in both languages and themes, with accessible names and k
     await expect(strategy).toContainText('Strategie růstu bez tváře');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   }
+  await strategy.getByRole('button', { name: 'Apify', exact: true }).click();
+  const apify = page.getByTestId('strategy-apify');
+  await expect(apify).toContainText('26 / 241');
+  await expect(apify).toContainText('neobsahuje analyzovanou skupinu českých AI konkurentů');
+  await apify.locator('summary').filter({ hasText: 'Pokrytí účtů v tomto vzorku' }).click();
+  for (const width of [360, 430, 768, 1024, 1440, 1728]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  }
+  expect((await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).include('[data-testid="strategy-apify"]').analyze()).violations).toEqual([]);
+  await page.screenshot({ path: 'test-results/strategy-apify-cs-dark.png' });
   await strategy.getByRole('button', { name: '25 námětů', exact: true }).click();
   const summary = strategy.locator('summary').first(); await summary.focus(); await page.keyboard.press('Enter');
   await expect(strategy.locator('details').first()).toHaveAttribute('open', '');
@@ -52,5 +63,7 @@ test('Strategy reflows in both languages and themes, with accessible names and k
   await gotoPreview(page, { lang: 'en', theme: 'light' });
   await page.goto('/dev-preview?project=devshark&projectTab=strategy');
   await expect(strategy).toContainText('Faceless growth strategy');
+  await strategy.getByRole('button', { name: 'Apify', exact: true }).click();
+  await expect(apify).toContainText('No new runs have been started');
   expect((await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).include('[data-testid="marketing-strategy"]').analyze()).violations).toEqual([]);
 });

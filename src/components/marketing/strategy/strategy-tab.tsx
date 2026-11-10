@@ -13,6 +13,7 @@ import { addStrategyIdea, loadStrategy, loadStrategyCalendar, openStrategyHref, 
 import type { StrategyRead } from '@/lib/marketing/strategy/contracts';
 import { cn } from '@/lib/utils';
 import { StrategyResults } from './strategy-results';
+import { StrategyApify } from './strategy-apify';
 
 type Props = { brand: PublishingBrand; projectId: string; projectSlug: string; lang: StrategyLang; preview?: boolean };
 type Section = keyof (typeof copy)['en']['sections'];
@@ -39,6 +40,7 @@ export function MarketingStrategyTab({ brand, projectId, projectSlug, lang, prev
     ...(brand === 'dneskai' ? [[t.topics, '/topics'], [t.sources, projectHref('sources')]] : []),
     [t.competition, projectHref('competition')], [t.knowledge, projectHref('knowledge')], [t.tips, '/ig-tips'],
     [t.finance, projectHref(brand === 'dneskai' ? 'dneskai-costs' : 'finance')],
+    [t.backlog, '/backlog'],
   ];
   return <section className="min-w-0 space-y-5" data-testid="marketing-strategy" aria-labelledby={`${ids}-title`}>
     <header className="space-y-2">
@@ -67,6 +69,7 @@ export function MarketingStrategyTab({ brand, projectId, projectSlug, lang, prev
     {section === 'ideas' && <div className="space-y-3"><p className="text-sm text-foreground-muted">{t.ideaHelp}</p><ol className="divide-y divide-border">{strategyIdeas(brand).map((idea, index) => <Idea key={idea.id} {...{ idea, index, lang, brand, projectId, projectSlug, preview }} read={query.data} unavailable={query.isError || query.isPending} />)}</ol></div>}
     {section === 'experiments' && <div className="space-y-5"><p className="text-sm text-foreground-muted">{t.experimentHelp}</p><Block title={t.rules}><p>{growthResearch.common.decision[lang]}</p></Block>{research.experiments.map((exp) => <Block key={exp.id} title={exp.title[lang]}><dl className="space-y-2"><div><dt className="font-medium">{t.variantA}</dt><dd>{exp.a[lang]}</dd></div><div><dt className="font-medium">{t.variantB}</dt><dd>{exp.b[lang]}</dd></div><div><dt className="font-medium">{t.metric}</dt><dd>{t.metrics[exp.metric as 'shares' | 'saves' | 'replies']} / 1 000 · {exp.channel === 'threads' ? t.metrics.views : t.metrics.reach}</dd></div></dl></Block>)}</div>}
     {section === 'results' && <StrategyResults {...{ brand, projectId, lang, preview }} read={query.data} unavailable={query.isError || query.isPending} />}
+    {section === 'apify' && <StrategyApify brand={brand} lang={lang} />}
     {section === 'research' && <div className="space-y-5">
       <Block title={t.research}><p>{growthResearch.common.boundary[lang]}</p><p className="mt-3">{growthResearch.common.screenshots[lang]}</p><p className="mt-3 text-foreground-muted">{t.sourcesHelp}</p></Block>
       <Block title={t.references}><p>{growthResearch.common.competitors[lang]}</p></Block>
