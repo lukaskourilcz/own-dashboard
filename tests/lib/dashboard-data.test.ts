@@ -6,20 +6,20 @@ import { NAV_TABS } from "@/lib/nav-tabs";
 describe("dashboard route data boundaries", () => {
   it("keeps unrelated financial and career records out of Home", () => {
     const keys = dashboardDataKeysForTab("home");
-    expect(keys.has("todos")).toBe(true);
-    expect(keys.has("todayCalendar")).toBe(true);
+    expect(keys.has("todos")).toBe(false);
+    expect(keys.has("todayCalendar")).toBe(false);
     expect(keys.has("transactions")).toBe(false);
     expect(keys.has("jobListings")).toBe(false);
     expect(keys.has("jobUserStates")).toBe(false);
     expect(keys.has("weekCalendar")).toBe(false);
   });
 
-  it("loads job applications on Home for the follow-up column only", () => {
+  it("loads saved positions and applications on Home to exclude already applied roles", () => {
     // The hero merges opportunity and career follow-ups; neither the scraped
     // board nor the application history belongs on Home.
     expect(dashboardDataKeysForTab("home").has("jobApplications")).toBe(true);
     expect(dashboardDataKeysForTab("home").has("jobApplicationEvents")).toBe(false);
-    expect(dashboardDataKeysForTab("home").has("savedJobPositions")).toBe(false);
+    expect(dashboardDataKeysForTab("home").has("savedJobPositions")).toBe(true);
   });
 
   it("loads the relationships required by a project workspace", () => {

@@ -55,20 +55,8 @@ export const DASHBOARD_DATA_KEYS = [
 export type DashboardDataKey = (typeof DASHBOARD_DATA_KEYS)[number];
 
 const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
-  home: [
-    "subscriptions",
-    "todos",
-    "plans",
-    "importantDates",
-    "projects",
-    "opportunities",
-    // The hero's follow-up column covers both pipelines: a client opportunity
-    // and a job application both have a date you promised yourself. The
-    // scraped listings and their user state stay out; Home shows what is due,
-    // not the job board.
-    "jobApplications",
-    "todayCalendar",
-  ],
+  // Home contains the shared backlog (own query) and saved, unapplied Career positions.
+  home: ["savedJobPositions", "jobApplications"],
   inbox: ["inboxItems", "notifications"],
   work: [
     "todos",

@@ -44,20 +44,21 @@ const STATUS_TONE: Record<BacklogStatus, string> = {
   dropped: "border-dashed border-border bg-surface-inset",
 };
 
-export function BacklogPanel({ isPreview = false }: { isPreview?: boolean }) {
+export function BacklogPanel({ isPreview = false, strategyOnly = false, project }: { isPreview?: boolean; strategyOnly?: boolean; project?: "devShark" | "DNESKAi" }) {
   const { lang } = useLang();
   const t = strings[lang];
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: qk.backlog, queryFn: fetchBacklogItems, enabled: !isPreview, staleTime: 30_000 });
   const [previewItems, setPreviewItems] = useState(PREVIEW_BACKLOG);
-  const items = useMemo(() => isPreview ? previewItems : query.data ?? [], [isPreview, previewItems, query.data]);
+  const items = useMemo(() => (isPreview ? previewItems : query.data ?? []).filter((item) => (!strategyOnly || item.source?.startsWith("strategy:")) && (!project || item.project === project)), [isPreview, previewItems, query.data, strategyOnly, project]);
+  const [executor, setExecutor] = useState<"all" | "me" | "ai">("all");
   const [filter, setFilter] = useState<BacklogFilter>({ project: "all", status: "active" });
   const [failed, setFailed] = useState<string | null>(null);
-  const shown = useMemo(() => filterBacklog(items, filter), [items, filter]);
+  const shown = useMemo(() => filterBacklog(items, filter).filter((item) => executor === "all" || (item.executor ?? "ai") === executor), [items, filter, executor]);
   const counts = useMemo(() => backlogProjectCounts(items, filter.status), [items, filter.status]);
 
-  type Change = { id: string; status?: BacklogStatus; note?: string | null };
-  const patch = (item: BacklogItem, change: Change): BacklogItem => ({ ...item, ...(change.status ? { status: change.status } : {}),
+  type Change = { id: string; executor?: "me" | "ai"; status?: BacklogStatus; note?: string | null };
+  const patch = (item: BacklogItem, change: Change): BacklogItem => ({ ...item, ...(change.executor ? { executor: change.executor } : {}), ...(change.status ? { status: change.status } : {}),
     ...(change.note !== undefined ? { note: change.note, note_updated_at: change.note === item.note ? item.note_updated_at : new Date().toISOString() } : {}) });
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const mutation = useMutation({
@@ -84,13 +85,16 @@ export function BacklogPanel({ isPreview = false }: { isPreview?: boolean }) {
   const statusChoices = BACKLOG_STATUSES.map((status) => ({ value: status, label: t.statuses[status] }));
 
   return <section className="min-w-0" data-testid="backlog-panel">
-    <PageHeader title={t.title} description={t.description} />
+    {strategyOnly ? <div className="mb-4 space-y-1"><h2 className="text-base font-semibold">{t.strategyTasks}</h2><p className="text-xs text-foreground-muted">{t.strategyHelp}</p></div> : <PageHeader title={t.title} description={t.description} />}
     <div className="mb-4 flex flex-wrap items-end gap-3">
       <label className="grid gap-1 text-xs font-medium text-foreground-muted">{t.project}
         <SimpleSelect value={filter.project} onValueChange={(value) => setFilter((old) => ({ ...old, project: value as BacklogFilter["project"] }))} options={projectOptions} aria-label={t.project} className="w-56" />
       </label>
       <label className="grid gap-1 text-xs font-medium text-foreground-muted">{t.status}
         <SimpleSelect value={filter.status} onValueChange={(value) => setFilter((old) => ({ ...old, status: value as BacklogFilter["status"] }))} options={statusOptions} aria-label={t.status} className="w-56" />
+      </label>
+      <label className="grid gap-1 text-xs font-medium text-foreground-muted">{t.executor}
+        <SimpleSelect value={executor} onValueChange={(value) => setExecutor(value as typeof executor)} options={[{value:"all",label:t.allExecutors},{value:"me",label:"JA"},{value:"ai",label:"AI"}]} aria-label={t.executor} className="w-36" />
       </label>
       <p className="pb-2 text-xs tabular-nums text-foreground-muted" aria-live="polite">{t.count(shown.length, items.length)}</p>
     </div>
@@ -106,7 +110,7 @@ export function BacklogPanel({ isPreview = false }: { isPreview?: boolean }) {
             <Card className={cn("flex flex-col gap-3 p-3 sm:flex-row sm:items-start sm:justify-between", STATUS_TONE[item.status])}>
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <EntityBadge>{t.projects[item.project]}</EntityBadge>
+                  <EntityBadge>{t.projects[item.project]}</EntityBadge><EntityBadge>{item.executor === "me" ? "JA" : "AI"}</EntityBadge>
                   {item.external_ref && (href
                     ? <a href={href} target="_blank" rel="noreferrer" className="inline-flex min-h-6 items-center gap-1 text-xs font-medium text-foreground underline underline-offset-2 hover:no-underline focus-ring">{item.external_ref}<ExternalLink className="h-3 w-3" aria-hidden /></a>
                     : <span className="text-xs text-foreground-muted">{item.external_ref}</span>)}
@@ -134,7 +138,8 @@ export function BacklogPanel({ isPreview = false }: { isPreview?: boolean }) {
                 </>}
                 {failed === item.id && <p role="alert" className="text-xs text-risk">{t.saveFailed}</p>}
               </div>
-              <SimpleSelect value={item.status} onValueChange={(value) => setStatus(item.id, value as BacklogStatus)} options={statusChoices} aria-label={t.statusOf(item.title)} className="w-full shrink-0 sm:w-40" />
+              <div className="grid w-full shrink-0 gap-2 sm:w-40"><SimpleSelect value={item.executor ?? "ai"} onValueChange={(value) => save({ id: item.id, executor: value as "me" | "ai" })} options={[{value:"me",label:"JA"},{value:"ai",label:"AI"}]} aria-label={`${t.executor}: ${item.title}`} disabled={mutation.isPending} />
+              <SimpleSelect value={item.status} onValueChange={(value) => setStatus(item.id, value as BacklogStatus)} options={statusChoices} aria-label={t.statusOf(item.title)} className="w-full" /></div>
             </Card>
           </li>;
         })}

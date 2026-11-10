@@ -3,6 +3,10 @@ import type { BacklogProject, BacklogStatus } from "@/lib/backlog";
 /** The Backlog section (owner request, 8 November 2026). Every string exists in English and Czech with the same meaning. */
 const en = {
   title: "Backlog",
+  executor: "For",
+  allExecutors: "JA + AI",
+  strategyTasks: "Strategy tasks",
+  strategyHelp: "Actionable steps from Strategy, shared with Backlog. AI includes terminal and Chrome work; JA covers owner decisions and identity checks.",
   description: "Tasks the agents on this laptop added when you asked them to put something in the backlog, and the ones you track yourself.",
   project: "Project",
   status: "Status",
@@ -36,6 +40,10 @@ const en = {
 
 const cs: typeof en = {
   title: "Backlog",
+  executor: "Pro",
+  allExecutors: "JA + AI",
+  strategyTasks: "Úkoly ze Strategie",
+  strategyHelp: "Konkrétní kroky ze Strategie sdílené s Backlogem. AI zahrnuje práci v terminálu a Chromu; JA rozhodnutí vlastníka a ověření identity.",
   description: "Úkoly, které agenti na tomhle notebooku přidali, když jsi jim řekl, ať je dají do backlogu, a ty, které si vedeš sám.",
   project: "Projekt",
   status: "Stav",

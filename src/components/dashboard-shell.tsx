@@ -30,13 +30,7 @@ import { WorkflowsPanel } from "@/components/panels/workflows-panel";
 import { IgTipsPanel } from "@/components/panels/ig-tips-panel";
 import { IgCollectionPanel } from "@/components/panels/ig-collection-panel";
 import { DneskaiTopicsPanel } from "@/components/panels/dneskai-topics-panel";
-import { CustomizableOverview } from "@/components/overview/customizable-overview";
-import { KpiCards } from "@/components/overview/kpi-cards";
-import { RecurringPlans } from "@/components/overview/recurring-plans";
-import { DailyFocusPanel } from "@/components/overview/daily-focus";
-import { CronMonitorPanel } from "@/components/overview/cron-monitor";
-import { TodayHero } from "@/components/overview/today-hero";
-import { WorkAttention } from "@/components/overview/work-attention";
+import { ExecutionHome } from "@/components/overview/execution-home";
 import { WeekView } from "@/components/calendar/week-view";
 import { CommandPalette } from "@/components/command-palette";
 import { MobileFab } from "@/components/mobile-fab";
@@ -54,7 +48,6 @@ import type { DetectedToolsResponse } from "@/lib/stack-detection";
 import type { MarketingCalendarsResponse } from "@/lib/marketing-calendars";
 import { onDemandDataKeys, tabNeedsDashboardData, type DashboardDataKey } from "@/lib/dashboard-data";
 import { useQueryClient, type QueryKey } from "@tanstack/react-query";
-import type { WidgetId } from "@/lib/dashboard-layout";
 import { isHiddenNavTab, tabFromPath, tabToPath } from "@/lib/nav-tabs";
 import { useEntityStore } from "@/lib/queries/entities";
 import { taskBelongsToProject } from "@/lib/project-match";
@@ -300,12 +293,12 @@ export function DashboardShell(props: Props) {
   const [weeklyReviews, setWeeklyReviews, weeklyReviewsStatus] = useEntityStore(qk.weeklyReviews, props.initialWeeklyReviews, fetchWeeklyReviews, dataOptions("weeklyReviews"));
   const [jobListings] = useEntityStore(qk.jobListings, props.initialJobListings, fetchJobListings, dataOptions("jobListings"));
   const [jobUserStates, setJobUserStates] = useEntityStore(qk.jobUserStates, props.initialJobUserStates, fetchJobUserStates, dataOptions("jobUserStates"));
-  const [savedJobPositions, setSavedJobPositions] = useEntityStore(qk.savedJobPositions, props.initialSavedJobPositions, fetchSavedJobPositions, dataOptions("savedJobPositions"));
-  const [jobApplications, setJobApplications] = useEntityStore(qk.jobApplications, props.initialJobApplications, fetchJobApplications, dataOptions("jobApplications"));
+  const [savedJobPositions, setSavedJobPositions, savedPositionsStatus] = useEntityStore(qk.savedJobPositions, props.initialSavedJobPositions, fetchSavedJobPositions, dataOptions("savedJobPositions"));
+  const [jobApplications, setJobApplications, applicationsStatus] = useEntityStore(qk.jobApplications, props.initialJobApplications, fetchJobApplications, dataOptions("jobApplications"));
   const [jobApplicationEvents, setJobApplicationEvents] = useEntityStore(qk.jobApplicationEvents, props.initialJobApplicationEvents, fetchJobApplicationEvents, dataOptions("jobApplicationEvents"));
   const [coverLetterTemplates, setCoverLetterTemplates] = useEntityStore(qk.coverLetterTemplates, props.initialCoverLetterTemplates, fetchCoverLetterTemplates, dataOptions("coverLetterTemplates"));
   const [jobLastRun] = useEntityStore<JobScrapeRun | null>(qk.jobLastRun, props.initialJobLastRun, fetchJobLastRun, dataOptions("jobLastRun"));
-  const [todayCalendar] = useEntityStore(qk.calendarToday, props.todayCalendar, fetchTodayCalendar, dataOptions("todayCalendar"));
+  useEntityStore(qk.calendarToday, props.todayCalendar, fetchTodayCalendar, dataOptions("todayCalendar"));
   const [weekCalendar] = useEntityStore(qk.calendarWeek, props.weekCalendar, fetchWeekCalendar, dataOptions("weekCalendar"));
   const [lastWeekCalendar, , lastWeekCalendarStatus] = useEntityStore(qk.calendarLastWeek, props.lastWeekCalendar, fetchLastWeekCalendar, dataOptions("lastWeekCalendar"));
   const { currency: displayCurrency, setCurrency: setDisplayCurrency } = useDisplayCurrency();
@@ -379,16 +372,7 @@ export function DashboardShell(props: Props) {
         <MobileNav tab={tab} setTab={setTab} />
         <div key={tab}>
           {isHiddenNavTab(tab) && <p className="mb-3 text-xs text-foreground-subtle">{t.nav.hiddenFromNavigation}</p>}
-          {tab === "home" && <CustomizableOverview syncPreferences={!props.isPreview} nodes={{
-            "today-hero": <TodayHero userName={user.name} userEmail={user.email} calendar={todayCalendar} todos={operationalTodos} opportunities={opportunities} jobApplications={jobApplications} importantDates={importantDates} />,
-            kpi: <KpiCards subscriptions={subscriptions} todos={operationalTodos} projects={activeProjects} displayCurrency={displayCurrency} />,
-            todos: <DailyFocusPanel todos={operationalTodos} isPreview={props.isPreview} />,
-            crons: <CronMonitorPanel isPreview={props.isPreview} />,
-            "work-attention": <WorkAttention opportunities={opportunities} onOpen={() => setTab("opportunities")} />,
-            subscriptions: <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} displayCurrency={displayCurrency} compact />,
-            calendar: <CalendarPanel compact />,
-            goals: <RecurringPlans plans={plans} setPlans={setPlans} />,
-          } satisfies Record<WidgetId, React.ReactNode>} />}
+          {tab === "home" && <ExecutionHome isPreview={props.isPreview} positions={savedJobPositions} applications={jobApplications} careerStatus={{ ready: savedPositionsStatus.ready && applicationsStatus.ready, failed: savedPositionsStatus.failed || applicationsStatus.failed }} onBacklog={() => setTab("backlog")} onCareer={() => setTab("career")} />}
           {tab === "inbox" && <InboxPanel items={inboxItems} setItems={setInboxItems} notifications={notifications} setNotifications={setNotifications} />}
           {tab === "work" && <WorkOverviewPanel projects={activeProjects} opportunities={opportunities} organizations={organizations} invoices={invoices} jobApplications={jobApplications} importantDates={importantDates} todos={operationalTodos} costs={projectCosts} crons={crons} reviews={weeklyReviews} setReviews={setWeeklyReviews} reviewsStatus={weeklyReviewsStatus} lastWeekCalendar={lastWeekCalendar} lastWeekCalendarStatus={lastWeekCalendarStatus} isPreview={props.isPreview} previewMarketingCalendars={props.previewMarketingCalendars} />}
           {tab === "projects" && <ProjectsPanel projects={projects} setProjects={setProjects} costs={projectCosts} setCosts={setProjectCosts} crons={crons} setCrons={setCrons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} initialVisibleIds={props.repoVisibleIds} selectedProjectId={selectedProjectId ?? undefined} onOpenProject={openProject} todos={todos} notes={notes} setNotes={setNotes} invoices={invoices} invoiceItems={invoiceItems} subscriptions={subscriptions} subscriptionAllocations={subscriptionAllocations} transactions={transactions} organizations={organizations} opportunities={opportunities} importantDates={importantDates} prompts={prompts} inboxItems={inboxItems} repoNotes={repoNotes} setRepoNotes={setRepoNotes} repoLinks={repoLinks} setRepoLinks={setRepoLinks} communications={projectCommunications} setCommunications={setProjectCommunications} aiLinks={aiLinks} aiCategories={aiCategories} projectLinks={projectLinks} setProjectLinks={setProjectLinks} promptLinks={promptLinks} competitors={competitors} setCompetitors={setCompetitors} syncRepositories={!props.isPreview} isPreview={props.isPreview} />}
@@ -400,7 +384,7 @@ export function DashboardShell(props: Props) {
           {tab === "money" && <DevFinancePanel subscriptions={subscriptions} allocations={subscriptionAllocations} transactions={transactions} projects={projects} projectCosts={projectCosts} crons={crons} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} onOpenSubscriptions={() => setTab("subscriptions")} onOpenProject={openProject} />}
           {(tab === "accounts" || tab === "transactions" || tab === "categories") && financePanel}
           {tab === "subscriptions" && <SubscriptionsPanel subs={subscriptions} setSubs={setSubscriptions} projects={activeProjects} allocations={subscriptionAllocations} setAllocations={setSubscriptionAllocations} allocationsReady={subscriptionAllocationsStatus.ready} displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />}
-          {tab === "tasks" && <TodosPanel todos={operationalTodos} projects={activeProjects} organizations={organizations} />}
+          {tab === "tasks" && <div className="space-y-8"><BacklogPanel isPreview={props.isPreview} strategyOnly /><TodosPanel todos={operationalTodos} projects={activeProjects} organizations={organizations} /></div>}
           {tab === "calendar" && <div className="grid gap-4 lg:grid-cols-2"><CalendarPanel /><WeekView calendar={weekCalendar} selectedCalendarIds={props.selectedCalendarIds} /></div>}
           {tab === "backlog" && <BacklogPanel isPreview={props.isPreview} />}
           {tab === "schedule" && <PublishingCalendarPanel isPreview={props.isPreview} />}
