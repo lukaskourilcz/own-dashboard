@@ -45,6 +45,8 @@ for (const lang of ["en", "cs"] as const) {
     const dialog = page.getByTestId("publishing-post-dialog");
     await expect(dialog.getByRole("heading", { name: "typeof null" })).toBeVisible();
     const tabs = dialog.getByRole("tablist");
+    // Instagram is the default; explicitly choose the Story version under test.
+    await tabs.getByRole("tab", { name: /Story/ }).click();
     await expect(tabs.getByRole("tab", { name: /Story/ })).toHaveAttribute("aria-selected", "true");
     await expect(dialog.getByTestId("story-frame")).toBeVisible();
     for (const name of [/LinkedIn/, /FB/]) await expect(tabs.getByRole("tab", { name })).toBeDisabled();
@@ -74,14 +76,14 @@ for (const lang of ["en", "cs"] as const) {
     await expect(page.getByRole("heading", { level: 1, name: "Backlog" }).first()).toBeVisible();
     await expect(panel).toBeVisible();
     const list = panel.getByRole("list", { name: "Backlog" });
-    await expect(list.getByRole("listitem")).toHaveCount(3);
+    await expect(list.getByRole("listitem")).toHaveCount(7);
     await expect(panel.getByText("Fix the search error message")).toHaveCount(0);
     await panel.getByRole("combobox", { name: lang === "cs" ? "Stav úkolu Renew the domain" : "Status of Renew the domain" }).click();
     await page.getByRole("option", { name: lang === "cs" ? "Hotový" : "Done", exact: true }).click();
-    await expect(list.getByRole("listitem")).toHaveCount(2);
+    await expect(list.getByRole("listitem")).toHaveCount(6);
     await panel.getByRole("combobox", { name: lang === "cs" ? "Stav" : "Status", exact: true }).click();
     await page.getByRole("option", { name: lang === "cs" ? "Všechny stavy" : "All statuses", exact: true }).click();
-    await expect(list.getByRole("listitem")).toHaveCount(4);
+    await expect(list.getByRole("listitem")).toHaveCount(8);
     await expect(panel.getByRole("link", { name: /LDEV-1/ })).toHaveAttribute("href", "https://linka.atlassian.net/browse/LDEV-1");
     await expect(panel.getByTestId("backlog-note")).toContainText("Moved the message under the search field.");
     // A note and the hand-over to an agent in one action.
@@ -90,7 +92,7 @@ for (const lang of ["en", "cs"] as const) {
     await item.getByRole("textbox", { name: lang === "cs" ? "Poznámka k úkolu Shorter closing slide on Threads" : "Note for Shorter closing slide on Threads" }).fill("Keep the line short.\nTwo rows at most.");
     await item.getByRole("button", { name: lang === "cs" ? "Uložit a předat agentovi" : "Save and hand to an agent" }).click();
     await expect(item.getByTestId("backlog-note")).toContainText("Two rows at most.");
-    await expect(item.getByRole("combobox")).toContainText(lang === "cs" ? "Připraven pro agenta" : "Ready for an agent");
+    await expect(item.getByRole("combobox", { name: lang === "cs" ? "Stav úkolu Shorter closing slide on Threads" : "Status of Shorter closing slide on Threads" })).toContainText(lang === "cs" ? "Připraven pro agenta" : "Ready for an agent");
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     const scan = await new AxeBuilder({ page: page as unknown as AxePage }).include('[data-testid="backlog-panel"]').withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
     expect(scan.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`)).toEqual([]);

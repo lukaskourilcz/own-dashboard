@@ -69,25 +69,11 @@ test.describe("dashboard sections", () => {
       await expect(page.locator(".mac-toolbar")).toBeVisible();
       await expect(page.locator("aside").getByText("OwnDashboard", { exact: true })).toBeVisible();
     }
-    await expect(page.getByRole("heading", { level: 2 }).first()).toContainText(
-      "Jan",
-    );
-    // KPI + customize affordance present.
-    await expect(
-      page.getByRole("button", { name: "Customize" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Today's seven" }),
-    ).toBeVisible();
-    await expect(page.getByText("0 of 7 completed")).toBeVisible();
-    await expect(page.getByText("GLOBAL", { exact: true })).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 3, name: "Completion garden" }),
-    ).toBeVisible();
-    await expect(page.getByText(/^Waiting /).first()).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Generate a new seven" }),
-    ).toBeVisible();
+    const home = page.getByTestId("execution-home");
+    await expect(home.getByRole("list", { name: "Backlog tasks" }).getByRole("listitem")).toHaveCount(5);
+    await expect(home.getByRole("list", { name: "Opportunities to apply" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Customize" })).toHaveCount(0);
+    await expect(page.getByText("Completion garden")).toHaveCount(0);
     const sidebar = page.locator("aside");
     if (testInfo.project.name === "desktop") {
       await expect(
@@ -137,7 +123,7 @@ test.describe("dashboard sections", () => {
     }
     await menu.getByRole("button", { name: "Finance" }).click();
     await expect(page.getByRole("tab", { name: "Finance" })).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByText("Supabase", { exact: true })).toBeVisible();
+    await expect(page.getByText("Supabase", { exact: true }).last()).toBeVisible();
     await more.click();
     await menu.getByRole("button", { name: "Communication" }).click();
     await expect(page.getByText("Confirmed the first release scope and the weekly review cadence.")).toBeVisible();

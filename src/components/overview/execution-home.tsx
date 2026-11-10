@@ -5,7 +5,6 @@ import { ArrowUpRight, BriefcaseBusiness, ListChecks } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EntityBadge } from "@/components/ui/status-badge";
-import { PageHeader } from "@/components/ui/page-header";
 import { PREVIEW_BACKLOG } from "@/components/panels/backlog-panel";
 import { fetchBacklogItems } from "@/lib/backlog";
 import { qk } from "@/lib/queries/keys";
@@ -25,7 +24,7 @@ export function ExecutionHome({ positions, applications, careerStatus, onBacklog
   const tasks = homeBacklog(isPreview ? PREVIEW_BACKLOG : backlog.data ?? []);
   const jobs = homeApplications(positions, applications);
   return <section data-testid="execution-home" className="space-y-4">
-    <PageHeader title={cs ? "Domů" : "Home"} description={cs ? "Pět úkolů z backlogu a pět příležitostí k přihlášce." : "Five backlog tasks and five opportunities to apply for."} />
+    <p className="text-sm text-foreground-muted">{cs ? "Pět úkolů z backlogu a pět příležitostí k přihlášce." : "Five backlog tasks and five opportunities to apply for."}</p>
     <div className="grid min-w-0 gap-4 xl:grid-cols-2">
       <Card className="min-w-0 overflow-hidden p-0">
         <CardHeader className="flex-row items-center justify-between gap-2 border-b border-border"><CardTitle><ListChecks className="size-4" />{cs ? "Prvních 5 z backlogu" : "First 5 from Backlog"}</CardTitle><Button variant="ghost" size="sm" onClick={onBacklog}>{cs ? "Celý backlog" : "All backlog"}<ArrowUpRight className="size-4" aria-hidden /></Button></CardHeader>
