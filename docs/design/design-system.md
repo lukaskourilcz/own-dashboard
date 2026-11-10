@@ -42,7 +42,7 @@ Home and login may breathe. Work, Projects, Opportunities, Career, Money, and In
 - `EntityBadge` shows relationships without pretending they are statuses.
 - `Metric` creates compact border-led measures instead of repeating equal cards.
 - `BrandMark` is the name-independent shell/auth/icon placement contract.
-- `DailyFocusPanel` is an operational execution surface: it snapshots at most seven active-project or GLOBAL tasks, exposes waiting age, and uses the 49-day completion garden as professional task history rather than lifestyle gamification.
+- Home uses `ExecutionHome`: five active backlog rows and up to five saved Career positions awaiting applications. Its two queues use the established list and card primitives. Daily focus, calendar context and customization are absent from Home. Strategy rows show editable JA / AI execution categories. Project cost details keep recurring estimates, payments, usage periods and credits distinct.
 
 New generic abstractions require two real consumers. Search before creating. Existing invoice, Career, finance, editor, and repository components retain domain logic while adopting shared surface and status primitives incrementally.
 

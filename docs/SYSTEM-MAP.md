@@ -13,7 +13,7 @@ own-only under row-level security. The product areas:
 
 | Area | What it holds | Main code |
 |---|---|---|
-| Home | Daily focus (seven tasks), completion garden, weekly planning, cron and integration health | `src/app/api/daily-focus/route.ts`, `src/lib/weekly-planning.ts`, `src/lib/cron-heartbeat.ts` |
+| Home | First five active backlog tasks and up to five unapplied saved Career positions | `src/components/overview/execution-home.tsx`, `src/lib/home-execution.ts` |
 | Work | Projects (workspaces at `/projects/<id-or-slug>`; the Projects section lists only DNESKAi, devShark and heyDarlink since 8 November 2026), tasks, notes, prompts, tools, the link library | `src/lib/projects.ts`, `src/lib/project-*`, `src/lib/link-library.ts` |
 | Opportunities | Freelance pipeline, clients and organizations (ARES and VIES checks), competition | `src/lib/freelance.ts`, `src/lib/competition.ts`, `src/lib/tax-registry.ts` |
 | Career | The Prague and Czech-remote job search: researched roles, careers directory, application drafts | `src/components/panels/career-research-workspace.tsx`, `src/lib/jobs` |
