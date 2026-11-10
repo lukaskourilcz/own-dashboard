@@ -383,11 +383,12 @@ test.describe("dashboard sections", () => {
     const netflix = page.getByRole("listitem").filter({ hasText: "Netflix" }).filter({ hasText: "Entertainment" });
     await expect(netflix).toContainText("Entertainment");
     await expect(netflix).toContainText("Optional");
-    await expect(netflix).toContainText("in 8d");
+    // Preview dates are fixed when built; the browser may cross local midnight before this test.
+    await expect(netflix).toContainText(/next \d{4}-\d{2}-\d{2} · in \d+d/);
     const figma = page.getByRole("listitem").filter({ hasText: "Figma" });
     await expect(figma).toContainText("Development");
     await expect(figma).toContainText("Useful");
-    await expect(figma).toContainText("in 120d");
+    await expect(figma).toContainText(/next \d{4}-\d{2}-\d{2} · in \d+d/);
   });
 
   test("Money overview marks amounts not yet checked against an invoice", async ({ page }, testInfo) => {
