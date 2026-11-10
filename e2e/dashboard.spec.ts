@@ -126,8 +126,8 @@ test.describe("dashboard sections", () => {
     // No project header (#171): the toolbar breadcrumb "Projects › DNESKAi" carries the context.
     await expect(page.locator("header").getByText("DNESKAi", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(["Projects"]);
-    // DNESKAi shows its five tabs; the general project sections open from the More menu (#169).
-    await expect(page.getByRole("tab")).toHaveText(["Today and tomorrow", "For review today", "Calendar", "Posts", "Sources (DNESKAi)"]);
+    // DNESKAi shows its seven tabs; the general project sections open from the More menu (#169).
+    await expect(page.getByRole("tab")).toHaveText(["Today and tomorrow", "For review today", "Calendar", "Posts", "Promo slide", "Sources (DNESKAi)", "Strategy"]);
     const more = page.getByTestId("dneskai-more");
     await expect(more).toHaveAccessibleName("More");
     await more.click();

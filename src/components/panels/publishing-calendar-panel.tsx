@@ -34,6 +34,7 @@ import {
 import { cn } from "@/lib/utils";
 import { dneskaiWorkspaceApi } from "@/lib/marketing/dneskai-workspace-client";
 import { DevsharkStudioSlide } from "@/components/design-studio/slide-canvas";
+import { StrategyLink } from "@/components/marketing/strategy/strategy-link";
 
 type Lang = "en" | "cs";
 
@@ -291,11 +292,12 @@ function PostDialog({ post, connected, lang, onClose, onSwitch, saving, failed, 
         </label>}
         {current ? <VersionDetails version={current} lang={lang} /> : <p className="text-sm text-foreground-muted">{t.noVersion}</p>}
       </div>
-      {post.target && <div className="mt-4 flex justify-end">
-        <Button type="button" variant="outline" onClick={() => { const target = post.target!; onClose(); openTarget(target, selected); }}>
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <StrategyLink brand={post.brand} lang={lang} onOpen={onClose} />
+        {post.target && <Button type="button" variant="outline" onClick={() => { const target = post.target!; onClose(); openTarget(target, selected); }}>
           <ExternalLink className="h-4 w-4" aria-hidden />{t.editInLab}
-        </Button>
-      </div>}
+        </Button>}
+      </div>
         </div>
       </div>
     </DialogContent>

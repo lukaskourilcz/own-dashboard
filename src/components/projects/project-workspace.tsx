@@ -51,6 +51,7 @@ import { useProjectTabVisibility } from "@/lib/use-prefs";
 import { isDneskaiProject } from "@/lib/marketing/dneskai-registry";
 import { dneskaiWorkspace } from "@/lib/i18n/sections/dneskai-workspace";
 import { devsharkStudio } from "@/lib/i18n/sections/devshark-studio";
+import { marketingStrategy } from "@/lib/i18n/sections/marketing-strategy";
 import { DneskaiOverflowMenu } from "@/components/marketing/dneskai/overflow-menu";
 import type {
   AiCategory,
@@ -87,6 +88,9 @@ const DneskaiAudioLibrary = dynamic(() => import('@/components/marketing/dneskai
 const DneskaiDailyMixPanel = dynamic(() => import('@/components/marketing/dneskai-daily-mix').then(module => module.DneskaiDailyMixPanel));
 // The DNESKAi workspace tabs (#119) load their code and their reads only when one of them opens.
 const DevsharkStudioTab = dynamic(() => import('@/components/marketing/devshark/studio-tab').then(module => module.DevsharkStudioTab));
+const MarketingStrategyTab = dynamic(() => import('@/components/marketing/strategy/strategy-tab').then(module => module.MarketingStrategyTab), {
+  loading: function StrategyLoading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; },
+});
 const DneskaiWorkspaceTab = dynamic(() => import('@/components/marketing/dneskai/workspace').then(module => module.DneskaiWorkspaceTab), {
   loading: function WorkspaceLoading() { const t = useDict(); return <p role="status" className="text-sm text-foreground-muted">{t.common.loading}</p>; },
 });
@@ -225,7 +229,8 @@ export function ProjectWorkspace(props: Props) {
   // devShark (owner request, 7 November 2026): the studio opens first, before the general project tabs.
   const devshark = project.slug === "devshark" || project.portfolio_key === "react-express-app";
   const devsharkTabs: Array<{ id: ProjectTabId; label: string }> = devshark && !isProjectTabHidden("devshark-studio") ? [{ id: "devshark-studio", label: devsharkStudio[lang].tab }] : [];
-  const tabs = dneskai ? [...dneskaiStrip, ...(openSection ? [openSection] : [])] : [...devsharkTabs, ...projectTabs];
+  const strategyTabs: Array<{ id: ProjectTabId; label: string }> = (dneskai || devshark) && !isProjectTabHidden("strategy") ? [{ id: "strategy", label: marketingStrategy[lang].tab }] : [];
+  const tabs = dneskai ? [...dneskaiStrip, ...strategyTabs, ...(openSection ? [openSection] : [])] : [...devsharkTabs, ...strategyTabs, ...projectTabs];
   // A tab hidden in Settings, or one this project does not have, opens the first tab instead.
   const tab = tabs.some((item) => item.id === selectedTab) ? selectedTab : (tabs[0]?.id ?? "overview");
 
@@ -267,6 +272,7 @@ export function ProjectWorkspace(props: Props) {
     {tab === "activity" && <div className="space-y-4">{project.repo_full_name && <ProjectGithubActivity repoFullName={project.repo_full_name} enabled={props.repositoryIntegrationEnabled} />}<RecordCard title={p.recentActivity} icon={Activity} empty={p.noRelatedRecords} items={activity.map((item) => ({ id: item.id, primary: item.label, secondary: item.at.slice(0, 10) }))} /></div>}
     {tab === "communication" && <ProjectCommunicationPanel projectId={project.id} communications={projectCommunications} setCommunications={props.setCommunications} />}
     {tab === "devshark-studio" && devshark && <DevsharkStudioTab lang={lang} preview={props.isPreview} />}
+    {tab === "strategy" && (dneskai || devshark) && <MarketingStrategyTab brand={dneskai ? "dneskai" : "devshark"} projectId={project.id} projectSlug={project.slug} lang={lang} preview={props.isPreview} />}
     {isDneskaiProjectTab(tab) && dneskai && <DneskaiWorkspaceTab tab={tab} projectId={project.id} lang={lang} preview={props.isPreview} />}
     {tab === "sources" && isDneskaiProject(project) && <div className="space-y-8"><DneskaiSourceList projectId={project.id} lang={lang} preview={props.isPreview} /><DneskaiDailyMixPanel projectId={project.id} lang={lang} preview={props.isPreview} /><DneskaiAudioLibrary lang={lang} preview={props.isPreview} /></div>}
     {tab === "repository" && (project.repo_full_name && props.repositoryIntegrationEnabled ? <ReposPanel initialVisibleIds={[]} repoFullName={project.repo_full_name} repoNotes={props.repoNotes} setRepoNotes={props.setRepoNotes} repoLinks={props.repoLinks} setRepoLinks={props.setRepoLinks} /> : <Card><CardHeader><CardTitle className="flex items-center gap-2"><GithubIcon className="h-4 w-4" />{p.projectRepository}</CardTitle></CardHeader><CardContent>{project.repo_full_name ? <div className="space-y-3"><a className="inline-flex items-center gap-2 text-sm underline" href={`https://github.com/${project.repo_full_name}`} target="_blank" rel="noreferrer">{project.repo_full_name}<ExternalLink className="h-3.5 w-3.5" /></a>{project.notes && <p className="whitespace-pre-wrap text-sm text-foreground-muted">{project.notes}</p>}</div> : <p className="text-sm text-foreground-muted">{p.repositoryUnavailable}</p>}</CardContent></Card>)}

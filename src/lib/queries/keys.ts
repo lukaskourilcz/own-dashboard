@@ -63,6 +63,7 @@ export const qk = {
   repos: ["github", "repos"] as const,
   detectedTools: ["github", "detected-tools"] as const,
   marketingState: ["marketing", "state"] as const,
+  marketingStrategy: ["marketing", "strategy"] as const,
   dneskaiSources: ["marketing", "dneskai-sources"] as const,
   dneskaiSourceList: ["marketing", "dneskai-source-list"] as const,
   // The DNESKAi workspace tabs (#119), each followed by the project id; lazy, one per tab.

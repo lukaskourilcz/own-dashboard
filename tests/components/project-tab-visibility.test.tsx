@@ -65,11 +65,11 @@ describe('hideable DNESKAi project tabs', () => {
     expect([...general.querySelectorAll('li')].map(rowLabel)[0]).toBe(professional[lang].projectOverview);
   });
 
-  it('shows six DNESKAi tabs with Today and tomorrow open, and a hidden tab falls back to the first one left', () => {
+  it('shows seven DNESKAi tabs with Today and tomorrow open, and a hidden tab falls back to the first one left', () => {
     document.documentElement.lang = 'en';
     render(<><SettingsPanel syncPreferences={false} />{workspace}</>);
     const labels = dneskaiWorkspace.en.tabs; const p = professional.en;
-    expect(tabs().map(item => item.textContent)).toEqual([labels.today, labels.review, labels.calendar, labels.published, labels.promo, p.projectSources]);
+    expect(tabs().map(item => item.textContent)).toEqual([labels.today, labels.review, labels.calendar, labels.published, labels.promo, p.projectSources, "Strategy"]);
     expect(tabNamed(labels.today)!.getAttribute('aria-selected')).toBe('true');
     expect(container.querySelector('[data-dynamic-tab="dneskai-today"]')).not.toBeNull();
 
@@ -84,7 +84,7 @@ describe('hideable DNESKAi project tabs', () => {
     expect(tabNamed(labels.calendar)).toBeUndefined();
     expect(tabNamed(labels.today)!.getAttribute('aria-selected')).toBe('true');
     expect(container.querySelector('[data-dynamic-tab="dneskai-calendar"]')).toBeNull();
-    expect(tabs().map(item => item.textContent)).toEqual([labels.today, labels.review, labels.published, labels.promo, p.projectSources]);
+    expect(tabs().map(item => item.textContent)).toEqual([labels.today, labels.review, labels.published, labels.promo, p.projectSources, "Strategy"]);
 
     // Sources hides from the DNESKAi group like the DNESKAi tabs.
     click(switchNamed(p.projectSources)!);
@@ -108,7 +108,7 @@ describe('hideable DNESKAi project tabs', () => {
     expect(items.slice(4)).toEqual([p.projectOverview, p.projectTasksNotes, p.projectActivity, p.projectCommunication, p.projectRepository, p.projectFinance, expect.any(String), p.projectKnowledge, p.projectScaling, p.projectMonetization]);
     click([...menu.querySelectorAll('button')].find(item => item.textContent === p.projectFinance)!);
     expect(tabNamed(p.projectFinance)!.getAttribute('aria-selected')).toBe('true');
-    expect(tabs()).toHaveLength(7);
+    expect(tabs()).toHaveLength(8);
 
     // A section hidden in Settings leaves the menu too.
     click(switchNamed(p.projectFinance)!);

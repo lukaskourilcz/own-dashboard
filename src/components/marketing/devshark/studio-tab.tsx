@@ -13,6 +13,7 @@ import type { DevsharkDeck, DevsharkSlide } from '@/lib/marketing/devshark-deck'
 import { decideDevsharkDraft, devsharkEditable, devsharkStudioErrorCode, fetchDevsharkDrafts, renderDevsharkPreview, saveDevsharkDraft,
   type DevsharkDraft, type DevsharkPreview } from '@/lib/marketing/devshark-studio';
 import { demoDevsharkStudio } from '@/lib/demo/devshark-studio-demo';
+import { StrategyLink } from '@/components/marketing/strategy/strategy-link';
 
 type Lang = 'en' | 'cs';
 type Draft = { title: string; caption: string; deck: DevsharkDeck };
@@ -35,7 +36,7 @@ export function DevsharkStudioTab({ lang, preview = false }: { lang: Lang; previ
   const current = drafts.find((draft) => draft.id === selected) ?? drafts[0] ?? null;
   return <section aria-labelledby="devshark-studio-title" className="min-w-0 space-y-5" data-testid="devshark-studio">
     <div className="space-y-1">
-      <h2 id="devshark-studio-title" className="text-base font-semibold">{t.title}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="devshark-studio-title" className="text-base font-semibold">{t.title}</h2><StrategyLink brand="devshark" lang={lang} /></div>
       <p className="max-w-3xl text-sm text-foreground-muted">{t.intro}</p>
       {preview && <p className="text-xs text-foreground-muted">{t.previewOnly}</p>}
     </div>
