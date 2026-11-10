@@ -3,7 +3,7 @@ import { convert } from "@/lib/fx";
 
 /** A single cost line's monthly amount in the display currency. */
 export function costMonthlyIn(cost: ProjectCost, display: string): number {
-  return convert(cost.amount, cost.currency, display);
+  return cost.cost_type && cost.cost_type !== "monthly_estimate" ? 0 : convert(cost.amount, cost.currency, display);
 }
 
 /**

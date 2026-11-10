@@ -39,9 +39,15 @@ export function isDevelopmentSubscription(sub: Subscription, allocations: Subscr
 }
 
 export function isDevelopmentTransaction(tx: Transaction): boolean {
+  if (tx.kind === "income" && tx.category === "development_refund") return true;
   if (tx.kind !== "expense") return false;
   if (tx.subscription_id || tx.project_id) return true;
   return DEVELOPMENT_CATEGORIES.has((tx.category ?? "").trim().toLowerCase());
+}
+
+/** Provider refunds reduce net paid spend; usage/credits are stored separately. */
+export function developmentPaymentAmount(tx: Transaction, currency: string): number {
+  return convert(tx.amount, tx.currency, currency) * (tx.kind === "income" ? -1 : 1);
 }
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
@@ -280,17 +286,17 @@ export function summarizeDevFinance({
   let paidTotal = 0;
 
   for (const tx of windowTx) {
-    const amount = convert(tx.amount, tx.currency, currency);
+    const amount = developmentPaymentAmount(tx, currency);
     paidTotal += amount;
     const sub = tx.subscription_id ? subById.get(tx.subscription_id) : undefined;
-    if (sub) {
+    if (tx.project_id) {
+      paidByProject.set(tx.project_id, (paidByProject.get(tx.project_id) ?? 0) + amount);
+      if (!sub) oneOffByProject.set(tx.project_id, (oneOffByProject.get(tx.project_id) ?? 0) + amount);
+    } else if (sub) {
       for (const slice of subscriptionShares(sub, allocations)) {
         if (!slice.projectId) continue;
         paidByProject.set(slice.projectId, (paidByProject.get(slice.projectId) ?? 0) + amount * slice.share);
       }
-    } else if (tx.project_id) {
-      paidByProject.set(tx.project_id, (paidByProject.get(tx.project_id) ?? 0) + amount);
-      oneOffByProject.set(tx.project_id, (oneOffByProject.get(tx.project_id) ?? 0) + amount);
     }
   }
 
@@ -327,7 +333,7 @@ export function summarizeDevFinance({
       .reduce((sum, sub) => sum + toMonthlyIn(sub, currency), 0),
     paid: windowTx
       .filter((tx) => monthKeyOf(tx.occurred_on) === month)
-      .reduce((sum, tx) => sum + convert(tx.amount, tx.currency, currency), 0),
+      .reduce((sum, tx) => sum + developmentPaymentAmount(tx, currency), 0),
   }));
 
   const byVendor = activeDevSubs
