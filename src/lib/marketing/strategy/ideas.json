@@ -1,0 +1,1102 @@
+[
+  {
+    "id": "promise-order",
+    "brand": "devshark",
+    "pillar": 0,
+    "title": "Which log runs first?",
+    "hook": "Which log runs first?",
+    "topic": "JavaScript",
+    "code": "console.log(\"A\");\nPromise.resolve().then(() =>\n  console.log(\"B\"));\nconsole.log(\"C\");",
+    "answer": "A, C, then B",
+    "why": "The synchronous work finishes before the resolved promise callback runs.",
+    "sourceUrl": "https://javascript.info/microtask-queue",
+    "appeal": {
+      "en": "An interview puzzle with a mechanism readers can explain to a teammate.",
+      "cs": "Pohovorová hádanka s mechanismem, který čtenář vysvětlí kolegovi."
+    },
+    "visual": {
+      "en": "A short event-loop timeline, then the same problem with a timer.",
+      "cs": "Krátká časová osa event loopu, pak stejný problém s časovačem."
+    },
+    "threads": "Which log runs first? A, C, then B. The synchronous work finishes before the resolved promise callback runs.",
+    "keyword": null
+  },
+  {
+    "id": "array-mutation",
+    "brand": "devshark",
+    "pillar": 1,
+    "title": "sort changes the input",
+    "hook": "sort changes the input",
+    "topic": "JavaScript",
+    "code": "const a = [3, 1, 2];\nconst b = a.sort();\nconsole.log(a === b);",
+    "answer": "true",
+    "why": "sort mutates the array and returns its reference. Use toSorted for a sorted copy in supported runtimes.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort",
+    "appeal": {
+      "en": "A familiar bug in shared data.",
+      "cs": "Známá chyba při sdílení dat."
+    },
+    "visual": {
+      "en": "Before/after references, then a toSorted comparison.",
+      "cs": "Reference před a po, potom porovnání s toSorted."
+    },
+    "threads": "sort changes the input true. sort mutates the array and returns its reference. Use toSorted for a sorted copy in supported runtimes.",
+    "keyword": null
+  },
+  {
+    "id": "nullish",
+    "brand": "devshark",
+    "pillar": 2,
+    "title": "0 is a valid value",
+    "hook": "0 is a valid value",
+    "topic": "JavaScript",
+    "code": "const count = 0;\nconsole.log(count || 10);\nconsole.log(count ?? 10);",
+    "answer": "10, then 0",
+    "why": "|| replaces any falsy value. ?? replaces only null or undefined.",
+    "sourceUrl": "https://javascript.info/nullish-coalescing-operator",
+    "appeal": {
+      "en": "A small default-value mistake readers see in forms.",
+      "cs": "Drobná chyba výchozí hodnoty, kterou lidé potkávají ve formulářích."
+    },
+    "visual": {
+      "en": "Compare a zero quantity and an empty text field.",
+      "cs": "Porovnat nulový počet a prázdné textové pole."
+    },
+    "threads": "0 is a valid value 10, then 0. || replaces any falsy value. ?? replaces only null or undefined.",
+    "keyword": null
+  },
+  {
+    "id": "fetch-errors",
+    "brand": "devshark",
+    "pillar": 3,
+    "title": "404 can resolve fetch",
+    "hook": "404 can resolve fetch",
+    "topic": "Browser",
+    "code": "const response = await fetch(url);\nif (!response.ok) {\n  throw new Error(\"HTTP error\");\n}",
+    "answer": "Check response.ok",
+    "why": "fetch can resolve for HTTP errors. Network failures reject the promise. Check the status before reading the success body.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch",
+    "appeal": {
+      "en": "A practical debugging trap with an immediate fix.",
+      "cs": "Praktická past při ladění s okamžitou opravou."
+    },
+    "visual": {
+      "en": "Show the status check, then ask how to handle a network error.",
+      "cs": "Ukázat kontrolu stavu a navázat zpracováním síťové chyby."
+    },
+    "threads": "404 can resolve fetch Check response.ok. fetch can resolve for HTTP errors. Network failures reject the promise. Check the status before reading the success body.",
+    "keyword": null
+  },
+  {
+    "id": "async-loop",
+    "brand": "devshark",
+    "pillar": 0,
+    "title": "forEach does not wait",
+    "hook": "forEach does not wait",
+    "topic": "JavaScript",
+    "code": "items.forEach(async (item) => {\n  await save(item);\n});",
+    "answer": "The loop does not await",
+    "why": "forEach ignores returned promises. Use for...of with await for sequential work, or map plus Promise.all for concurrent work.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
+    "appeal": {
+      "en": "A task that finishes before its saves do.",
+      "cs": "Úloha, která skončí dřív než její ukládání."
+    },
+    "visual": {
+      "en": "Draw sequential vs concurrent timelines with a failure example.",
+      "cs": "Časové osy postupného a souběžného zpracování s příkladem selhání."
+    },
+    "threads": "forEach does not wait The loop does not await. forEach ignores returned promises. Use for...of with await for sequential work, or map plus Promise.all for concurrent work.",
+    "keyword": null
+  },
+  {
+    "id": "object-copy",
+    "brand": "devshark",
+    "pillar": 1,
+    "title": "Spread is a shallow copy",
+    "hook": "Spread is a shallow copy",
+    "topic": "JavaScript",
+    "code": "const a = { user: { age: 20 } };\nconst b = { ...a };\nb.user.age = 21;\nconsole.log(a.user.age);",
+    "answer": "21",
+    "why": "The nested user object is shared. Copy the nested object before changing it when you need independent state.",
+    "sourceUrl": "https://javascript.info/object-copy",
+    "appeal": {
+      "en": "A common state bug that is easy to reproduce.",
+      "cs": "Běžná chyba stavu, kterou jde snadno zopakovat."
+    },
+    "visual": {
+      "en": "Reference arrows, then a nested immutable update.",
+      "cs": "Šipky referencí a neměnná úprava vnořeného objektu."
+    },
+    "threads": "Spread is a shallow copy 21. The nested user object is shared. Copy the nested object before changing it when you need independent state.",
+    "keyword": null
+  },
+  {
+    "id": "stale-react",
+    "brand": "devshark",
+    "pillar": 2,
+    "title": "State is a snapshot",
+    "hook": "State is a snapshot",
+    "topic": "React",
+    "code": "setCount(count + 1);\nsetCount(count + 1);",
+    "answer": "One increment",
+    "why": "Both updates read the same render snapshot. Functional updates can queue calculations from the previous state.",
+    "sourceUrl": "https://react.dev/learn/queueing-a-series-of-state-updates",
+    "appeal": {
+      "en": "A counter puzzle with a reusable state lesson.",
+      "cs": "Hádanka s počítadlem a použitelnou lekcí o stavu."
+    },
+    "visual": {
+      "en": "Two queued updates, then the functional form.",
+      "cs": "Dvě zařazené aktualizace a poté funkční zápis."
+    },
+    "threads": "State is a snapshot One increment. Both updates read the same render snapshot. Functional updates can queue calculations from the previous state.",
+    "keyword": null
+  },
+  {
+    "id": "effect-cleanup",
+    "brand": "devshark",
+    "pillar": 3,
+    "title": "Stop an old request",
+    "hook": "Stop an old request",
+    "topic": "React",
+    "code": "useEffect(() => {\n  const c = new AbortController();\n  fetch(url, { signal: c.signal });\n  return () => c.abort();\n}, [url]);",
+    "answer": "Clean up each effect",
+    "why": "Cleanup can abort a pending request when the effect changes or unmounts. Handle rejection and stale results in the full implementation.",
+    "sourceUrl": "https://react.dev/learn/synchronizing-with-effects",
+    "appeal": {
+      "en": "Fast typing can reveal a stale search result.",
+      "cs": "Rychlé psaní může odhalit zastaralý výsledek hledání."
+    },
+    "visual": {
+      "en": "A search race shown as two response timelines.",
+      "cs": "Souběh hledání jako dvě časové osy odpovědí."
+    },
+    "threads": "Stop an old request Clean up each effect. Cleanup can abort a pending request when the effect changes or unmounts. Handle rejection and stale results in the full implementation.",
+    "keyword": null
+  },
+  {
+    "id": "derived-state",
+    "brand": "devshark",
+    "pillar": 0,
+    "title": "Do you need that effect?",
+    "hook": "Do you need that effect?",
+    "topic": "React",
+    "code": "const fullName =\n  firstName + \" \" + lastName;",
+    "answer": "Derive during render",
+    "why": "A value that follows directly from props or state often needs no separate state or synchronization effect.",
+    "sourceUrl": "https://react.dev/learn/you-might-not-need-an-effect",
+    "appeal": {
+      "en": "A simpler component readers can recognize in their code.",
+      "cs": "Jednodušší komponenta, kterou čtenář pozná ve vlastním kódu."
+    },
+    "visual": {
+      "en": "Compare a derived expression with redundant synchronized state.",
+      "cs": "Porovnat odvozený výraz s nadbytečným synchronizovaným stavem."
+    },
+    "threads": "Do you need that effect? Derive during render. A value that follows directly from props or state often needs no separate state or synchronization effect.",
+    "keyword": null
+  },
+  {
+    "id": "ts-narrow",
+    "brand": "devshark",
+    "pillar": 1,
+    "title": "Check before you use it",
+    "hook": "Check before you use it",
+    "topic": "TypeScript",
+    "code": "function size(x: unknown) {\n  return typeof x === \"string\"\n    ? x.length : 0;\n}",
+    "answer": "Narrow unknown",
+    "why": "A typeof check narrows this unknown value to string in the matching branch.",
+    "sourceUrl": "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",
+    "appeal": {
+      "en": "A safe way to handle untrusted values.",
+      "cs": "Bezpečný způsob práce s nedůvěryhodnou hodnotou."
+    },
+    "visual": {
+      "en": "Show the error before narrowing and the accepted branch after it.",
+      "cs": "Ukázat chybu před zúžením typu a platnou větev po něm."
+    },
+    "threads": "Check before you use it Narrow unknown. A typeof check narrows this unknown value to string in the matching branch.",
+    "keyword": null
+  },
+  {
+    "id": "ts-union",
+    "brand": "devshark",
+    "pillar": 2,
+    "title": "Model states explicitly",
+    "hook": "Model states explicitly",
+    "topic": "TypeScript",
+    "code": "type Result =\n  | { ok: true; value: string }\n  | { ok: false; error: string };",
+    "answer": "Use a discriminant",
+    "why": "A literal ok property lets TypeScript narrow each branch to the matching shape.",
+    "sourceUrl": "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",
+    "appeal": {
+      "en": "A concrete replacement for optional fields everywhere.",
+      "cs": "Konkrétní náhrada za volitelná pole ve všech stavech."
+    },
+    "visual": {
+      "en": "Success/error rows with the allowed fields highlighted.",
+      "cs": "Řádky úspěchu a chyby se zvýrazněním povolených polí."
+    },
+    "threads": "Model states explicitly Use a discriminant. A literal ok property lets TypeScript narrow each branch to the matching shape.",
+    "keyword": null
+  },
+  {
+    "id": "ts-runtime",
+    "brand": "devshark",
+    "pillar": 3,
+    "title": "Types disappear at runtime",
+    "hook": "Types disappear at runtime",
+    "topic": "TypeScript",
+    "code": "const data = JSON.parse(input);\n// Check the shape before use.",
+    "answer": "Validate external data",
+    "why": "A TypeScript type assertion does not validate JSON. Check the runtime shape at the boundary.",
+    "sourceUrl": "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html",
+    "appeal": {
+      "en": "An API response can violate the type a developer assumed.",
+      "cs": "Odpověď API může porušit typ, který vývojář předpokládal."
+    },
+    "visual": {
+      "en": "A malformed response and a small explicit shape check.",
+      "cs": "Neplatná odpověď a krátká výslovná kontrola jejího tvaru."
+    },
+    "threads": "Types disappear at runtime Validate external data. A TypeScript type assertion does not validate JSON. Check the runtime shape at the boundary.",
+    "keyword": null
+  },
+  {
+    "id": "css-overflow",
+    "brand": "devshark",
+    "pillar": 0,
+    "title": "Why does this row overflow?",
+    "hook": "Why does this row overflow?",
+    "topic": "CSS",
+    "code": ".item {\n  min-width: 0;\n}",
+    "answer": "Allow the item to shrink",
+    "why": "A flex item can retain its min-content width. min-width: 0 can let it shrink; text still needs suitable wrapping or overflow rules.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/CSS/min-width",
+    "appeal": {
+      "en": "A visible bug in dashboards and long filenames.",
+      "cs": "Viditelná chyba dashboardů a dlouhých názvů souborů."
+    },
+    "visual": {
+      "en": "Real browser before/after with a long filename.",
+      "cs": "Skutečný prohlížeč před a po změně s dlouhým názvem souboru."
+    },
+    "threads": "Why does this row overflow? Allow the item to shrink. A flex item can retain its min-content width. min-width: 0 can let it shrink; text still needs suitable wrapping or overflow rules.",
+    "keyword": null
+  },
+  {
+    "id": "grid-minmax",
+    "brand": "devshark",
+    "pillar": 1,
+    "title": "A safer fluid column",
+    "hook": "A safer fluid column",
+    "topic": "CSS",
+    "code": ".layout {\n  display: grid;\n  grid-template-columns:\n    16rem minmax(0, 1fr);\n}",
+    "answer": "Give the track a zero min",
+    "why": "minmax(0, 1fr) lets this track shrink below its automatic minimum; its content still needs overflow handling.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/CSS/minmax",
+    "appeal": {
+      "en": "A layout fix with an obvious visual result.",
+      "cs": "Oprava layoutu s jasně viditelným výsledkem."
+    },
+    "visual": {
+      "en": "Compare 1fr and minmax with an unbroken string.",
+      "cs": "Porovnat 1fr a minmax s nepřerušeným řetězcem."
+    },
+    "threads": "A safer fluid column Give the track a zero min. minmax(0, 1fr) lets this track shrink below its automatic minimum; its content still needs overflow handling.",
+    "keyword": null
+  },
+  {
+    "id": "css-box",
+    "brand": "devshark",
+    "pillar": 2,
+    "title": "What width does 100% mean?",
+    "hook": "What width does 100% mean?",
+    "topic": "CSS",
+    "code": "* {\n  box-sizing: border-box;\n}",
+    "answer": "Include padding and border",
+    "why": "border-box includes padding and border in the specified width. It does not include margin.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/CSS/box-sizing",
+    "appeal": {
+      "en": "A small layout fact readers can save.",
+      "cs": "Drobný fakt o layoutu vhodný k uložení."
+    },
+    "visual": {
+      "en": "A labeled box-model diagram using real browser dimensions.",
+      "cs": "Popsaný box model se skutečnými rozměry z prohlížeče."
+    },
+    "threads": "What width does 100% mean? Include padding and border. border-box includes padding and border in the specified width. It does not include margin.",
+    "keyword": null
+  },
+  {
+    "id": "keyboard-focus",
+    "brand": "devshark",
+    "pillar": 3,
+    "title": "Can you see keyboard focus?",
+    "hook": "Can you see keyboard focus?",
+    "topic": "Accessibility",
+    "code": ":focus-visible {\n  outline: 2px solid currentColor;\n  outline-offset: 3px;\n}",
+    "answer": "Keep a visible focus cue",
+    "why": "Keyboard users need to identify the focused control. Test the whole flow with Tab and Shift+Tab.",
+    "sourceUrl": "https://web.dev/learn/accessibility/focus",
+    "appeal": {
+      "en": "A quick audit readers can run on their own site.",
+      "cs": "Rychlá kontrola vlastního webu."
+    },
+    "visual": {
+      "en": "Screen capture of a short keyboard journey.",
+      "cs": "Záznam krátkého průchodu klávesnicí."
+    },
+    "threads": "Can you see keyboard focus? Keep a visible focus cue. Keyboard users need to identify the focused control. Test the whole flow with Tab and Shift+Tab.",
+    "keyword": null
+  },
+  {
+    "id": "image-alt",
+    "brand": "devshark",
+    "pillar": 0,
+    "title": "Describe the purpose",
+    "hook": "Describe the purpose",
+    "topic": "Accessibility",
+    "code": "<img src=\"chart.png\"\n  alt=\"Sales rose from 4 to 6\" />",
+    "answer": "Choose alt for the context",
+    "why": "Alt text should convey the image purpose in context. Decorative images use empty alt; complex charts need a fuller equivalent.",
+    "sourceUrl": "https://web.dev/learn/accessibility/images",
+    "appeal": {
+      "en": "A concrete way to improve a page without changing its look.",
+      "cs": "Konkrétní zlepšení stránky bez změny vzhledu."
+    },
+    "visual": {
+      "en": "One chart, its short alt, and the accessible data table.",
+      "cs": "Jeden graf, krátký alternativní text a přístupná datová tabulka."
+    },
+    "threads": "Describe the purpose Choose alt for the context. Alt text should convey the image purpose in context. Decorative images use empty alt; complex charts need a fuller equivalent.",
+    "keyword": null
+  },
+  {
+    "id": "dialog-focus",
+    "brand": "devshark",
+    "pillar": 1,
+    "title": "Where did focus go?",
+    "hook": "Where did focus go?",
+    "topic": "Accessibility",
+    "code": "// Open: move focus inside.\n// Close: restore the trigger.",
+    "answer": "Test the dialog journey",
+    "why": "A modal dialog needs managed focus, an accessible name and a working dismissal path. Use a tested dialog primitive.",
+    "sourceUrl": "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/",
+    "appeal": {
+      "en": "A common interaction failure with a clear keyboard demonstration.",
+      "cs": "Běžná chyba ovládání s jasnou ukázkou klávesnice."
+    },
+    "visual": {
+      "en": "Record opening, Tab navigation, Escape and restored focus.",
+      "cs": "Zaznamenat otevření, Tab, Escape a vrácení fokusu."
+    },
+    "threads": "Where did focus go? Test the dialog journey. A modal dialog needs managed focus, an accessible name and a working dismissal path. Use a tested dialog primitive.",
+    "keyword": null
+  },
+  {
+    "id": "git-restore",
+    "brand": "devshark",
+    "pillar": 2,
+    "title": "Unstage without losing edits",
+    "hook": "Unstage without losing edits",
+    "topic": "Git",
+    "code": "git restore --staged file.js",
+    "answer": "Keep working-tree edits",
+    "why": "This unstages the path while preserving working-tree changes. Review git status before and after.",
+    "sourceUrl": "https://git-scm.com/docs/git-restore",
+    "appeal": {
+      "en": "A small command readers can use safely in daily work.",
+      "cs": "Malý příkaz použitelný v každodenní práci."
+    },
+    "visual": {
+      "en": "Status before and after in a disposable example repo.",
+      "cs": "Stav před a po změně ve cvičném repozitáři."
+    },
+    "threads": "Unstage without losing edits Keep working-tree edits. This unstages the path while preserving working-tree changes. Review git status before and after.",
+    "keyword": null
+  },
+  {
+    "id": "git-diff",
+    "brand": "devshark",
+    "pillar": 3,
+    "title": "Review what you will commit",
+    "hook": "Review what you will commit",
+    "topic": "Git",
+    "code": "git diff --staged",
+    "answer": "Inspect the staged changes",
+    "why": "git diff --staged compares the index to HEAD. Plain git diff shows unstaged working-tree changes.",
+    "sourceUrl": "https://git-scm.com/docs/git-diff",
+    "appeal": {
+      "en": "A useful habit that prevents accidental commits.",
+      "cs": "Užitečný návyk proti nechtěnému commitu."
+    },
+    "visual": {
+      "en": "One staged edit and one unstaged edit side by side.",
+      "cs": "Jedna připravená a jedna nepřipravená změna vedle sebe."
+    },
+    "threads": "Review what you will commit Inspect the staged changes. git diff --staged compares the index to HEAD. Plain git diff shows unstaged working-tree changes.",
+    "keyword": null
+  },
+  {
+    "id": "http-idempotent",
+    "brand": "devshark",
+    "pillar": 0,
+    "title": "Retrying can duplicate work",
+    "hook": "Retrying can duplicate work",
+    "topic": "HTTP",
+    "code": "PUT /items/42\n\nPOST /orders",
+    "answer": "Know the retry contract",
+    "why": "Idempotence concerns the intended server effect of repeated requests. Do not assume every POST endpoint supports safe automatic retries.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Glossary/Idempotent",
+    "appeal": {
+      "en": "A real payment or order failure readers understand.",
+      "cs": "Skutečné selhání objednávky, kterému čtenář porozumí."
+    },
+    "visual": {
+      "en": "A request timeline with an explicit idempotency key contract.",
+      "cs": "Časová osa požadavků s výslovným kontraktem idempotentního klíče."
+    },
+    "threads": "Retrying can duplicate work Know the retry contract. Idempotence concerns the intended server effect of repeated requests. Do not assume every POST endpoint supports safe automatic retries.",
+    "keyword": null
+  },
+  {
+    "id": "http-cache",
+    "brand": "devshark",
+    "pillar": 1,
+    "title": "304 has no new body",
+    "hook": "304 has no new body",
+    "topic": "HTTP",
+    "code": "If-None-Match: \"v1\"\n\nHTTP/1.1 304 Not Modified",
+    "answer": "Reuse the cached response",
+    "why": "A successful conditional request can return 304 so the client can reuse a stored representation.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/304",
+    "appeal": {
+      "en": "A network-panel observation with an explanatory payoff.",
+      "cs": "Pozorování z panelu sítě s vysvětlením."
+    },
+    "visual": {
+      "en": "Two loads of the same asset in a clean demo.",
+      "cs": "Dvě načtení stejného souboru v čistém příkladu."
+    },
+    "threads": "304 has no new body Reuse the cached response. A successful conditional request can return 304 so the client can reuse a stored representation.",
+    "keyword": null
+  },
+  {
+    "id": "sql-null",
+    "brand": "devshark",
+    "pillar": 2,
+    "title": "NULL is not equal to NULL",
+    "hook": "NULL is not equal to NULL",
+    "topic": "SQL",
+    "code": "SELECT * FROM users\nWHERE deleted_at IS NULL;",
+    "answer": "Use IS NULL",
+    "why": "SQL uses three-valued logic. Comparing a value with NULL using = does not select the NULL rows as true.",
+    "sourceUrl": "https://www.postgresql.org/docs/current/functions-comparison.html",
+    "appeal": {
+      "en": "A query mistake that silently returns no rows.",
+      "cs": "Chyba dotazu, který tiše vrátí prázdný výsledek."
+    },
+    "visual": {
+      "en": "A tiny table with NULL and non-NULL values.",
+      "cs": "Malá tabulka s NULL i neprázdnými hodnotami."
+    },
+    "threads": "NULL is not equal to NULL Use IS NULL. SQL uses three-valued logic. Comparing a value with NULL using = does not select the NULL rows as true.",
+    "keyword": null
+  },
+  {
+    "id": "sql-join",
+    "brand": "devshark",
+    "pillar": 3,
+    "title": "Keep the unmatched rows",
+    "hook": "Keep the unmatched rows",
+    "topic": "SQL",
+    "code": "SELECT a.id, b.name\nFROM a LEFT JOIN b\nON a.bid = b.id;",
+    "answer": "LEFT JOIN keeps the left",
+    "why": "Unmatched left rows remain, with NULL on the right. A WHERE filter on the right table can remove them.",
+    "sourceUrl": "https://www.postgresql.org/docs/current/queries-table-expressions.html",
+    "appeal": {
+      "en": "A data-report bug that readers can visualize.",
+      "cs": "Chyba datového přehledu, kterou lze ukázat na obrázku."
+    },
+    "visual": {
+      "en": "Three rows, then a join and a misplaced filter.",
+      "cs": "Tři řádky, spojení tabulek a chybně umístěný filtr."
+    },
+    "threads": "Keep the unmatched rows LEFT JOIN keeps the left. Unmatched left rows remain, with NULL on the right. A WHERE filter on the right table can remove them.",
+    "keyword": null
+  },
+  {
+    "id": "test-boundary",
+    "brand": "devshark",
+    "pillar": 0,
+    "title": "Test the empty input",
+    "hook": "Test the empty input",
+    "topic": "Testing",
+    "code": "reverseWords(\"\")\nreverseWords(\"  a  b  \")",
+    "answer": "Name the boundary cases",
+    "why": "Write the expected behavior for empty input and repeated spaces before choosing an implementation.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/trim",
+    "appeal": {
+      "en": "A follow-up to the existing reverse-words concept with a new angle.",
+      "cs": "Pokračování existujícího konceptu obracení slov z jiného úhlu."
+    },
+    "visual": {
+      "en": "Start from two failing cases, then show a focused repair.",
+      "cs": "Začít dvěma selhávajícími případy a ukázat úzkou opravu."
+    },
+    "threads": "Test the empty input Name the boundary cases. Write the expected behavior for empty input and repeated spaces before choosing an implementation.",
+    "keyword": null
+  },
+  {
+    "id": "porada",
+    "brand": "dneskai",
+    "pillar": 0,
+    "title": "Z porady udělejte seznam úkolů",
+    "hook": "Zápis není seznam úkolů. Oddělte rozhodnutí, odpovědné osoby a termíny.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "A practical output for people who deal with meetings every week.",
+      "cs": "Praktický výstup pro lidi, kteří řeší porady každý týden."
+    },
+    "visual": {
+      "en": "Fictional meeting with no personal data → task/owner/deadline table → mark missing details.",
+      "cs": "Ukázka porady bez osobních údajů → tabulka úkol/odpovědnost/termín → označení chybějících údajů."
+    },
+    "threads": "Z porady udělejte seznam úkolů. Zápis není seznam úkolů. Oddělte rozhodnutí, odpovědné osoby a termíny.",
+    "keyword": "PORADA"
+  },
+  {
+    "id": "email",
+    "brand": "dneskai",
+    "pillar": 1,
+    "title": "E-mail bez šesti prázdných vět",
+    "hook": "Nechte AI zkrátit návrh e-mailu a zachovat jeho požadavek.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "A specific workflow to share with a colleague.",
+      "cs": "Čtenář pošle konkrétní postup kolegovi."
+    },
+    "visual": {
+      "en": "Fictional long email → concise rewrite request → review commitments.",
+      "cs": "Smyšlený dlouhý e-mail → požadavek na stručnost → ruční kontrola závazků."
+    },
+    "threads": "E-mail bez šesti prázdných vět. Nechte AI zkrátit návrh e-mailu a zachovat jeho požadavek.",
+    "keyword": null
+  },
+  {
+    "id": "tabulka",
+    "brand": "dneskai",
+    "pillar": 2,
+    "title": "Tabulka, která si nedoplní data",
+    "hook": "Chybějící hodnotu označte jako chybějící.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "A useful habit for office spreadsheets.",
+      "cs": "Užitečný návyk pro kancelářské tabulky."
+    },
+    "visual": {
+      "en": "Small fictional table → explicit no-invention instruction → check every row.",
+      "cs": "Malá smyšlená tabulka → zadání zákazu domýšlení → ruční kontrola řádků."
+    },
+    "threads": "Tabulka, která si nedoplní data. Chybějící hodnotu označte jako chybějící.",
+    "keyword": null
+  },
+  {
+    "id": "halucinace",
+    "brand": "dneskai",
+    "pillar": 3,
+    "title": "Proč AI vymyslí název knihy",
+    "hook": "Plynulá odpověď ještě nezaručuje správný údaj.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/slovnik-ai",
+    "appeal": {
+      "en": "An accessible first lesson about limitations.",
+      "cs": "Srozumitelná první lekce o omezeních."
+    },
+    "visual": {
+      "en": "Fictional prompt → check a book title in a catalogue → correct the error.",
+      "cs": "Smyšlené zadání → hledání názvu v katalogu → oprava chyby."
+    },
+    "threads": "Proč AI vymyslí název knihy. Plynulá odpověď ještě nezaručuje správný údaj.",
+    "keyword": null
+  },
+  {
+    "id": "token",
+    "brand": "dneskai",
+    "pillar": 0,
+    "title": "Co je token na české větě",
+    "hook": "Jedno slovo nemusí být jeden token.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/nastroje/pocitadlo-tokenu",
+    "appeal": {
+      "en": "A visual explanation without mathematics.",
+      "cs": "Vizuální vysvětlení pojmu bez matematiky."
+    },
+    "visual": {
+      "en": "Short Czech sentence → tokenizer output → distinguish words and tokens.",
+      "cs": "Krátká česká věta → rozdělení v počítadle → rozdíl mezi slovy a tokeny."
+    },
+    "threads": "Co je token na české větě. Jedno slovo nemusí být jeden token.",
+    "keyword": null
+  },
+  {
+    "id": "kontext",
+    "brand": "dneskai",
+    "pillar": 1,
+    "title": "Dlouhý chat potřebuje souhrn",
+    "hook": "Před novým úkolem pojmenujte, které informace má AI použít.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/slovnik-ai",
+    "appeal": {
+      "en": "A common issue in long conversations.",
+      "cs": "Častý problém dlouhých konverzací."
+    },
+    "visual": {
+      "en": "Long fictional chat → concise summary → new prompt with the same goal.",
+      "cs": "Dlouhý smyšlený chat → stručný souhrn → nové zadání se stejným cílem."
+    },
+    "threads": "Dlouhý chat potřebuje souhrn. Před novým úkolem pojmenujte, které informace má AI použít.",
+    "keyword": null
+  },
+  {
+    "id": "rag",
+    "brand": "dneskai",
+    "pillar": 2,
+    "title": "RAG vysvětlený na firemní příručce",
+    "hook": "Vyhledání podkladů a napsání odpovědi jsou dva různé kroky.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/slovnik-ai",
+    "appeal": {
+      "en": "A concept for people choosing a workplace chatbot.",
+      "cs": "Pojem pro lidi, kteří rozhodují o firemním chatbotu."
+    },
+    "visual": {
+      "en": "Fictional handbook → retrieved paragraph → answer with human review.",
+      "cs": "Smyšlená příručka → nalezený odstavec → odpověď s ruční kontrolou."
+    },
+    "threads": "RAG vysvětlený na firemní příručce. Vyhledání podkladů a napsání odpovědi jsou dva různé kroky.",
+    "keyword": null
+  },
+  {
+    "id": "agent",
+    "brand": "dneskai",
+    "pillar": 3,
+    "title": "Kdy je chatbot agent",
+    "hook": "K odpovědi může přibýt volba nástroje a další krok.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/akademie/jak-funguji-ai-agenti",
+    "appeal": {
+      "en": "A distinction readers encounter in AI news.",
+      "cs": "Rozdíl, který čtenáři potkávají v novinkách."
+    },
+    "visual": {
+      "en": "Diagram task → tool → result → check; use no real accounts.",
+      "cs": "Diagram úkol → nástroj → výsledek → kontrola; žádné skutečné účty."
+    },
+    "threads": "Kdy je chatbot agent. K odpovědi může přibýt volba nástroje a další krok.",
+    "keyword": null
+  },
+  {
+    "id": "mcp",
+    "brand": "dneskai",
+    "pillar": 0,
+    "title": "MCP jako zásuvka pro nástroje",
+    "hook": "Připojení nástroje potřebuje i oprávnění.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/akademie/jak-funguje-mcp",
+    "appeal": {
+      "en": "A technical term with practical consequences.",
+      "cs": "Technický pojem s praktickým dopadem."
+    },
+    "visual": {
+      "en": "Assistant with two tools → reading permission → writing permission.",
+      "cs": "Diagram asistenta se dvěma nástroji → co smí číst → co smí měnit."
+    },
+    "threads": "MCP jako zásuvka pro nástroje. Připojení nástroje potřebuje i oprávnění.",
+    "keyword": null
+  },
+  {
+    "id": "soukromi",
+    "brand": "dneskai",
+    "pillar": 1,
+    "title": "Co do AI v práci nevkládat",
+    "hook": "Začněte pravidly firmy a citlivostí dat.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/bezpecne-s-ai-v-praci",
+    "appeal": {
+      "en": "A workflow readers can share with their team.",
+      "cs": "Postup, který lze sdílet s celým týmem."
+    },
+    "visual": {
+      "en": "Fictional invoice → identify personal data → safe replacement example.",
+      "cs": "Smyšlená faktura → označení osobních údajů → bezpečný náhradní příklad."
+    },
+    "threads": "Co do AI v práci nevkládat. Začněte pravidly firmy a citlivostí dat.",
+    "keyword": "DATA"
+  },
+  {
+    "id": "smlouva",
+    "brand": "dneskai",
+    "pillar": 2,
+    "title": "AI přečte smlouvu, odpovědnost zůstává",
+    "hook": "Použijte ji na otázky k textu, odborné rozhodnutí předejte člověku.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/bezpecne-s-ai-v-praci",
+    "appeal": {
+      "en": "A practical boundary without legal promises.",
+      "cs": "Praktické vymezení možností bez právních slibů."
+    },
+    "visual": {
+      "en": "Fictional clause → questions to ask → human review.",
+      "cs": "Smyšlený odstavec → seznam otázek → lidská kontrola."
+    },
+    "threads": "AI přečte smlouvu, odpovědnost zůstává. Použijte ji na otázky k textu, odborné rozhodnutí předejte člověku.",
+    "keyword": null
+  },
+  {
+    "id": "prompt-brief",
+    "brand": "dneskai",
+    "pillar": 3,
+    "title": "Zadání pro AI jako krátký brief",
+    "hook": "Cíl, kontext a podoba výstupu patří do zadání.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "A repeatable workflow for beginners.",
+      "cs": "Opakovatelný postup pro začátečníka."
+    },
+    "visual": {
+      "en": "Vague request → three specific details → review the output.",
+      "cs": "Nejasný požadavek → tři konkrétní doplnění → kontrola výsledku."
+    },
+    "threads": "Zadání pro AI jako krátký brief. Cíl, kontext a podoba výstupu patří do zadání.",
+    "keyword": "ZADANI"
+  },
+  {
+    "id": "kontrola",
+    "brand": "dneskai",
+    "pillar": 0,
+    "title": "Tři otázky před použitím odpovědi",
+    "hook": "Zkontrolujte jména, čísla a to, co z výstupu plyne.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/bezpecne-s-ai-v-praci",
+    "appeal": {
+      "en": "A short checklist worth saving.",
+      "cs": "Krátká pomůcka k uložení."
+    },
+    "visual": {
+      "en": "Marked claims in fictional text → checklist → corrected version.",
+      "cs": "Označené údaje ve smyšleném textu → kontrolní seznam → opravená verze."
+    },
+    "threads": "Tři otázky před použitím odpovědi. Zkontrolujte jména, čísla a to, co z výstupu plyne.",
+    "keyword": null
+  },
+  {
+    "id": "cena",
+    "brand": "dneskai",
+    "pillar": 1,
+    "title": "Zdarma neznamená bez limitu",
+    "hook": "Před návodem si zkontrolujte aktuální tarif i dostupnost v Česku.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "Help choosing a tool without an unverified ranking.",
+      "cs": "Pomoc při výběru nástroje bez neověřeného žebříčku."
+    },
+    "visual": {
+      "en": "Blank price/limit/data comparison → fill only current verified terms.",
+      "cs": "Prázdná srovnávací tabulka cena/limit/data → doplnit jen aktuální ověřené podmínky."
+    },
+    "threads": "Zdarma neznamená bez limitu. Před návodem si zkontrolujte aktuální tarif i dostupnost v Česku.",
+    "keyword": null
+  },
+  {
+    "id": "obraz",
+    "brand": "dneskai",
+    "pillar": 2,
+    "title": "Fotka z AI může ukazovat chybu",
+    "hook": "U produktových obrázků zkontrolujte detaily a označení.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aidetem.cz/obecny-uvod-do-umele-inteligence/",
+    "appeal": {
+      "en": "A visual lesson that needs no presenter.",
+      "cs": "Vizuální lekce, která funguje bez tváře."
+    },
+    "visual": {
+      "en": "Owned or licensed example → inspect text and geometry.",
+      "cs": "Vlastní nebo licencovaná ukázka → ruční kontrola nápisů a geometrie."
+    },
+    "threads": "Fotka z AI může ukazovat chybu. U produktových obrázků zkontrolujte detaily a označení.",
+    "keyword": null
+  },
+  {
+    "id": "shrnovani",
+    "brand": "dneskai",
+    "pillar": 3,
+    "title": "Souhrn nesmí změnit závěr",
+    "hook": "Porovnejte shrnutí s původním odstavcem.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "A common workplace task with a clear check.",
+      "cs": "Častá pracovní úloha s jasným kontrolním krokem."
+    },
+    "visual": {
+      "en": "Own three-paragraph text → summary → highlight a missing condition.",
+      "cs": "Vlastní tříodstavcový text → souhrn → označení ztracené podmínky."
+    },
+    "threads": "Souhrn nesmí změnit závěr. Porovnejte shrnutí s původním odstavcem.",
+    "keyword": null
+  },
+  {
+    "id": "preklad",
+    "brand": "dneskai",
+    "pillar": 0,
+    "title": "Český překlad potřebuje kontext",
+    "hook": "Uveďte publikum a význam odborných slov.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "A Czech example instead of a list of tools.",
+      "cs": "Konkrétní český příklad místo seznamu nástrojů."
+    },
+    "visual": {
+      "en": "Own ambiguous sentence → translate without context → translate with context.",
+      "cs": "Vlastní dvojznačná věta → překlad bez kontextu → překlad s kontextem."
+    },
+    "threads": "Český překlad potřebuje kontext. Uveďte publikum a význam odborných slov.",
+    "keyword": null
+  },
+  {
+    "id": "tabulka-zdroje",
+    "brand": "dneskai",
+    "pillar": 1,
+    "title": "AI porovnání se stejnými kritérii",
+    "hook": "Všem variantám položte stejnou otázku.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "A workflow useful for purchasing and planning.",
+      "cs": "Postup použitelný při nákupu i plánování."
+    },
+    "visual": {
+      "en": "Three fictional offers → identical criteria → mark unknown values.",
+      "cs": "Tři smyšlené nabídky → stejná kritéria → označit neznámé údaje."
+    },
+    "threads": "AI porovnání se stejnými kritérii. Všem variantám položte stejnou otázku.",
+    "keyword": null
+  },
+  {
+    "id": "skola",
+    "brand": "dneskai",
+    "pillar": 2,
+    "title": "Učení s AI bez hotové odpovědi",
+    "hook": "Nechte si položit otázku a vysvětlete vlastní postup.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aidetem.cz/",
+    "appeal": {
+      "en": "Help students and parents support learning.",
+      "cs": "Pomoc studentům a rodičům bez obcházení učení."
+    },
+    "visual": {
+      "en": "Fictional learning task → hint → explain and check your own reasoning.",
+      "cs": "Smyšlená učební úloha → nápověda → vlastní vysvětlení a kontrola."
+    },
+    "threads": "Učení s AI bez hotové odpovědi. Nechte si položit otázku a vysvětlete vlastní postup.",
+    "keyword": null
+  },
+  {
+    "id": "osvc",
+    "brand": "dneskai",
+    "pillar": 3,
+    "title": "Živnostník: z dotazu udělejte brief",
+    "hook": "Doplňte požadovaný výsledek, omezení a příští krok.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/temata/ai-pro-zivnostniky-a-male-firmy",
+    "appeal": {
+      "en": "A small-business example for the Czech audience.",
+      "cs": "Česká praxe pro malé firmy."
+    },
+    "visual": {
+      "en": "Fictional client inquiry → brief with missing details → questions for the client.",
+      "cs": "Smyšlená poptávka → brief s neznámými údaji → otázky klientovi."
+    },
+    "threads": "Živnostník: z dotazu udělejte brief. Doplňte požadovaný výsledek, omezení a příští krok.",
+    "keyword": null
+  },
+  {
+    "id": "novinka-dopad",
+    "brand": "dneskai",
+    "pillar": 0,
+    "title": "Z AI novinky udělejte jeden pokus",
+    "hook": "Oznámená funkce není totéž co dostupná funkce pro vás.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/ai-v-cesku",
+    "appeal": {
+      "en": "A bridge from news to practical education.",
+      "cs": "Most mezi zpravodajstvím a vzděláváním."
+    },
+    "visual": {
+      "en": "Current approved story → check availability → small task; invent no release.",
+      "cs": "Aktuální schválená zpráva → ověřit dostupnost → malý úkol; žádná smyšlená novinka."
+    },
+    "threads": "Z AI novinky udělejte jeden pokus. Oznámená funkce není totéž co dostupná funkce pro vás.",
+    "keyword": null
+  },
+  {
+    "id": "disk-sdileni",
+    "brand": "dneskai",
+    "pillar": 1,
+    "title": "Kdo může číst váš sdílený soubor",
+    "hook": "U složky zkontrolujte rozsah přístupu a konkrétní osoby.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://support.google.com/drive/answer/2494822",
+    "appeal": {
+      "en": "A practical follow-up to an already published story.",
+      "cs": "Praktické pokračování již zveřejněné zprávy."
+    },
+    "visual": {
+      "en": "Follow up the GSA story → demo with an empty folder → check access permissions.",
+      "cs": "Navázat na GSA zprávu → demo s prázdnou složkou → kontrola oprávnění."
+    },
+    "threads": "Kdo může číst váš sdílený soubor. U složky zkontrolujte rozsah přístupu a konkrétní osoby.",
+    "keyword": null
+  },
+  {
+    "id": "hlas-podvod",
+    "brand": "dneskai",
+    "pillar": 2,
+    "title": "Hlas sám nepotvrzuje totožnost",
+    "hook": "Požadavek na peníze ověřte jiným známým kanálem.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/bezpecne-s-ai-v-praci",
+    "appeal": {
+      "en": "A safety reminder readers can send to family.",
+      "cs": "Pomůcka, kterou lidé mohou poslat rodině."
+    },
+    "visual": {
+      "en": "Fictional request → verify the contact independently → create no cloned voice.",
+      "cs": "Smyšlená zpráva → nezávislé ověření kontaktu → žádné klonování hlasu."
+    },
+    "threads": "Hlas sám nepotvrzuje totožnost. Požadavek na peníze ověřte jiným známým kanálem.",
+    "keyword": null
+  },
+  {
+    "id": "slovnik-test",
+    "brand": "dneskai",
+    "pillar": 3,
+    "title": "Rozumíte těmto třem pojmům AI",
+    "hook": "Vysvětlete token, model a agenta vlastními slovy.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/slovnik-ai",
+    "appeal": {
+      "en": "Review the dictionary with a new example.",
+      "cs": "Opakování slovníku s novým příkladem."
+    },
+    "visual": {
+      "en": "Three short questions → answers on later slides → one example per term.",
+      "cs": "Tři krátké otázky → odpovědi na dalších slidech → příklad každého pojmu."
+    },
+    "threads": "Rozumíte těmto třem pojmům AI. Vysvětlete token, model a agenta vlastními slovy.",
+    "keyword": null
+  },
+  {
+    "id": "tyden-ukol",
+    "brand": "dneskai",
+    "pillar": 0,
+    "title": "Jeden postup AI na příští týden",
+    "hook": "Vyberte jeden malý úkol a zapište, jak poznáte dobrý výsledek.",
+    "topic": "AI česky",
+    "code": null,
+    "answer": null,
+    "why": null,
+    "sourceUrl": "https://aiodbornici.cz/umela-inteligence-pro-vsechny",
+    "appeal": {
+      "en": "A weekly reason to return to practical learning.",
+      "cs": "Týdenní návrat k praktickému učení."
+    },
+    "visual": {
+      "en": "One example → manual baseline → AI trial → human check with no promised time saving.",
+      "cs": "Jeden příklad → výchozí ruční postup → pokus s AI → lidská kontrola bez slibu úspory."
+    },
+    "threads": "Jeden postup AI na příští týden. Vyberte jeden malý úkol a zapište, jak poznáte dobrý výsledek.",
+    "keyword": null
+  }
+]
