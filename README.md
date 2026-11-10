@@ -215,6 +215,9 @@ The migrations, in the order they run:
 116. `20261109160000_dneskai_codex_illustrations.sql` — generated Codex illustrations can share the DNESKAi library and supply pictures for briefs.
 117. `20261109204711_dneskai_promo_tab.sql` — allows the Promo slide tab to be hidden in workspace settings.
 118. `20261110210000_marketing_strategy.sql` — shared devShark/DNESKAi Strategy tab, idempotent unapproved draft/topic handoffs and own-only manual Insights snapshots; applied in production on 10 November 2026.
+119. `20261110222156_backlog_executor.sql` — canonical backlog execution category JA / AI.
+120. `20261110222929_project_cost_evidence.sql` — dated provider consumption and credits, separate from monthly budgets and payments.
+121. `20261110224047_project_cost_evidence_ownership.sql` — verifies project ownership on cost inserts and updates.
 
 
 The migration guide describes migrations 1–6 under Apply and Verify and gives every later migration its own entry. The first 38 migrations were verified in production on 2026-09-28. Production holds migrations 1–63 (through `20261021125123`); its history matches this list since the 22 October reconciliation. Migrations 64–86, the 23 files marked unapplied, wait for the owner's `npx supabase db push --linked`.
