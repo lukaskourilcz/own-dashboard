@@ -152,7 +152,7 @@
      "kind": "text",
      "kicker": "Your turn",
      "headline": "reverseWords(s)",
-     "body": "Extra spaces between words [[should not matter]]. Try it before you swipe."
+     "body": "Collapse extra whitespace. Empty or whitespace-only input returns an empty string."
     },
     {
      "kind": "code",
