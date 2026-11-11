@@ -590,6 +590,8 @@ const CODES = {
   'slide-videos-unavailable': ['retry', 'The video slides could not be made or stored; the post stays queued and is tried again.', 'Videa slidů se nepodařilo vyrobit nebo uložit; příspěvek zůstává ve frontě a zkusí se znovu.'],
   'carousel-video-processing': ['wait', 'Instagram is still processing a video slide; the carousel is created again on a following run.', 'Instagram ještě zpracovává video slide; karusel se vytvoří znovu při dalším běhu.'],
   'carousel-video-failed': ['retry', 'Instagram could not process a video slide, so nothing was published.', 'Instagram nedokázal zpracovat video slide, proto se nic nepublikovalo.'],
+  'carousel-item-processing': ['wait', 'Threads is still processing a carousel slide. The publisher will try again within its current slot.', 'Threads ještě zpracovává slide karuselu. Publisher to zkusí znovu v aktuálním slotu.'],
+  'carousel-item-failed': ['retry', 'Threads could not process a carousel slide. The post did not publish.', 'Threads nedokázal zpracovat slide karuselu. Příspěvek nevyšel.'],
   'reel-render-pending': ['wait','The Reel video is being made; the post publishes on a following run inside its window.', 'Video Reelu se vyrábí; příspěvek vyjde při některém dalším běhu v rámci svého okna.'],
   'reel-render-unavailable': ['retry', 'The Reel video could not be requested, so the post waits.', 'Video Reelu nešlo vyžádat, proto příspěvek čeká.'],
   'reel-video-missing': ['investigate', 'The Reel had no stored video at publishing time, so nothing was sent.', 'Reel neměl při publikování uložené video, proto se nic neodeslalo.'],

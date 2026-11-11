@@ -24,6 +24,9 @@ export function instagramFeedGeometryValid(width: number, height: number): boole
 }
 const instagramFeed = (revision: ContentRevision) => revision.account.platform === 'instagram' && revision.format !== 'story';
 const normalizedHandle = (value: string) => value.replace(/^@/, '').toLowerCase();
+const threadsText = (revision: ContentRevision) => revision.brand === 'dneskai'
+  ? dneskaiThreadsText(revision.caption) || stripThreadsHashtags(revision.title)
+  : stripThreadsHashtags(revision.caption);
 export type PublishOutcome = { status: 'held' | 'dry-run' | 'pending' | 'published' | 'failed' | 'reconciliation';
   remoteContainerId: string | null; remoteMediaId: string | null; remoteUrl: string | null; errorCode: string | null;
   /** Preflight only: the enablement switches that would still hold a real run. */
@@ -47,7 +50,7 @@ export const CONTAINER_RETRY_CODE = 'container-retry';
  */
 export function containerFailureRetryable(code: string): boolean {
   return /^meta-http-(5\d\d|429)$/.test(code) || ['meta-request-uncertain', 'meta-invalid-response', 'container-identity-unavailable', 'container-status-unavailable',
-    'publication-deadline-exceeded', 'checkpoint-or-revalidation-failed', 'carousel-video-processing'].includes(code);
+    'publication-deadline-exceeded', 'checkpoint-or-revalidation-failed', 'carousel-video-processing', 'carousel-item-processing'].includes(code);
 }
 export type PublisherState = { revisionRow: MarketingRevisionRow; account: MarketingPublishAccount; sources: SourcePacket[] };
 /** The rendered MP4 of a DNESKAi deck Reel (#163, #165): a signed URL Instagram fetches, and the bytes it must be. */
@@ -248,7 +251,11 @@ async function verifyAssets(input: PublishMarketingInput): Promise<void> {
     if (url.protocol !== 'https:' || url.username || url.password || !input.config.approvedAssetHosts.includes(url.hostname)) throw new MetaFailure('asset-host-unapproved');
     let response: Response;
     try { response = await (input.fetcher ?? fetch)(url.href, { redirect: 'error', signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000) }); }
-    catch { throw new MetaFailure('asset-unreachable'); }
+    catch { throw new MetaFailure('asset-unreachable', 'asset-unreachable', !input.signal?.aborted); }
+    if (response.status === 429 || response.status >= 500) {
+      await response.body?.cancel().catch(() => {});
+      throw new MetaFailure('asset-unreachable', 'asset-unreachable', !input.signal?.aborted);
+    }
     if (!response.ok || response.headers.get('content-type')?.split(';')[0] !== asset.mimeType || !response.body) throw new MetaFailure('asset-mime-or-response-invalid');
     const maxBytes = story ? 8_000_000 : feedImage ? INSTAGRAM_FEED_IMAGE.maxBytes : asset.mimeType === 'image/jpeg' ? 10_000_000 : 200_000_000;
     if (Number(response.headers.get('content-length')) > maxBytes) throw new MetaFailure('asset-too-large');
@@ -256,7 +263,7 @@ async function verifyAssets(input: PublishMarketingInput): Promise<void> {
     const imageChunks: Uint8Array[] = [];
     try { while (true) { input.signal?.throwIfAborted(); const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
       if (bytes > maxBytes) { await reader.cancel(); throw new MetaFailure('asset-too-large'); } hash.update(part.value); if (story || feedImage) imageChunks.push(part.value); } }
-    catch (error) { if (error instanceof MetaFailure) throw error; throw new MetaFailure('asset-unreachable'); }
+    catch (error) { if (error instanceof MetaFailure) throw error; throw new MetaFailure('asset-unreachable', 'asset-unreachable', !input.signal?.aborted); }
     if (hash.digest('hex') !== asset.sha256) throw new MetaFailure('asset-hash-mismatch');
     if (feedImage) {
       // Meta fetches the URL itself; check the approved bytes it will receive, not the declared metadata.
@@ -346,6 +353,23 @@ const expectedMediaType = (format: ContentRevision['format']) => format === 'car
 /** A Reel lists as `VIDEO` (its product type is REELS); some responses name it `REELS` (#165). Both match. */
 const mediaTypeMatches = (format: ContentRevision['format'], type: unknown) => type === expectedMediaType(format) || (format === 'reel' && type === 'REELS');
 type MediaMatch = { kind: 'match'; id: string; permalink: string | null } | { kind: 'none' | 'ambiguous' | 'incomplete' | 'unavailable' };
+const threadsMediaType = (revision: ContentRevision) => {
+  if (revision.format === 'carousel') return 'CAROUSEL_ALBUM';
+  if (!revision.assets[0]) return 'TEXT_POST';
+  return revision.assets[0].mimeType === 'video/mp4' ? 'VIDEO' : 'IMAGE';
+};
+function threadsPermalink(value: unknown, handle: string): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value);
+    const [, account, section, shortcode, ...rest] = url.pathname.split('/');
+    if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+      !['threads.com', 'www.threads.com', 'threads.net', 'www.threads.net'].includes(url.hostname) ||
+      account?.toLowerCase() !== `@${normalizedHandle(handle)}` || section !== 'post' ||
+      !shortcode || !/^[\w-]+$/.test(shortcode) || rest.some(Boolean)) return null;
+    return `${url.origin}${url.pathname}`;
+  } catch { return null; }
+}
 /**
  * After an ambiguous `media_publish`, the owned account's own media list is
  * the only evidence used to recover the media ID: the same media type, a
@@ -377,6 +401,39 @@ async function findPublishedFeedMedia(input: PublishMarketingInput): Promise<Med
   return { kind: 'match', id: match.id as string, permalink };
 }
 
+/** The Threads API reports a separate media ID. Recover it only from the
+ * verified owner's complete slot window and the exact text sent by the publisher. */
+async function findPublishedThread(input: PublishMarketingInput): Promise<MediaMatch> {
+  const { revisionRow: { revision }, account } = input;
+  const scheduled = Date.parse(revision.scheduledAt);
+  const expectedText = normalizedCaption(threadsText(revision));
+  if (!Number.isFinite(scheduled) || !expectedText) return { kind: 'unavailable' };
+  const from = scheduled - RECONCILE_LOOKBACK_MS;
+  const until = Math.min(scheduled + RECONCILE_LOOKAHEAD_MS, (input.now ?? new Date()).getTime() + 60_000);
+  let page: Record<string, unknown>;
+  try {
+    if (await verifyRemoteAccount(input)) return { kind: 'unavailable' };
+    page = await graph(input, `${account.remote_account_id}/threads`, 'GET', {
+      fields: 'id,text,timestamp,permalink,media_type,is_quote_post',
+      since: String(Math.floor(from / 1000)), until: String(Math.ceil(until / 1000)), limit: String(RECONCILE_PAGE_SIZE),
+    });
+  } catch { return { kind: 'unavailable' }; }
+  if (!Array.isArray(page.data) || page.data.length > RECONCILE_PAGE_SIZE) return { kind: 'unavailable' };
+  if ((page.paging as { next?: unknown } | undefined)?.next) return { kind: 'incomplete' };
+  const matches: Array<{ id: string; permalink: string | null }> = [];
+  for (const item of page.data) {
+    if (!item || typeof item !== 'object' || Array.isArray(item) || !idValid(item.id)) return { kind: 'unavailable' };
+    const posted = metaInstant(item.timestamp);
+    if (posted < from || posted > until) continue;
+    if (!Number.isFinite(posted) || typeof item.media_type !== 'string') return { kind: 'unavailable' };
+    if (item.media_type !== threadsMediaType(revision) || item.is_quote_post === true) continue;
+    if (typeof item.text !== 'string') return { kind: 'unavailable' };
+    if (normalizedCaption(item.text) === expectedText) matches.push({ id: item.id, permalink: threadsPermalink(item.permalink, account.handle) });
+  }
+  if (matches.length > 1) return { kind: 'ambiguous' };
+  return matches.length ? { kind: 'match', ...matches[0]! } : { kind: 'none' };
+}
+
 /** This path never POSTs. A feed post whose publish was ambiguous is matched against the account's own media list. */
 export async function reconcileMarketingPublication(input: PublishMarketingInput): Promise<PublishOutcome> {
   if (input.publication.user_id !== input.revisionRow.user_id || input.account.user_id !== input.revisionRow.user_id || input.publication.revision_id !== input.revisionRow.id || input.publication.platform !== input.account.platform ||
@@ -401,10 +458,13 @@ export async function reconcileMarketingPublication(input: PublishMarketingInput
   try { status = await containerStatus(input, container); } catch { status = null; }
   // FINISHED, IN_PROGRESS, ERROR and EXPIRED all say this container was not
   // published, so a similar post in the list cannot be ours.
-  if (instagramFeed(input.revisionRow.revision) && (status === 'PUBLISHED' || status === null)) {
-    const found = await findPublishedFeedMedia(input);
+  const threads = input.account.platform === 'threads';
+  if (threads && status === 'PUBLISHED' && (revisionContentHash(input.revisionRow.revision) !== input.revisionRow.content_hash ||
+    input.revisionRow.content_hash !== input.revisionRow.approved_hash)) return result('held', 'revision-identity-mismatch', container);
+  if (threads ? status === 'PUBLISHED' : instagramFeed(input.revisionRow.revision) && (status === 'PUBLISHED' || status === null)) {
+    const found = await (threads ? findPublishedThread(input) : findPublishedFeedMedia(input));
     if (found.kind === 'match') {
-      const url = found.permalink ?? await mediaUrl(input, found.id);
+      const url = found.permalink ?? (threads ? threadsPermalink(await mediaUrl(input, found.id), input.account.handle) : await mediaUrl(input, found.id));
       return result(url ? 'published' : 'reconciliation', url ? null : 'remote-permalink-unavailable', container, found.id, url);
     }
     if (found.kind === 'ambiguous') return result('reconciliation', 'remote-media-match-ambiguous', container);
@@ -471,9 +531,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       // Story text is rendered in the JPEG. The stored caption is internal
       // review copy; it is never sent as a public Story caption or alt_text.
       const fields: Record<string, string> = revision.format === 'story' ? {} : { [threads ? 'text' : 'caption']: revision.caption };
-      if (threads && revision.format !== 'story') fields.text = revision.brand === 'dneskai'
-        ? dneskaiThreadsText(revision.caption) || stripThreadsHashtags(revision.title)
-        : stripThreadsHashtags(revision.caption);
+      if (threads && revision.format !== 'story') fields.text = threadsText(revision);
       else if (revision.brand === 'dneskai' && revision.format !== 'story') fields.caption = dneskaiPublicText(revision.caption);
       // Instagram accepts alt_text on image containers only; Threads takes it for images and videos.
       const altText = (asset: ContentRevision['assets'][number]): Record<string, string> => threads || asset.mimeType === 'image/jpeg' ? { alt_text: asset.alt } : {};
@@ -487,24 +545,27 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
         if (revision.audio && 'instagramAudioId' in revision.audio) fields.audio_configuration = JSON.stringify({ audio_id: revision.audio.instagramAudioId, audio_volume: 100 });
       } else if (revision.format === 'carousel') {
         const children: string[] = [];
-        const videoChildren: string[] = [];
+        const processingChildren: string[] = [];
         for (const [index, asset] of revision.assets.entries()) {
           const clip = input.slideVideos?.[index];
-          // A video-first slide goes out as its clip; Instagram takes alt text on images only, Threads on both.
-          if (clip) { const child = await create({ media_type: 'VIDEO', video_url: clip.url, is_carousel_item: 'true', ...(threads ? { alt_text: asset.alt } : {}) }); children.push(child); videoChildren.push(child); continue; }
-          children.push(await create({ ...(asset.mimeType === 'video/mp4' ? { media_type: 'VIDEO' } : threads ? { media_type: 'IMAGE' } : {}),
-            [asset.mimeType === 'video/mp4' ? 'video_url' : 'image_url']: asset.url, is_carousel_item: 'true', ...altText(asset) }));
+          const videoItem = !!clip || asset.mimeType === 'video/mp4';
+          const child = await create({ ...(videoItem ? { media_type: 'VIDEO' } : threads ? { media_type: 'IMAGE' } : {}),
+            [videoItem ? 'video_url' : 'image_url']: clip?.url ?? asset.url, is_carousel_item: 'true',
+            ...(!videoItem || threads ? altText(asset) : {}) });
+          children.push(child);
+          if (threads || clip) processingChildren.push(child);
         }
-        // Video items are processed before the carousel may name them; one still processing retries the containers next tick.
-        for (const child of videoChildren) {
-          let status = 'IN_PROGRESS';
-          for (let attempt = 0; attempt < REEL_CONTAINER_POLL.attempts && status === 'IN_PROGRESS'; attempt++) {
-            if (attempt) await pollWait(input, Math.max(0, Math.min(REEL_CONTAINER_POLL.intervalMs, input.config.pollIntervalMs ?? REEL_CONTAINER_POLL.intervalMs)));
-            status = await containerStatus(input, child);
-          }
-          if (status === 'IN_PROGRESS') throw new MetaFailure('carousel-video-processing');
-          if (status !== 'FINISHED') throw new MetaFailure('carousel-video-failed');
+        // Threads can still be downloading an image after returning its container ID.
+        // Poll the unfinished children in rounds so their waits share the deadline.
+        let pendingChildren = processingChildren;
+        const childInterval = Math.max(0, Math.min(REEL_CONTAINER_POLL.intervalMs, input.config.pollIntervalMs ?? REEL_CONTAINER_POLL.intervalMs));
+        for (let attempt = 0; attempt < REEL_CONTAINER_POLL.attempts && pendingChildren.length; attempt++) {
+          if (attempt) await pollWait(input, childInterval);
+          const states = await Promise.all(pendingChildren.map(child => containerStatus(input, child)));
+          if (states.some(status => status !== 'FINISHED' && status !== 'IN_PROGRESS')) throw new MetaFailure(threads ? 'carousel-item-failed' : 'carousel-video-failed');
+          pendingChildren = pendingChildren.filter((_, index) => states[index] === 'IN_PROGRESS');
         }
+        if (pendingChildren.length) throw new MetaFailure(threads ? 'carousel-item-processing' : 'carousel-video-processing');
         Object.assign(fields, { media_type: 'CAROUSEL', children: children.join(',') });
       } else if (revision.assets[0]) {
         // An Instagram single image is the default container type: image_url without media_type or children.

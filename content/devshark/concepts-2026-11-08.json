@@ -38,7 +38,7 @@
     { "kind": "cover", "kicker": "JavaScript quiz", "headline": "0.1 + 0.2 === 0.3", "body": "True or false? [[Guess before you swipe.]]" },
     { "kind": "code", "headline": "A. true\nB. false", "code": "0.1 + 0.2 === 0.3" },
     { "kind": "answer", "headline": "B. false", "body": "Numbers are binary floats, so the sum is [[0.30000000000000004]]." },
-    { "kind": "code", "headline": "Compare with a tolerance.", "code": "Math.abs(a - b) < Number.EPSILON" },
+    { "kind": "code", "headline": "Choose a tolerance.", "body": "Pick it from the units and scale of your data.", "code": "const a = 0.1 + 0.2, b = 0.3;\nMath.abs(a - b) <= 1e-12 // true" },
     { "kind": "closing", "headline": "Quizzes, lessons and [[coding tasks]] for web developers." }
    ]
   }
@@ -51,9 +51,9 @@
    "cover": "dark",
    "slides": [
     { "kind": "cover", "kicker": "Interview prep", "headline": "401 or 403?", "body": "Both say [[no]]. They mean different things." },
-    { "kind": "text", "headline": "401: who are you?", "body": "The request has [[no valid credentials]]. Log in and try again." },
-    { "kind": "text", "headline": "403: not allowed.", "body": "The server knows who you are, but you [[lack permission]]. Logging in again will not help." },
-    { "kind": "answer", "headline": "401 is authentication. 403 is authorization.", "body": "Despite its name, 401 Unauthorized is about [[who you are]]." },
+    { "kind": "text", "headline": "401: valid credentials required.", "body": "The request lacks [[valid credentials]] for this resource." },
+    { "kind": "text", "headline": "403: request refused.", "body": "The server understood the request and [[refused it]]. Permissions or another policy may apply." },
+    { "kind": "answer", "headline": "401 asks for credentials. 403 refuses.", "body": "Check the authentication challenge for 401 and the applicable access rules for 403." },
     { "kind": "closing", "headline": "[[Interview prep]] for web developers." }
    ]
   }
