@@ -24,6 +24,9 @@ export function instagramFeedGeometryValid(width: number, height: number): boole
 }
 const instagramFeed = (revision: ContentRevision) => revision.account.platform === 'instagram' && revision.format !== 'story';
 const normalizedHandle = (value: string) => value.replace(/^@/, '').toLowerCase();
+const threadsText = (revision: ContentRevision) => revision.brand === 'dneskai'
+  ? dneskaiThreadsText(revision.caption) || stripThreadsHashtags(revision.title)
+  : stripThreadsHashtags(revision.caption);
 export type PublishOutcome = { status: 'held' | 'dry-run' | 'pending' | 'published' | 'failed' | 'reconciliation';
   remoteContainerId: string | null; remoteMediaId: string | null; remoteUrl: string | null; errorCode: string | null;
   /** Preflight only: the enablement switches that would still hold a real run. */
@@ -346,6 +349,23 @@ const expectedMediaType = (format: ContentRevision['format']) => format === 'car
 /** A Reel lists as `VIDEO` (its product type is REELS); some responses name it `REELS` (#165). Both match. */
 const mediaTypeMatches = (format: ContentRevision['format'], type: unknown) => type === expectedMediaType(format) || (format === 'reel' && type === 'REELS');
 type MediaMatch = { kind: 'match'; id: string; permalink: string | null } | { kind: 'none' | 'ambiguous' | 'incomplete' | 'unavailable' };
+const threadsMediaType = (revision: ContentRevision) => {
+  if (revision.format === 'carousel') return 'CAROUSEL_ALBUM';
+  if (!revision.assets[0]) return 'TEXT_POST';
+  return revision.assets[0].mimeType === 'video/mp4' ? 'VIDEO' : 'IMAGE';
+};
+function threadsPermalink(value: unknown, handle: string): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value);
+    const [, account, section, shortcode, ...rest] = url.pathname.split('/');
+    if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+      !['threads.com', 'www.threads.com', 'threads.net', 'www.threads.net'].includes(url.hostname) ||
+      account?.toLowerCase() !== `@${normalizedHandle(handle)}` || section !== 'post' ||
+      !shortcode || !/^[\w-]+$/.test(shortcode) || rest.some(Boolean)) return null;
+    return `${url.origin}${url.pathname}`;
+  } catch { return null; }
+}
 /**
  * After an ambiguous `media_publish`, the owned account's own media list is
  * the only evidence used to recover the media ID: the same media type, a
@@ -377,6 +397,39 @@ async function findPublishedFeedMedia(input: PublishMarketingInput): Promise<Med
   return { kind: 'match', id: match.id as string, permalink };
 }
 
+/** The Threads API reports a separate media ID. Recover it only from the
+ * verified owner's complete slot window and the exact text sent by the publisher. */
+async function findPublishedThread(input: PublishMarketingInput): Promise<MediaMatch> {
+  const { revisionRow: { revision }, account } = input;
+  const scheduled = Date.parse(revision.scheduledAt);
+  const expectedText = normalizedCaption(threadsText(revision));
+  if (!Number.isFinite(scheduled) || !expectedText) return { kind: 'unavailable' };
+  const from = scheduled - RECONCILE_LOOKBACK_MS;
+  const until = Math.min(scheduled + RECONCILE_LOOKAHEAD_MS, (input.now ?? new Date()).getTime() + 60_000);
+  let page: Record<string, unknown>;
+  try {
+    if (await verifyRemoteAccount(input)) return { kind: 'unavailable' };
+    page = await graph(input, `${account.remote_account_id}/threads`, 'GET', {
+      fields: 'id,text,timestamp,permalink,media_type,is_quote_post',
+      since: String(Math.floor(from / 1000)), until: String(Math.ceil(until / 1000)), limit: String(RECONCILE_PAGE_SIZE),
+    });
+  } catch { return { kind: 'unavailable' }; }
+  if (!Array.isArray(page.data) || page.data.length > RECONCILE_PAGE_SIZE) return { kind: 'unavailable' };
+  if ((page.paging as { next?: unknown } | undefined)?.next) return { kind: 'incomplete' };
+  const matches: Array<{ id: string; permalink: string | null }> = [];
+  for (const item of page.data) {
+    if (!item || typeof item !== 'object' || Array.isArray(item) || !idValid(item.id)) return { kind: 'unavailable' };
+    const posted = metaInstant(item.timestamp);
+    if (posted < from || posted > until) continue;
+    if (!Number.isFinite(posted) || typeof item.media_type !== 'string') return { kind: 'unavailable' };
+    if (item.media_type !== threadsMediaType(revision) || item.is_quote_post === true) continue;
+    if (typeof item.text !== 'string') return { kind: 'unavailable' };
+    if (normalizedCaption(item.text) === expectedText) matches.push({ id: item.id, permalink: threadsPermalink(item.permalink, account.handle) });
+  }
+  if (matches.length > 1) return { kind: 'ambiguous' };
+  return matches.length ? { kind: 'match', ...matches[0]! } : { kind: 'none' };
+}
+
 /** This path never POSTs. A feed post whose publish was ambiguous is matched against the account's own media list. */
 export async function reconcileMarketingPublication(input: PublishMarketingInput): Promise<PublishOutcome> {
   if (input.publication.user_id !== input.revisionRow.user_id || input.account.user_id !== input.revisionRow.user_id || input.publication.revision_id !== input.revisionRow.id || input.publication.platform !== input.account.platform ||
@@ -401,10 +454,13 @@ export async function reconcileMarketingPublication(input: PublishMarketingInput
   try { status = await containerStatus(input, container); } catch { status = null; }
   // FINISHED, IN_PROGRESS, ERROR and EXPIRED all say this container was not
   // published, so a similar post in the list cannot be ours.
-  if (instagramFeed(input.revisionRow.revision) && (status === 'PUBLISHED' || status === null)) {
-    const found = await findPublishedFeedMedia(input);
+  const threads = input.account.platform === 'threads';
+  if (threads && status === 'PUBLISHED' && (revisionContentHash(input.revisionRow.revision) !== input.revisionRow.content_hash ||
+    input.revisionRow.content_hash !== input.revisionRow.approved_hash)) return result('held', 'revision-identity-mismatch', container);
+  if (threads ? status === 'PUBLISHED' : instagramFeed(input.revisionRow.revision) && (status === 'PUBLISHED' || status === null)) {
+    const found = await (threads ? findPublishedThread(input) : findPublishedFeedMedia(input));
     if (found.kind === 'match') {
-      const url = found.permalink ?? await mediaUrl(input, found.id);
+      const url = found.permalink ?? (threads ? threadsPermalink(await mediaUrl(input, found.id), input.account.handle) : await mediaUrl(input, found.id));
       return result(url ? 'published' : 'reconciliation', url ? null : 'remote-permalink-unavailable', container, found.id, url);
     }
     if (found.kind === 'ambiguous') return result('reconciliation', 'remote-media-match-ambiguous', container);
@@ -471,9 +527,7 @@ export async function publishMarketingRevision(input: PublishMarketingInput): Pr
       // Story text is rendered in the JPEG. The stored caption is internal
       // review copy; it is never sent as a public Story caption or alt_text.
       const fields: Record<string, string> = revision.format === 'story' ? {} : { [threads ? 'text' : 'caption']: revision.caption };
-      if (threads && revision.format !== 'story') fields.text = revision.brand === 'dneskai'
-        ? dneskaiThreadsText(revision.caption) || stripThreadsHashtags(revision.title)
-        : stripThreadsHashtags(revision.caption);
+      if (threads && revision.format !== 'story') fields.text = threadsText(revision);
       else if (revision.brand === 'dneskai' && revision.format !== 'story') fields.caption = dneskaiPublicText(revision.caption);
       // Instagram accepts alt_text on image containers only; Threads takes it for images and videos.
       const altText = (asset: ContentRevision['assets'][number]): Record<string, string> => threads || asset.mimeType === 'image/jpeg' ? { alt_text: asset.alt } : {};

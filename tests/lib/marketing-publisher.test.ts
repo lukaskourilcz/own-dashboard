@@ -84,6 +84,42 @@ describe('guarded Meta publishing', () => {
     const create = requests.find(row => row.method === 'POST' && row.url.endsWith('/threads'))!;
     expect(create.body).toContain('media_type=TEXT'); expect(create.body).not.toContain('auto_publish_text');
   });
+  it.each([
+    ['unique match', 'PUBLISHED', undefined, false, 'published', null],
+    ['duplicate text', 'PUBLISHED', 'duplicate', false, 'reconciliation', 'remote-media-match-ambiguous'],
+    ['pagination', 'PUBLISHED', undefined, true, 'reconciliation', 'remote-media-list-incomplete'],
+    ['text prefix only', 'PUBLISHED', 'prefix', false, 'reconciliation', 'remote-published-media-id-required'],
+    ['quote', 'PUBLISHED', 'quote', false, 'reconciliation', 'remote-published-media-id-required'],
+    ['other account', 'PUBLISHED', 'account', false, 'reconciliation', 'remote-permalink-unavailable'],
+    ['container never published', 'FINISHED', undefined, false, 'reconciliation', 'remote-container-finished'],
+  ] as const)('reconciles Threads by read-only evidence: %s', async (_case, containerStatus, mode, paginated, status, errorCode) => {
+    const { input, requests } = fixture(true);
+    const revision = input.revisionRow.revision;
+    revision.caption += '\n\n#devshark';
+    input.revisionRow.content_hash = input.revisionRow.approved_hash = revisionHash(revision);
+    input.publication = { ...input.publication, status: 'reconciliation', remote_container_id: '201', error_code: 'meta-request-uncertain' };
+    const permalink = 'https://www.threads.com/@qa_only/post/qa';
+    const media = { id: '301', text: mode === 'prefix' ? 'Synthetic QA caption only plus more' : 'Synthetic QA caption only',
+      media_type: 'TEXT_POST', timestamp: now.toISOString(), permalink: mode === 'account' ? permalink.replace('qa_only', 'another') : permalink,
+      is_quote_post: mode === 'quote' };
+    const fallback = input.fetcher!;
+    input.fetcher = async (request, options) => {
+      const url = new URL(String(request));
+      if (url.pathname.endsWith('/201')) return Response.json({ id: '201', status: containerStatus });
+      if (url.pathname.endsWith('/101/threads')) {
+        expect(options?.method).toBe('GET');
+        expect(url.searchParams.get('since')).toBe(String(now.getTime() / 1000 - 300));
+        return Response.json({ data: mode === 'duplicate' ? [media, { ...media, id: '302' }] : [media],
+          paging: paginated ? { next: 'https://graph.threads.net/next' } : undefined });
+      }
+      if (mode === 'account' && url.pathname.endsWith('/301')) return Response.json({ id: '301', permalink: media.permalink });
+      return fallback(request, options);
+    };
+    const outcome = await reconcileMarketingPublication(input);
+    expect(outcome).toMatchObject({ status, errorCode });
+    if (status === 'published') expect(outcome).toMatchObject({ remoteMediaId: '301', remoteUrl: permalink });
+    expect(requests.every(request => request.method === 'GET')).toBe(true);
+  });
   it('holds drifted assets and revoked approval before remote publication', async () => {
     const drift = fixture(); const fetcher = drift.input.fetcher!;
     drift.input.fetcher = async (url, options) => String(url).includes('assets.example.invalid') ? new Response('different bytes', { headers: { 'Content-Type': 'image/jpeg' } }) : fetcher(url, options);

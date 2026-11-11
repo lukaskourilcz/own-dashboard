@@ -81,6 +81,7 @@ switched to Reel in the Lab, or an education post generated as one) publishes as
 - **Quota.** The publisher refuses at 50 posts in 24 hours (`content_publishing_limit`), even if the account reports
   a higher total.
 - **Reconciliation** matches a Reel listed as `VIDEO` or `REELS`.
+- **Threads receipts** use the verified account's post list once Meta reports the stored container as published. The worker accepts one result in the slot window with the same media type and the full normalized text sent at publication. It checks that the permalink belongs to that account. A missing or ambiguous match stays in reconciliation. This path only reads Meta. [Threads API post-list reference](https://www.postman.com/meta/threads/request/34203612-fea6c131-986c-4bf0-9908-fa38a77fa2d2).
 
 Collection, media, briefs and generation wait for that tick (`deferred: yield-to-publication`) while
 publishing is live and either a queued DNESKAi publication is due now or within five minutes, or a
