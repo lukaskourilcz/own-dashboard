@@ -251,7 +251,11 @@ async function verifyAssets(input: PublishMarketingInput): Promise<void> {
     if (url.protocol !== 'https:' || url.username || url.password || !input.config.approvedAssetHosts.includes(url.hostname)) throw new MetaFailure('asset-host-unapproved');
     let response: Response;
     try { response = await (input.fetcher ?? fetch)(url.href, { redirect: 'error', signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000) }); }
-    catch { throw new MetaFailure('asset-unreachable'); }
+    catch { throw new MetaFailure('asset-unreachable', 'asset-unreachable', !input.signal?.aborted); }
+    if (response.status === 429 || response.status >= 500) {
+      await response.body?.cancel().catch(() => {});
+      throw new MetaFailure('asset-unreachable', 'asset-unreachable', !input.signal?.aborted);
+    }
     if (!response.ok || response.headers.get('content-type')?.split(';')[0] !== asset.mimeType || !response.body) throw new MetaFailure('asset-mime-or-response-invalid');
     const maxBytes = story ? 8_000_000 : feedImage ? INSTAGRAM_FEED_IMAGE.maxBytes : asset.mimeType === 'image/jpeg' ? 10_000_000 : 200_000_000;
     if (Number(response.headers.get('content-length')) > maxBytes) throw new MetaFailure('asset-too-large');
@@ -259,7 +263,7 @@ async function verifyAssets(input: PublishMarketingInput): Promise<void> {
     const imageChunks: Uint8Array[] = [];
     try { while (true) { input.signal?.throwIfAborted(); const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
       if (bytes > maxBytes) { await reader.cancel(); throw new MetaFailure('asset-too-large'); } hash.update(part.value); if (story || feedImage) imageChunks.push(part.value); } }
-    catch (error) { if (error instanceof MetaFailure) throw error; throw new MetaFailure('asset-unreachable'); }
+    catch (error) { if (error instanceof MetaFailure) throw error; throw new MetaFailure('asset-unreachable', 'asset-unreachable', !input.signal?.aborted); }
     if (hash.digest('hex') !== asset.sha256) throw new MetaFailure('asset-hash-mismatch');
     if (feedImage) {
       // Meta fetches the URL itself; check the approved bytes it will receive, not the declared metadata.

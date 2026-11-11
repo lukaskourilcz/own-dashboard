@@ -138,6 +138,19 @@ describe('DNESKAi Threads failure receipts', () => {
 });
 
 describe('DNESKAi Instagram publisher against a mocked Graph API', () => {
+  it.each([429, 503, null])('keeps a transient asset read in the retry path before any remote writes (%s)', async (status) => {
+    const state = fixture();
+    const fetcher = state.input.fetcher!;
+    state.input.fetcher = async (url, init) => {
+      if (!String(url).startsWith('https://assets.example.invalid/')) return fetcher(url, init);
+      if (status === null) throw new TypeError('fixture network failure');
+      return new Response('temporarily unavailable', { status });
+    };
+    expect(await publishMarketingRevision(state.input)).toMatchObject({ status: 'pending', errorCode: 'container-retry', retryCause: 'asset-unreachable' });
+    expect(state.checkpoints.map(({ stage }) => stage)).toEqual(['container-retry']);
+    expect(state.posts()).toHaveLength(0);
+  });
+
   it('publishes a carousel with alt text per child, a parent without children alt and exactly one media_publish', async () => {
     const { input, posts, checkpoints, calls } = fixture();
     expect(await publishMarketingRevision(input)).toEqual({ status: 'published', remoteContainerId: '300', remoteMediaId: '90001', remoteUrl: 'https://www.instagram.com/p/offline-qa/', errorCode: null });
