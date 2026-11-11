@@ -61,6 +61,7 @@ function fixture(options: { format?: 'carousel' | 'post'; assets?: Asset[]; coll
         if (url.pathname.endsWith('/17841400000000001') && method === 'GET') return Response.json({ id: input.account.remote_account_id, username: 'dneskai' });
         if (url.pathname.endsWith('/threads_publishing_limit')) return Response.json({ data: [{ quota_usage: 3, config: { quota_total: 50 } }] });
         if (url.pathname.endsWith('/threads') && method === 'POST') return Response.json({ id: body.has('is_carousel_item') ? String(++nextChild) : '300' });
+        if (method === 'GET' && /\/20[1-9]$/.test(url.pathname)) return Response.json({ id: url.pathname.split('/').at(-1), status: 'FINISHED' });
         if (url.pathname.endsWith('/300')) return Response.json({ id: '300', status: 'FINISHED' });
       }
       if (url.pathname.endsWith('/17841400000000001') && method === 'GET') return Response.json({ id: '1234567', user_id: '17841400000000001', username: 'dneskai' });
@@ -104,6 +105,28 @@ describe('DNESKAi Threads failure receipts', () => {
     expect(state.posts().map(({ body }) => body.get('topic_tag'))).toEqual([null, null, null, null]);
     expect(state.posts().at(-1)!.body.get('text')).not.toContain('#');
     expect(state.checkpoints).toMatchObject([{ stage: 'container-retry' }]);
+  });
+
+  it.each([false, true])('waits for Threads image children before making the parent, prolonged processing %s', async (prolonged) => {
+    let reads = 0;
+    const state = threadsFixture(({ url, method, body }) => {
+      if (method === 'GET' && url.pathname.endsWith('/201')) {
+        reads++;
+        return Response.json({ id: '201', status: prolonged || reads === 1 ? 'IN_PROGRESS' : 'FINISHED' });
+      }
+      if (body.has('children')) {
+        expect(reads).toBe(2);
+        return Response.json({ id: '300' });
+      }
+      if (method === 'POST' && url.pathname.endsWith('/threads_publish')) return Response.json({ id: '90001' });
+      return undefined;
+    });
+    const outcome = await publishMarketingRevision(state.input);
+    expect(outcome).toMatchObject(prolonged
+      ? { status: 'pending', retryCause: 'carousel-item-processing' }
+      : { status: 'published' });
+    expect(state.posts().some(call => call.body.has('children'))).toBe(!prolonged);
+    expect(state.posts().filter(call => call.url.pathname.endsWith('/threads_publish'))).toHaveLength(prolonged ? 0 : 1);
   });
 
   it('reconciles even a transient error after sending the publish request', async () => {
