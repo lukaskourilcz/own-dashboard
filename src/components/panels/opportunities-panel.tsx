@@ -187,8 +187,8 @@ function ContactsView({ t, lang, trade, isPreview, template, templateMissing, pr
   const websiteCell = (row: LeadContact) => {
     const url = safeLeadUrl(row.website);
     return url
-      ? <a href={url} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 max-w-full items-center gap-1 break-all text-sm underline underline-offset-2 hover:no-underline md:min-h-0">{url.replace(/^https?:\/\//i, "").replace(/\/$/, "")}<ExternalLink className="h-3 w-3 shrink-0" aria-hidden /></a>
-      : <span className="text-2xl font-semibold leading-none text-risk" title={t.noWebsite}><span aria-hidden>–</span><span className="sr-only">{t.noWebsite}</span></span>;
+      ? <a href={url} target="_blank" rel="noreferrer" title={url} className="focus-ring inline-flex min-h-11 max-w-full items-center gap-1 text-sm underline underline-offset-2 hover:no-underline xl:min-h-0"><span className="truncate">{url.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")}</span><ExternalLink className="h-3 w-3 shrink-0" aria-hidden /></a>
+      : <span className="inline-block text-3xl font-bold leading-none text-risk" title={t.noWebsite}><span aria-hidden>–</span><span className="sr-only">{t.noWebsite}</span></span>;
   };
   const qualityCell = (row: LeadContact) => row.quality_score === null ? null
     : <span className={cn("tabular-nums text-sm font-semibold", row.quality_score <= 3 ? "text-risk" : row.quality_score <= 6 ? "text-warning" : "text-foreground")} title={row.quality_reason ?? undefined}>
@@ -203,8 +203,8 @@ function ContactsView({ t, lang, trade, isPreview, template, templateMissing, pr
   );
 
   return <>
-    <div className="mb-3 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))]">
-      <Input aria-label={t.search} placeholder={t.search} value={searchInput} onChange={(event) => { setSearchInput(event.target.value); setPage(0); }} className="sm:col-span-2 lg:col-span-1" />
+    <div className="mb-3 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))]">
+      <Input aria-label={t.search} placeholder={t.search} value={searchInput} onChange={(event) => { setSearchInput(event.target.value); setPage(0); }} className="sm:col-span-2 xl:col-span-1" />
       <SimpleSelect aria-label={t.region} value={filter.region} onValueChange={(region) => setFilterPart({ region })} options={[{ value: "all", label: t.allRegions }, ...LEAD_REGIONS.map((region) => ({ value: region, label: region })), { value: "unknown", label: t.unknownRegion }]} />
       <SimpleSelect aria-label={t.status} value={filter.status} onValueChange={(status) => setFilterPart({ status: status as LeadFilter["status"] })} options={[{ value: "active", label: t.activeStatuses }, { value: "all", label: t.allStatuses }, ...statusOptions]} />
       <SimpleSelect aria-label={t.website} value={filter.website} onValueChange={(website) => setFilterPart({ website: website as LeadFilter["website"] })} options={[{ value: "all", label: t.allWebsites }, { value: "without", label: t.withoutWebsite }, { value: "with", label: t.withWebsite }]} />
@@ -219,17 +219,17 @@ function ContactsView({ t, lang, trade, isPreview, template, templateMissing, pr
       : total === 0 && !filtersActive ? <EmptyState icon={Users} title={t.empty} description={t.emptyHint} />
       : total === 0 ? <p className="py-6 text-sm text-foreground-muted">{t.noMatch}</p>
       : <>
-        <div className={cn("hidden overflow-x-auto rounded-lg border border-border bg-surface md:block", query.isPlaceholderData && "opacity-60")}>
-          <table className="w-full min-w-[56rem] text-left text-sm">
+        <div className={cn("hidden overflow-x-auto rounded-lg border border-border bg-surface xl:block", query.isPlaceholderData && "opacity-60")}>
+          <table className="w-full min-w-[60rem] text-left text-sm">
             <thead className="border-b border-border text-xs text-foreground-muted">
               <tr>
-                <th scope="col" className="w-[24%] px-3 py-2 font-medium">{t.columns.name}</th>
-                <th scope="col" className="w-[20%] px-3 py-2 font-medium">{t.columns.email}</th>
-                <th scope="col" className="w-[16%] px-3 py-2 font-medium">{t.columns.website}</th>
-                <th scope="col" className="px-3 py-2 font-medium">{t.columns.activity}</th>
-                <th scope="col" className="w-20 px-3 py-2 text-right font-medium">{t.columns.quality}</th>
-                <th scope="col" className="w-40 px-3 py-2 font-medium">{t.columns.status}</th>
-                <th scope="col" className="w-24 px-3 py-2"><span className="sr-only">{t.columns.actions}</span></th>
+                <th scope="col" className="w-[21%] px-3 py-2 font-medium">{t.columns.name}</th>
+                <th scope="col" className="w-[19%] px-3 py-2 font-medium">{t.columns.email}</th>
+                <th scope="col" className="w-[15%] px-3 py-2 font-medium">{t.columns.website}</th>
+                <th scope="col" className="min-w-48 px-3 py-2 font-medium">{t.columns.activity}</th>
+                <th scope="col" className="w-20 px-2 py-2 text-right font-medium">{t.columns.quality}</th>
+                <th scope="col" className="w-36 px-2 py-2 font-medium">{t.columns.status}</th>
+                <th scope="col" className="w-24 px-2 py-2"><span className="sr-only">{t.columns.actions}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -239,18 +239,18 @@ function ContactsView({ t, lang, trade, isPreview, template, templateMissing, pr
                   {place(row) && <p className="mt-0.5 text-xs text-foreground-muted">{place(row)}</p>}
                 </td>
                 <td className="px-3 py-2 break-all"><span className="font-mono text-xs">{row.email}</span></td>
-                <td className="px-3 py-2">{websiteCell(row)}</td>
+                <td className="max-w-0 px-3 py-2">{websiteCell(row)}</td>
                 <td className="px-3 py-2 text-xs text-foreground-muted"><span className="line-clamp-3">{row.activity}</span></td>
-                <td className="px-3 py-2 text-right">{qualityCell(row)}</td>
-                <td className="px-3 py-2">{statusSelect(row, "w-full")}</td>
-                <td className="px-3 py-2 text-right">{writeButton(row)}</td>
+                <td className="px-2 py-2 text-right">{qualityCell(row)}</td>
+                <td className="px-2 py-2">{statusSelect(row, "w-full")}</td>
+                <td className="px-2 py-2 text-right">{writeButton(row)}</td>
               </tr>)}
             </tbody>
           </table>
         </div>
-        <ul className={cn("grid gap-2 md:hidden", query.isPlaceholderData && "opacity-60")} aria-label={t.contacts}>
+        <ul className={cn("grid gap-2 sm:grid-cols-2 xl:hidden", query.isPlaceholderData && "opacity-60")} aria-label={t.contacts}>
           {rows.map((row) => <li key={row.id}>
-            <Card className="space-y-2 p-3">
+            <Card className="h-full space-y-2 p-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <button type="button" className="focus-ring min-h-11 text-left text-sm font-medium break-words hover:underline" aria-label={t.details(row.name)} onClick={() => setDetailId(row.id)}>{row.name}</button>
@@ -340,13 +340,13 @@ function ComposeDialog({ t, contact, template, templateMissing, isPreview, onClo
   return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
     <DialogContent className="max-w-2xl">
       <DialogHeader><DialogTitle>{t.composeTitle}</DialogTitle><DialogDescription>{t.composeHelp}</DialogDescription></DialogHeader>
-      {!template ? <p role={templateMissing ? "alert" : "status"} className="text-sm text-foreground-muted">{templateMissing ? t.noTemplate : t.loadingTemplate}</p> : <div className="grid gap-3">
+      {!template ? <p role={templateMissing ? "alert" : "status"} className="text-sm text-foreground-muted">{templateMissing ? t.noTemplate : t.loadingTemplate}</p> : <div className="grid min-w-0 gap-3 [&>div]:min-w-0">
         <div><p className="text-xs text-foreground-muted">{t.columns.email}</p><p className="font-mono text-xs break-all">{contact.email}</p></div>
         <div><p className="text-xs text-foreground-muted">{t.subject}</p><p className="text-sm font-medium break-words" data-testid="lead-compose-subject">{subject}</p></div>
-        <div><p className="text-xs text-foreground-muted">{t.body}</p><div className="max-h-[45dvh] overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-border bg-surface-inset p-3 text-sm" data-testid="lead-compose-body">{body}</div></div>
+        <div><p className="text-xs text-foreground-muted">{t.body}</p><div className="max-h-[45dvh] overflow-y-auto whitespace-pre-wrap rounded-md border [overflow-wrap:anywhere] border-border bg-surface-inset p-3 text-sm" data-testid="lead-compose-body">{body}</div></div>
       </div>}
       <DialogFooter className="flex-wrap">
-        <Button variant="outline" onClick={onClose}>{t.close}</Button>
+        {!template && <Button variant="outline" onClick={onClose}>{t.close}</Button>}
         {template && <>
           <Button variant="outline" onClick={() => void copyText(subject, toast, t)}><Copy aria-hidden />{t.copySubject}</Button>
           <Button variant="outline" onClick={() => void copyText(body, toast, t)}><Copy aria-hidden />{t.copyBody}</Button>
@@ -421,7 +421,7 @@ function EmailsView({ t, lang, trade, isPreview, template, templateQuery, previe
           <SimpleSelect aria-label={t.previewFor} value={sample.id} onValueChange={setSampleId} options={samples.map((row) => ({ value: row.id, label: `${row.name}${row.website ? "" : ` (${t.noWebsite.toLocaleLowerCase(lang)})`}` }))} />
         </label>
         <div><p className="text-xs text-foreground-muted">{t.subject}</p><p className="text-sm font-medium break-words" data-testid="lead-template-preview-subject">{renderedSubject?.text}</p></div>
-        <div><p className="text-xs text-foreground-muted">{t.body}</p><div className="whitespace-pre-wrap break-words rounded-md border border-border bg-surface-inset p-3 text-sm" data-testid="lead-template-preview-body">{renderedBody?.text}</div></div>
+        <div><p className="text-xs text-foreground-muted">{t.body}</p><div className="whitespace-pre-wrap rounded-md border border-border bg-surface-inset p-3 text-sm [overflow-wrap:anywhere]" data-testid="lead-template-preview-body">{renderedBody?.text}</div></div>
       </>}
     </CardContent></Card>
   </div>;
