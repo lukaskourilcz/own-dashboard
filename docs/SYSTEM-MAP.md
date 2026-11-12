@@ -15,7 +15,7 @@ own-only under row-level security. The product areas:
 |---|---|---|
 | Home | First five active backlog tasks and up to five unapplied saved Career positions | `src/components/overview/execution-home.tsx`, `src/lib/home-execution.ts` |
 | Work | Projects (workspaces at `/projects/<id-or-slug>`; the Projects section lists only DNESKAi, devShark and heyDarlink since 8 November 2026), tasks, notes, prompts, tools, the link library | `src/lib/projects.ts`, `src/lib/project-*`, `src/lib/link-library.ts` |
-| Opportunities | Freelance pipeline, clients and organizations (ARES and VIES checks), competition | `src/lib/freelance.ts`, `src/lib/competition.ts`, `src/lib/tax-registry.ts` |
+| Opportunities | Tradespeople contacts per trade and one outreach template per trade; clients and organizations (ARES and VIES checks); competition | `src/lib/leads.ts`, `scripts/import-lead-contacts.ts`, `src/lib/competition.ts`, `src/lib/tax-registry.ts` |
 | Career | The Prague and Czech-remote job search: researched roles, careers directory, application drafts | `src/components/panels/career-research-workspace.tsx`, `src/lib/jobs` |
 | Money | Czech invoices (VAT, QR, print), transactions and rules, subscriptions, static FX, bank sync, payment matching | `src/lib/invoices.ts`, `src/lib/finances.ts`, `src/lib/bank*`, `src/lib/payment-matching*` |
 | Marketing | DNESKAi Instagram pipeline (below), devShark weekly drafts, knowledge import | `src/lib/marketing/`, `services/marketing-worker/` |

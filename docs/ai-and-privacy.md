@@ -11,7 +11,7 @@ The owner explicitly authorized model-backed marketing on 2026-10-13 in issue #9
 ## Write controls
 
 - Link enrichment fills an existing form; the user still saves it.
-- Opportunity-to-project conversion is deterministic, not AI-driven, and requires confirmation.
+- Opportunities never sends e-mail: it fills the owner's template and hands it to his mail client or clipboard. Website scores in Contacts were written before the import; the dashboard computes none.
 
 ## Data boundaries
 
