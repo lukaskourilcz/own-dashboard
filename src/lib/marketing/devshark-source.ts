@@ -41,3 +41,23 @@ export async function refreshDevsharkDraftPacket(db: Database, owner: string, so
   if (!row.success) return { held: 'source-packet-invalid' };
   return { packet: devsharkDraftPacket(row.data, now) };
 }
+
+/** The concept states whose packet is eligible; discovery lists only these. */
+export const DEVSHARK_ELIGIBLE_CONCEPT_STATUSES = ['approved', 'planned', 'published'] as const;
+
+/**
+ * Local devShark source discovery (13 November 2026): the owner's eligible concepts, newest first, at most `limit`.
+ * This replaces the Quorum/n8n bridge (`?resource=marketing-source`), whose n8n instance no longer exists.
+ */
+export async function discoverDevsharkDraftPackets(db: Database, owner: string, now: Date, limit = 20): Promise<{ packets: SourcePacket[]; invalid: number }> {
+  z.uuid().parse(owner);
+  const { data, error } = await db.from('marketing_devshark_drafts').select('id,title,caption,deck,status').eq('user_id', owner)
+    .in('status', [...DEVSHARK_ELIGIBLE_CONCEPT_STATUSES]).order('updated_at', { ascending: false }).order('id').limit(Math.max(1, Math.min(limit, 20)));
+  if (error) throw new Error('source-current-unavailable');
+  const packets: SourcePacket[] = []; let invalid = 0;
+  for (const value of (data ?? []) as unknown[]) {
+    const row = DraftRowSchema.safeParse(value);
+    if (row.success) packets.push(devsharkDraftPacket(row.data, now)); else invalid++;
+  }
+  return { packets, invalid };
+}

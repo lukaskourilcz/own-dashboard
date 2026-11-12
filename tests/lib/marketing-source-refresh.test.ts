@@ -1,55 +1,90 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { refreshSource, refreshMarketingSources } from '@/lib/marketing/source-refresh';
-import { parseSourcePacket } from '@/lib/marketing/contracts';
-import { contentHash } from '@/lib/marketing/hashes';
+import { devsharkDraftPacket } from '@/lib/marketing/devshark-source';
 vi.mock('server-only', () => ({}));
-const now = new Date('2026-10-13T09:00:00Z'); const secret = 'synthetic-source-secret-only-at-least-32';
-const content = { title: 'Synthetic QA question', body: 'QA only', category: 'javascript', difficulty: 'Easy', code: null,
-  options: ['A', 'B'], answer: 'A', explanation: 'Synthetic QA explanation', evidence: [], image: null };
-const packet = parseSourcePacket({ schemaVersion: 'marketing-source/1', brand: 'devshark', kind: 'question', sourceId: 'question:qa-only', sourceRevision: 'qa-daily-version', contentHash: contentHash(content), canonicalUrl: 'https://devshark.app/daily/2026-10-12', locale: 'en', observedAt: now.toISOString(), expiresAt: null, eligible: true, eligibilityReason: 'Synthetic QA only', content });
-const config = { url: 'https://devshark.example.invalid/api/admin', secret };
-describe('authoritative source refresh', () => {
-  it('rechecks a dated daily URL by its canonical date and exact resource', async () => {
-    const fetcher = vi.fn<typeof fetch>(async url => { const query = new URL(String(url)).searchParams;
-      expect(query.get('resource')).toBe('marketing-source'); expect(query.get('daily')).toBe('2026-10-12'); expect(query.has('sourceId')).toBe(false);
-      return Response.json({ packets: [packet], nextCursor: null }); });
-    expect(await refreshSource(packet, new AbortController().signal, { now, config, fetcher })).toEqual(packet);
-  });
-  it('uses direct effective-source lookup for a non-daily source', async () => {
-    const generic = { ...packet, canonicalUrl: 'https://devshark.app/quiz?categories=javascript' };
-    const fetcher = vi.fn<typeof fetch>(async url => { const query = new URL(String(url)).searchParams;
-      expect(query.get('sourceId')).toBe(packet.sourceId); expect(query.has('daily')).toBe(false); return Response.json({ packets: [generic] }); });
-    await refreshMarketingSources({ brand: 'devshark', config, sourceIds: [packet.sourceId], previousPackets: [generic], date: '2026-10-13', now, fetcher });
-  });
-  it('never substitutes a stored head after timeout, deletion or malformed response', async () => {
-    for (const fetcher of [async () => { throw new Error('timeout'); }, async () => new Response(null, { status: 410 }), async () => Response.json({ packets: [] })]) {
-      await expect(refreshSource(packet, new AbortController().signal, { now, config, fetcher })).rejects.toThrow();
-    }
-    await expect(refreshSource(packet, new AbortController().signal, { now, config, fetcher: async () => Response.json({ packets: [{ ...packet, observedAt: '2026-10-13T08:00:00Z' }] }) })).rejects.toThrow();
-  });
-  it('preserves current retirement and changed revisions for the worker to hold', async () => {
-    const retired = { ...packet, sourceRevision: 'retired-version', eligible: false, eligibilityReason: 'retired' };
-    const refreshed = await refreshSource(packet, new AbortController().signal, { now, config, fetcher: async () => Response.json({ packets: [retired] }) });
-    expect(refreshed.eligible).toBe(false); expect(refreshed.sourceRevision).toBe('retired-version');
-  });
-  it('holds a non-brief DNESKAi id locally and makes no Quorum request now that the bridge is gone', async () => {
-    // DNESKAi sources are the owner's own briefs (#115); Quorum's signed source bridge was removed on 9 November 2026.
-    // A sourceId that is not a known brief is held rather than fetched, and nothing leaves the process.
-    const fetcher = vi.fn<typeof fetch>();
-    const refreshed = await refreshMarketingSources({ brand: 'dneskai', sourceIds: ['2026-10-12-qa-only'], now, fetcher });
-    expect(fetcher).not.toHaveBeenCalled();
-    expect(refreshed.packets).toEqual([]); expect(refreshed.held).toEqual([{ sourceId: '2026-10-12-qa-only', reason: 'source-unavailable' }]);
-  });
-  it('rejects content drift and wrong identities', async () => {
-    for (const altered of [{ ...packet, content: { ...content, body: 'changed without hash' } }, { ...packet, sourceId: 'question:other' }]) {
-      await expect(refreshSource(packet, new AbortController().signal, { now, config, fetcher: async () => Response.json({ packets: [altered] }) })).rejects.toThrow();
-    }
-  });
-  it('holds a daily web-article DNESKAi id without reaching for a Quorum source URL', async () => {
-    const fetcher = vi.fn<typeof fetch>();
-    const result = await refreshMarketingSources({brand:'dneskai',sourceIds:['daily-web-article'],now,fetcher,
-      env:{MARKETING_DNESKAI_FEED_PROVIDER:'native'}});
-    expect(fetcher).not.toHaveBeenCalled();expect(result.packets).toEqual([]);expect(result.held).toEqual([{sourceId:'daily-web-article',reason:'source-unavailable'}]);
+vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => { throw new Error('no admin client in tests'); } }));
+
+const now = new Date('2026-11-13T09:00:00Z');
+const owner = '00000000-0000-4000-8000-000000000001';
+const concepts = JSON.parse(readFileSync('content/devshark/concepts-2026-11-07.json', 'utf8')) as Array<{ title: string; caption: string; deck: never }>;
+const draft = (index: number, status = 'planned') => ({ id: `11111111-1111-4111-8111-${String(index).padStart(12, '0')}`, title: concepts[index % concepts.length]!.title,
+  caption: concepts[index % concepts.length]!.caption, deck: concepts[index % concepts.length]!.deck, status });
+
+/** A synthetic owner-scoped concept store; it records every filter so the test can check owner scoping. */
+function store(rows: Array<ReturnType<typeof draft> & { user_id?: string }>, options: { fail?: boolean } = {}) {
+  const calls: Array<Array<[string, unknown]>> = [];
+  const db = { from: (table: string) => {
+    expect(table).toBe('marketing_devshark_drafts');
+    const filters: Array<[string, unknown]> = []; calls.push(filters);
+    let limit = Infinity;
+    const scoped = () => rows.filter(row => (row.user_id ?? owner) === filters.find(([key]) => key === 'user_id')?.[1]
+      && filters.every(([key, value]) => key === 'user_id' || (key === 'status:in' ? (value as string[]).includes(row.status) : key === 'id' ? row.id === value : true)));
+    const chain = {
+      select: () => chain,
+      eq: (key: string, value: unknown) => { filters.push([key, value]); return chain; },
+      in: (key: string, value: unknown) => { filters.push([`${key}:in`, value]); return chain; },
+      order: () => chain,
+      limit: (value: number) => { limit = value; return chain; },
+      maybeSingle: async () => options.fail ? { data: null, error: { message: 'down' } } : { data: scoped()[0] ?? null, error: null },
+      then: (resolve: (value: unknown) => void) => resolve(options.fail ? { data: null, error: { message: 'down' } } : { data: scoped().slice(0, limit).map(({ user_id: _owner, ...row }) => row), error: null }),
+    };
+    return chain;
+  } };
+  return { db: db as never, calls };
+}
+
+describe('local devShark source discovery (13 November 2026)', () => {
+  it('discovers the owner\'s approved, planned and published concepts without any network request', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch');
+    const { db, calls } = store([draft(0, 'approved'), draft(1, 'planned'), draft(2, 'published'), draft(3, 'draft'), draft(4, 'rejected'), { ...draft(5), user_id: '00000000-0000-4000-8000-000000000002' }]);
+    const result = await refreshMarketingSources({ brand: 'devshark', owner, db, now });
+    expect(fetcher).not.toHaveBeenCalled(); fetcher.mockRestore();
+    expect(result.packets.map(packet => packet.sourceId)).toEqual([0, 1, 2].map(index => `devshark-draft:${draft(index).id}`));
+    expect(result.packets.every(packet => packet.eligible && packet.kind === 'coding-task')).toBe(true);
+    expect(result).toMatchObject({ held: [], dropped: 0, nextCursor: null });
+    expect(calls[0]).toContainEqual(['user_id', owner]);
   });
 
+  it('caps a discovery at 20 concepts', async () => {
+    const { db } = store(Array.from({ length: 25 }, (_, index) => draft(index)));
+    expect((await refreshMarketingSources({ brand: 'devshark', owner, db, now })).packets).toHaveLength(20);
+  });
+
+  it('reports a dated discovery as having no daily edition and reads nothing', async () => {
+    const { db, calls } = store([draft(0)]);
+    const result = await refreshMarketingSources({ brand: 'devshark', owner, db, now, date: '2026-11-13' });
+    expect(result.packets).toEqual([]); expect(result.noEditionDates).toEqual(['2026-11-13']); expect(calls).toHaveLength(0);
+  });
+
+  it('requires an owner and fails closed when the concept store is unavailable', async () => {
+    await expect(refreshMarketingSources({ brand: 'devshark', now })).rejects.toThrow('concept-owner-required');
+    await expect(refreshMarketingSources({ brand: 'devshark', owner, db: store([], { fail: true }).db, now })).rejects.toThrow('source-current-unavailable');
+  });
+
+  it('holds a legacy non-concept devShark id without a request', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch');
+    const result = await refreshMarketingSources({ brand: 'devshark', owner, db: store([]).db, sourceIds: ['question:legacy-daily'], now });
+    expect(fetcher).not.toHaveBeenCalled(); fetcher.mockRestore();
+    expect(result.packets).toEqual([]); expect(result.held).toEqual([{ sourceId: 'question:legacy-daily', reason: 'source-unavailable' }]);
+  });
+
+  it('re-reads a concept for the publisher and follows its current status', async () => {
+    const packet = devsharkDraftPacket(draft(0), now);
+    expect(await refreshSource(packet, new AbortController().signal, { owner, db: store([draft(0)]).db, now })).toEqual(packet);
+    const rejected = await refreshSource(packet, new AbortController().signal, { owner, db: store([draft(0, 'rejected')]).db, now });
+    expect(rejected.eligible).toBe(false);
+    await expect(refreshSource(packet, new AbortController().signal, { owner, db: store([]).db, now })).rejects.toThrow('source-recheck-unavailable');
+  });
+});
+
+describe('DNESKAi source refresh without Quorum', () => {
+  it('holds a non-brief DNESKAi id locally and makes no request', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch');
+    for (const id of ['2026-10-12-qa-only', 'daily-web-article']) {
+      const refreshed = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [id], now });
+      expect(refreshed.packets).toEqual([]); expect(refreshed.held).toEqual([{ sourceId: id, reason: 'source-unavailable' }]);
+    }
+    expect(fetcher).not.toHaveBeenCalled(); fetcher.mockRestore();
+  });
 });

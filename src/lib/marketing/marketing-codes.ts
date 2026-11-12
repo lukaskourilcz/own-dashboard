@@ -398,6 +398,7 @@ const CODES = {
   'recovery-held-release-unavailable': ['config', 'Re-review of held reports needs the prepared owner recovery migration.', 'Nová kontrola pozastavených zpráv vyžaduje připravenou migraci obnovy.'],
   'recovery-candidate-unavailable': ['reload', 'The held report is not available.', 'Pozastavená zpráva není dostupná.'],
   'source-current-unavailable': ['source', 'The current source could not be read.', 'Aktuální zdroj nelze načíst.'],
+  'concept-owner-required': ['investigate', 'devShark concepts can be discovered only for their owner.', 'Koncepty devSharku lze vyhledat jen pro jejich vlastníka.'],
   // Publication (publisher, orchestrator).
   'access-token-expired': ['token', 'The Instagram token has expired.', 'Platnost instagramového tokenu vypršela.'],
   'access-token-expiry-unverified': ['token', 'The token’s expiry is not recorded.', 'Konec platnosti tokenu není zaznamenaný.'],

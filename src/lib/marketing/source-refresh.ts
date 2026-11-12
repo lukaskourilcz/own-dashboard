@@ -7,7 +7,7 @@ import { marketingPilotConfiguration } from './pilot';
 import { previewPilotRetired } from './preview-pilot';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DneskaiBriefSourceError, refreshDneskaiBriefPacket, type DneskaiBriefDatabase } from './dneskai-brief-source';
-import { DEVSHARK_DRAFT_SOURCE_PREFIX, refreshDevsharkDraftPacket } from './devshark-source';
+import { DEVSHARK_DRAFT_SOURCE_PREFIX, discoverDevsharkDraftPackets, refreshDevsharkDraftPacket } from './devshark-source';
 
 type SourcePreviewShare = { token: string; origin: string };
 export type SourceRefreshConfig = { url: string; secret: string; previewShare?: SourcePreviewShare };
@@ -190,6 +190,21 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
     // bridge was removed on 9 November 2026 (Quorum is not needed), so a non-brief id is held rather than fetched; in
     // practice every DNESKAi source is a brief, so nothing reaches here.
     for (const id of bridgeIds ?? []) result.held.push({ sourceId: id, reason: 'source-unavailable' });
+    return result;
+  }
+  if (input.brand === 'devshark') {
+    // devShark discovery runs locally (13 November 2026): the owner's eligible concepts are the sources. The Quorum
+    // bridge and its n8n instance are gone, so a non-concept id is held and nothing leaves the process.
+    for (const id of bridgeIds ?? []) result.held.push({ sourceId: id, reason: 'source-unavailable' });
+    if (bridgeIds) return result;
+    // Concepts have no daily editions; a dated discovery reports the date as having none.
+    if (input.date) { result.noEditionDates.push(input.date); return result; }
+    if (!input.owner) throw new SourceRefreshError('concept-owner-required');
+    let discovered;
+    try { discovered = await discoverDevsharkDraftPackets((input.db ?? createAdminClient()) as unknown as Parameters<typeof discoverDevsharkDraftPackets>[0], input.owner, now); }
+    catch { throw new SourceRefreshError('source-current-unavailable'); }
+    result.dropped += discovered.invalid;
+    for (const packet of discovered.packets) append(packet);
     return result;
   }
   input = { ...input, ...(bridgeIds ? { sourceIds: bridgeIds } : {}) };
