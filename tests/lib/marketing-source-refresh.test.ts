@@ -27,7 +27,7 @@ function store(rows: Array<ReturnType<typeof draft> & { user_id?: string }>, opt
       order: () => chain,
       limit: (value: number) => { limit = value; return chain; },
       maybeSingle: async () => options.fail ? { data: null, error: { message: 'down' } } : { data: scoped()[0] ?? null, error: null },
-      then: (resolve: (value: unknown) => void) => resolve(options.fail ? { data: null, error: { message: 'down' } } : { data: scoped().slice(0, limit).map(({ user_id: _owner, ...row }) => row), error: null }),
+      then: (resolve: (value: unknown) => void) => resolve(options.fail ? { data: null, error: { message: 'down' } } : { data: scoped().slice(0, limit).map(row => { const copy = { ...row }; delete copy.user_id; return copy; }), error: null }),
     };
     return chain;
   } };
