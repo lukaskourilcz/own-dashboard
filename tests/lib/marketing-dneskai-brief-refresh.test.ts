@@ -18,13 +18,13 @@ const brief = (built as { brief: DneskaiBrief }).brief;
 const packet = dneskaiBriefSourcePacket(brief);
 const row = (patch: Record<string, unknown> = {}) => ({ briefId, projectId: project, status: 'queued', code: null, brief, memberHash: brief.memberHash, currentMemberHash: brief.memberHash, memberCount: 1, currentMemberCount: 1, ...patch });
 const db = (data: unknown, error: unknown = null) => ({ rpc: vi.fn(async (name: string, args: Record<string, unknown>) => { expect(name).toBe('marketing_dneskai_brief_source'); expect(args).toEqual({ p_owner: owner, p_event: brief.eventId, p_target: '2026-10-21' }); return { data, error }; }) });
-const bridge = vi.fn<typeof fetch>(async () => { throw new Error('the Quorum bridge must not be called for a brief'); });
-const env = {}; // no MARKETING_DNESKAI_SOURCE_URL: a brief needs no bridge configuration
+// No network request may leave the process for a brief.
+const bridge = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => { throw new Error('no request may be made for a brief'); });
 
 describe('refreshSource for a DNESKAi brief (#115)', () => {
   it('re-reads the brief from the owner’s brief store with the same authority and a fresh observation', async () => {
     const store = db(row());
-    const current = await refreshSource(packet, new AbortController().signal, { owner, db: store as never, now, env, fetcher: bridge });
+    const current = await refreshSource(packet, new AbortController().signal, { owner, db: store as never, now });
     expect(current).toEqual({ ...packet, observedAt: now.toISOString() });
     expect(contentHash(current.content)).toBe(packet.contentHash);
     expect(parseSourcePacket(current).brief).toEqual(brief);
@@ -32,22 +32,22 @@ describe('refreshSource for a DNESKAi brief (#115)', () => {
   });
 
   it('makes a brief whose members changed, or that was skipped, ineligible', async () => {
-    const changed = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId], previousPackets: [packet], owner, db: db(row({ currentMemberHash: 'f'.repeat(64) })) as never, now, env, fetcher: bridge });
+    const changed = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId], previousPackets: [packet], owner, db: db(row({ currentMemberHash: 'f'.repeat(64) })) as never, now });
     expect(changed.packets[0]).toMatchObject({ eligible: false, eligibilityReason: 'brief-members-changed', sourceRevision: brief.memberHash });
     expect(changed.held).toEqual([{ sourceId: packet.sourceId, reason: 'source-ineligible' }]);
-    const fewer = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId], previousPackets: [packet], owner, db: db(row({ currentMemberCount: 0 })) as never, now, env, fetcher: bridge });
+    const fewer = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId], previousPackets: [packet], owner, db: db(row({ currentMemberCount: 0 })) as never, now });
     expect(fewer.packets[0]).toMatchObject({ eligible: false, eligibilityReason: 'brief-members-changed' });
-    const skipped = await refreshSource(packet, new AbortController().signal, { owner, db: db(row({ status: 'skipped', code: 'collection-already-covered' })) as never, now, env, fetcher: bridge });
+    const skipped = await refreshSource(packet, new AbortController().signal, { owner, db: db(row({ status: 'skipped', code: 'collection-already-covered' })) as never, now });
     expect(skipped).toMatchObject({ eligible: false, eligibilityReason: 'collection-already-covered' });
   });
 
   it('holds an expired brief and never substitutes a missing, unreadable or ownerless one', async () => {
-    const expired = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId], previousPackets: [packet], owner, db: db(row()) as never, now: new Date('2026-10-23T00:00:00Z'), env, fetcher: bridge });
+    const expired = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId], previousPackets: [packet], owner, db: db(row()) as never, now: new Date('2026-10-23T00:00:00Z') });
     expect(expired.held).toEqual([{ sourceId: packet.sourceId, reason: 'source-expired' }]);
-    await expect(refreshSource(packet, new AbortController().signal, { owner, db: db(null) as never, now, env, fetcher: bridge })).rejects.toThrow('source-recheck-unavailable');
-    await expect(refreshSource(packet, new AbortController().signal, { owner, db: db(row({ brief: { schemaVersion: 'dneskai-brief/1' } })) as never, now, env, fetcher: bridge })).rejects.toThrow('source-recheck-unavailable');
-    await expect(refreshSource(packet, new AbortController().signal, { owner, db: db(null, { message: 'down' }) as never, now, env, fetcher: bridge })).rejects.toThrow('source-current-unavailable');
-    const ownerless = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId], previousPackets: [packet], now, env, fetcher: bridge });
+    await expect(refreshSource(packet, new AbortController().signal, { owner, db: db(null) as never, now })).rejects.toThrow('source-recheck-unavailable');
+    await expect(refreshSource(packet, new AbortController().signal, { owner, db: db(row({ brief: { schemaVersion: 'dneskai-brief/1' } })) as never, now })).rejects.toThrow('source-recheck-unavailable');
+    await expect(refreshSource(packet, new AbortController().signal, { owner, db: db(null, { message: 'down' }) as never, now })).rejects.toThrow('source-current-unavailable');
+    const ownerless = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId], previousPackets: [packet], now });
     expect(ownerless).toMatchObject({ packets: [], dropped: 1, held: [{ sourceId: packet.sourceId, reason: 'brief-owner-required' }] });
     expect(bridge).not.toHaveBeenCalled();
   });
@@ -55,8 +55,8 @@ describe('refreshSource for a DNESKAi brief (#115)', () => {
   it('refreshes the brief locally and holds a non-brief id without any bridge request', async () => {
     // The brief is re-read from the owner's store; the Quorum source bridge was removed on 9 November 2026, so the
     // leftover 'article:qa-only' id is held rather than fetched and nothing leaves the process.
-    const fetcher = vi.fn<typeof fetch>();
-    const result = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId, 'article:qa-only'], previousPackets: [packet], owner, db: db(row()) as never, now, fetcher });
+    const fetcher = bridge;
+    const result = await refreshMarketingSources({ brand: 'dneskai', sourceIds: [packet.sourceId, 'article:qa-only'], previousPackets: [packet], owner, db: db(row()) as never, now });
     expect(fetcher).not.toHaveBeenCalled();
     expect(result.packets.map((item) => item.sourceId)).toEqual([packet.sourceId]);
     expect(result.held).toEqual([{ sourceId: 'article:qa-only', reason: 'source-unavailable' }]);

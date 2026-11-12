@@ -1,142 +1,24 @@
 import 'server-only';
-import { request as httpsRequest } from 'node:https';
 import { parseSourcePacket, sourceUsable, type MarketingBrand, type SourcePacket } from './contracts';
 import { contentHash } from './hashes';
 import { MARKETING_SOURCE_MAX_AGE_MS } from './publisher';
-import { marketingPilotConfiguration } from './pilot';
-import { previewPilotRetired } from './preview-pilot';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DneskaiBriefSourceError, refreshDneskaiBriefPacket, type DneskaiBriefDatabase } from './dneskai-brief-source';
 import { DEVSHARK_DRAFT_SOURCE_PREFIX, discoverDevsharkDraftPackets, refreshDevsharkDraftPacket } from './devshark-source';
 
-type SourcePreviewShare = { token: string; origin: string };
-export type SourceRefreshConfig = { url: string; secret: string; previewShare?: SourcePreviewShare };
 export type SourceRefreshResult = { packets: SourcePacket[]; held: Array<{ sourceId: string; reason: string }>;
   observedAt: string; noEditionDates: string[]; nextCursor: string | null; dropped: number };
 /**
  * `owner` (and optionally `db`) scope a DNESKAi brief refresh (#115): a brief is re-read from the owner's
  * `marketing_dneskai_briefs`, never from the Quorum bridge. Without an owner a brief source is held.
  */
-export type SourceRefreshOptions = { config?: SourceRefreshConfig; fetcher?: typeof fetch; now?: Date; signal?: AbortSignal; env?: Record<string, string | undefined>; owner?: string; db?: DneskaiBriefDatabase };
+export type SourceRefreshOptions = { now?: Date; signal?: AbortSignal; owner?: string; db?: DneskaiBriefDatabase };
 export class SourceRefreshError extends Error { constructor(readonly code: string) { super(code); } }
 
-export function sourceRefreshConfig(brand: MarketingBrand, env: Record<string, string | undefined> = process.env): SourceRefreshConfig {
-  const prefix = brand === 'dneskai' ? 'MARKETING_DNESKAI' : 'MARKETING_DEVSHARK';
-  const url = env[`${prefix}_SOURCE_URL`];
-  const secret = env[`${prefix}_SOURCE_SECRET`];
-  if (!url || !secret || secret.length < 32) throw new SourceRefreshError('source-integration-unconfigured');
-  const token = env[`${prefix}_SOURCE_PREVIEW_SHARE_TOKEN`], origin = env[`${prefix}_SOURCE_PREVIEW_ORIGIN`];
-  // Outside Preview the retired share is never sent; the request is the ordinary signed one.
-  if ((token === undefined && origin === undefined) || previewPilotRetired('source-preview', env)) return { url, secret };
-  if (!token || !origin) throw new SourceRefreshError('source-preview-configuration-invalid');
-  const config = { url, secret, previewShare: { token, origin } };
-  validatePreviewShare(config.previewShare, endpoint(config), env);
-  return config;
-}
-function endpoint(config: SourceRefreshConfig): URL {
-  const url = new URL(config.url);
-  if (url.protocol !== 'https:' || url.username || url.password || url.hash || config.secret.length < 32) throw new SourceRefreshError('source-integration-invalid');
-  return url;
-}
-function validatePreviewShare(access: SourcePreviewShare, url: URL, env: Record<string, string | undefined>): void {
-  try {
-    const origin = new URL(access.origin);
-    if (access.origin !== origin.origin || origin.protocol !== 'https:' || origin.port || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.vercel\.app$/.test(origin.hostname)
-      || origin.username || origin.password || url.origin !== access.origin || url.searchParams.has('_vercel_share') || url.searchParams.has('x-vercel-protection-bypass')
-      || !/^[\x21-\x7e]{1,2048}$/.test(access.token)) throw new Error();
-    if (env.VERCEL_ENV !== 'preview' || !marketingPilotConfiguration(env.MARKETING_OWNER_ID ?? '', env)) throw new Error();
-  } catch { throw new SourceRefreshError('source-preview-configuration-invalid'); }
-}
-function responsePreviewCookie(response: Response, url: URL): string {
-  // Consume only Vercel's one response cookie; never a caller/browser cookie jar.
-  const values = typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
-  if (values.length !== 1 || values[0].length > 10000) throw new SourceRefreshError('source-preview-cookie-invalid');
-  const [cookie, ...attributes] = values[0].split(';').map(value => value.trim());
-  if (!/^_vercel_jwt=[A-Za-z0-9._~-]{1,8192}$/.test(cookie)) throw new SourceRefreshError('source-preview-cookie-invalid');
-  const flags = attributes.map(attribute => attribute.toLowerCase());
-  const domain = flags.find(attribute => attribute.startsWith('domain='))?.slice(7);
-  if (!flags.includes('secure') || !flags.includes('httponly') || !flags.includes('path=/') || (domain && domain !== url.hostname && domain !== `.${url.hostname}`)) throw new SourceRefreshError('source-preview-cookie-invalid');
-  return cookie;
-}
-/** Avoid Next's fetch URL/cache metrics for the credential-bearing preflight. */
-function nativeProtectedRequest(url: string, options: RequestInit): Promise<Response> {
-  return new Promise((resolve, reject) => {
-    const outgoing = httpsRequest(url, { method: options.method ?? 'GET', headers: Object.fromEntries(new Headers(options.headers)), signal: options.signal ?? undefined }, response => {
-      const chunks: Buffer[] = []; let bytes = 0;
-      response.on('error', reject);
-      response.on('data', (value: Buffer) => {
-        bytes += value.length;
-        if (bytes > 2_000_000) { response.destroy(); outgoing.destroy(); reject(new SourceRefreshError('source-response-too-large')); return; }
-        chunks.push(value);
-      });
-      response.on('end', () => {
-        try {
-          const headers = new Headers();
-          for (const [name, value] of Object.entries(response.headers)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) headers.append(name, item);
-          resolve(new Response(Buffer.concat(chunks), { status: response.statusCode ?? 502, headers }));
-        } catch { reject(new SourceRefreshError('source-response-invalid')); }
-      });
-    });
-    outgoing.on('error', reject);
-    if (typeof options.body === 'string') outgoing.write(options.body);
-    outgoing.end(); // Native HTTPS never follows a redirect or stores cookies.
-  });
-}
-async function protectedRequest(input: SourceRefreshOptions, url: string, options: RequestInit): Promise<Response> {
-  const { suppressTracing, withIsolationScope } = await import('@sentry/nextjs');
-  return withIsolationScope(scope => {
-    scope.clear(); scope.addEventProcessor(() => null);
-    return suppressTracing(() => (input.fetcher ?? nativeProtectedRequest)(url, options));
-  });
-}
-async function previewCookie(input: SourceRefreshOptions, url: URL, access: SourcePreviewShare, signal: AbortSignal): Promise<string> {
-  const env = input.env ?? process.env;
-  validatePreviewShare(access, url, env);
-  const preflight = new URL(url); preflight.searchParams.set('_vercel_share', access.token);
-  let response: Response;
-  try { response = await protectedRequest(input, preflight.href, { method: 'GET', redirect: 'manual', credentials: 'omit', cache: 'no-store', signal }); }
-  catch { throw new SourceRefreshError('source-preview-unavailable'); }
-  const location = response.headers.get('location');
-  try {
-    if (response.status !== 307 || response.redirected || !location || new URL(location, preflight).href !== url.href) throw new Error();
-  } catch { throw new SourceRefreshError('source-preview-redirect-invalid'); }
-  const cookie = responsePreviewCookie(response, url);
-  validatePreviewShare(access, url, env); // A slow preflight cannot cross the approved pilot expiry.
-  if (signal.aborted) throw new SourceRefreshError('source-preview-unavailable');
-  return cookie;
-}
-function canonicalDailyDate(url: string): string | null {
-  const path = new URL(url).pathname;
-  const date = /^\/daily\/(\d{4}-\d{2}-\d{2})\/?$/.exec(path)?.[1];
-  if (!date) return null;
-  if (!Number.isFinite(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) throw new SourceRefreshError('daily-source-date-invalid');
-  return date;
-}
-async function request(input: SourceRefreshOptions, url: URL, options: RequestInit, config: SourceRefreshConfig): Promise<unknown> {
-  const signal = input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(12000)]) : AbortSignal.timeout(12000);
-  const headers = new Headers(options.headers);
-  if (config.previewShare) headers.set('Cookie', await previewCookie(input, url, config.previewShare, signal));
-  let response: Response;
-  try {
-    const init: RequestInit = { ...options, ...(config.previewShare ? { headers, credentials: 'omit', cache: 'no-store' } : {}), redirect: 'error', signal };
-    response = config.previewShare ? await protectedRequest(input, url.href, init) : await (input.fetcher ?? fetch)(url.href, init);
-  }
-  catch { throw new SourceRefreshError('source-current-unavailable'); }
-  if (config.previewShare && (response.redirected || (response.url && response.url !== url.href))) throw new SourceRefreshError('source-current-unavailable');
-  if (response.status === 409) throw new SourceRefreshError('source-cursor-stale');
-  if (response.status === 410) throw new SourceRefreshError('source-removed');
-  if (!response.ok) throw new SourceRefreshError('source-current-unavailable');
-  if (Number(response.headers.get('content-length')) > 2_000_000) throw new SourceRefreshError('source-response-too-large');
-  try {
-    const raw = await response.text();
-    if (Buffer.byteLength(raw, 'utf8') > 2_000_000) throw new Error();
-    return JSON.parse(raw) as unknown;
-  } catch { throw new SourceRefreshError('source-response-invalid'); }
-}
 function validatedPacket(raw: unknown, brand: MarketingBrand, now: Date, local = false): SourcePacket {
   const packet = parseSourcePacket(raw);
   if (packet.brand !== brand || contentHash(packet.content) !== packet.contentHash) throw new SourceRefreshError('source-packet-invalid');
-  // The bridge serves approved articles only; a brief comes only from the local producer.
+  // Every source is local now: a DNESKAi brief from the brief store, a devShark concept from the concept store.
   if ((brand === 'dneskai' && packet.kind !== (local ? 'brief' : 'article')) || (brand === 'devshark' && !['question', 'coding-task'].includes(packet.kind))) throw new SourceRefreshError('source-kind-invalid');
   const observed = Date.parse(packet.observedAt);
   if (observed > now.getTime() + 60000 || observed < now.getTime() - MARKETING_SOURCE_MAX_AGE_MS) throw new SourceRefreshError('source-observation-stale');
@@ -159,7 +41,7 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
       if (!sourceUsable(packet, now)) result.held.push({ sourceId: packet.sourceId, reason: packet.eligible ? 'source-expired' : 'source-ineligible' });
     } catch { result.dropped++; if (expectedId) result.held.push({ sourceId: expectedId, reason: 'source-packet-invalid' }); }
   };
-  // DNESKAi briefs (#115) are refreshed from the owner's own brief store; only the remaining ids reach the bridge.
+  // DNESKAi briefs (#115) are refreshed from the owner's own brief store.
   const briefs = input.brand === 'dneskai' ? [...new Set(input.sourceIds ?? [])].flatMap(id => {
     const previous = input.previousPackets?.find(packet => packet.sourceId === id);
     return previous?.kind === 'brief' ? [previous] : [];
@@ -183,55 +65,27 @@ export async function refreshMarketingSources(input: SourceRefreshOptions & { br
     if ('held' in refreshed) { result.held.push({ sourceId: id, reason: refreshed.held }); continue; }
     append(refreshed.packet, id);
   }
-  const bridgeIds = input.sourceIds?.filter(id => !briefs.some(packet => packet.sourceId === id) && !concepts.includes(id));
-  if (bridgeIds && !bridgeIds.length) return result;
+  const otherIds = input.sourceIds?.filter(id => !briefs.some(packet => packet.sourceId === id) && !concepts.includes(id));
+  if (otherIds && !otherIds.length) return result;
   if (input.brand === 'dneskai') {
     // DNESKAi sources are the owner's own briefs (#115), re-read from the brief store above. Quorum's signed source
     // bridge was removed on 9 November 2026 (Quorum is not needed), so a non-brief id is held rather than fetched; in
     // practice every DNESKAi source is a brief, so nothing reaches here.
-    for (const id of bridgeIds ?? []) result.held.push({ sourceId: id, reason: 'source-unavailable' });
+    for (const id of otherIds ?? []) result.held.push({ sourceId: id, reason: 'source-unavailable' });
     return result;
   }
-  if (input.brand === 'devshark') {
-    // devShark discovery runs locally (13 November 2026): the owner's eligible concepts are the sources. The Quorum
-    // bridge and its n8n instance are gone, so a non-concept id is held and nothing leaves the process.
-    for (const id of bridgeIds ?? []) result.held.push({ sourceId: id, reason: 'source-unavailable' });
-    if (bridgeIds) return result;
-    // Concepts have no daily editions; a dated discovery reports the date as having none.
-    if (input.date) { result.noEditionDates.push(input.date); return result; }
-    if (!input.owner) throw new SourceRefreshError('concept-owner-required');
-    let discovered;
-    try { discovered = await discoverDevsharkDraftPackets((input.db ?? createAdminClient()) as unknown as Parameters<typeof discoverDevsharkDraftPackets>[0], input.owner, now); }
-    catch { throw new SourceRefreshError('source-current-unavailable'); }
-    result.dropped += discovered.invalid;
-    for (const packet of discovered.packets) append(packet);
-    return result;
-  }
-  input = { ...input, ...(bridgeIds ? { sourceIds: bridgeIds } : {}) };
-  const config = input.config ?? sourceRefreshConfig(input.brand, input.env);
-  const base = endpoint(config);
-  if (config.previewShare) validatePreviewShare(config.previewShare, base, input.env ?? process.env);
-  const query = async (sourceId?: string) => {
-    const url = new URL(base); url.searchParams.set('resource', 'marketing-source'); url.searchParams.set('limit', '20');
-    url.searchParams.delete('sourceId'); url.searchParams.delete('daily'); url.searchParams.delete('cursor');
-    const previous = input.previousPackets?.find(packet => packet.sourceId === sourceId);
-    const daily = previous ? canonicalDailyDate(previous.canonicalUrl) : sourceId ? undefined : input.date;
-    if (daily) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(daily) || !Number.isFinite(Date.parse(`${daily}T00:00:00Z`)) || new Date(`${daily}T00:00:00Z`).toISOString().slice(0, 10) !== daily) throw new SourceRefreshError('daily-source-date-invalid');
-      url.searchParams.set('daily', daily);
-    } else if (sourceId) url.searchParams.set('sourceId', sourceId);
-    else if (input.cursor) url.searchParams.set('cursor', input.cursor);
-    const raw = await request(input, url, { headers: { Authorization: `Bearer ${config.secret}`, Accept: 'application/json' } }, config);
-    if (!raw || typeof raw !== 'object' || !('packets' in raw) || !Array.isArray(raw.packets) || raw.packets.length > 20) throw new SourceRefreshError('source-response-invalid');
-    if (sourceId && raw.packets.length !== 1) { result.held.push({ sourceId, reason: 'source-unavailable' }); return; }
-    for (const packet of raw.packets) append(packet, sourceId);
-    if ('nextCursor' in raw && typeof raw.nextCursor === 'string' && raw.nextCursor.length <= 1000) result.nextCursor = raw.nextCursor;
-  };
-  if (input.sourceIds) {
-    const ids = [...new Set(input.sourceIds)];
-    for (let offset = 0; offset < ids.length; offset += 4) await Promise.all(ids.slice(offset, offset + 4).map(query));
-  }
-  else await query();
+  // devShark discovery runs locally (13 November 2026): the owner's eligible concepts are the sources. The Quorum
+  // bridge and its n8n instance are gone, so a non-concept id is held and nothing leaves the process.
+  for (const id of otherIds ?? []) result.held.push({ sourceId: id, reason: 'source-unavailable' });
+  if (otherIds) return result;
+  // Concepts have no daily editions; a dated discovery reports the date as having none.
+  if (input.date) { result.noEditionDates.push(input.date); return result; }
+  if (!input.owner) throw new SourceRefreshError('concept-owner-required');
+  let discovered;
+  try { discovered = await discoverDevsharkDraftPackets((input.db ?? createAdminClient()) as unknown as Parameters<typeof discoverDevsharkDraftPackets>[0], input.owner, now); }
+  catch { throw new SourceRefreshError('source-current-unavailable'); }
+  result.dropped += discovered.invalid;
+  for (const packet of discovered.packets) append(packet);
   return result;
 }
 
