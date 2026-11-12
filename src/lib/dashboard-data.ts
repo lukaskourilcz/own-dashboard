@@ -36,7 +36,6 @@ export const DASHBOARD_DATA_KEYS = [
   "subscriptionAllocations",
   "competitors",
   "organizations",
-  "opportunities",
   "inboxItems",
   "notifications",
   "weeklyReviews",
@@ -66,7 +65,6 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "projectCosts",
     "crons",
     "organizations",
-    "opportunities",
     "weeklyReviews",
     "jobApplications",
     // Weekly planning measures last week's calendar time by channel; no other
@@ -106,7 +104,6 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "crons",
     "competitors",
     "organizations",
-    "opportunities",
     "inboxItems",
     "aiLinks",
     "aiCategories",
@@ -114,8 +111,9 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "promptLinks",
   ],
   competition: ["projects", "competitors"],
-  // Opportunities and Career load nothing on entry; see ON_DEMAND_TAB_DATA.
+  // Contacts and Emails read their own bounded pages through the owner's session (src/lib/leads.ts).
   opportunities: [],
+  // Career loads nothing on entry; see ON_DEMAND_TAB_DATA.
   clients: [
     "todos",
     "notes",
@@ -124,7 +122,6 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
     "invoiceItems",
     "projects",
     "organizations",
-    "opportunities",
   ],
   career: ["jobLastRun"],
   // "transactions" so a paid invoice can name the bank payment that settled it.
@@ -150,7 +147,7 @@ const TAB_DATA: Record<NavTab, readonly DashboardDataKey[]> = {
   calendar: ["weekCalendar"],
   goals: ["plans"],
   dates: ["importantDates", "projects", "organizations"],
-  notes: ["notes", "projects", "organizations", "opportunities", "jobApplications"],
+  notes: ["notes", "projects", "organizations", "jobApplications"],
   prompts: ["prompts", "promptLinks", "projects", "aiLinks", "aiCategories", "projectLinks"],
   tools: ["tools", "aiLinks", "aiCategories", "projects", "projectLinks", "subscriptions"],
   links: ["aiLinks", "aiCategories", "projectLinks", "projects", "tools"],
@@ -175,7 +172,6 @@ const ON_DEMAND_TAB_DATA: Partial<Record<NavTab, readonly DashboardDataKey[]>> =
     "jobApplicationEvents",
     "coverLetterTemplates",
   ],
-  opportunities: ["projects", "organizations", "opportunities"],
 };
 
 export function dashboardDataKeysForTab(tab: NavTab): ReadonlySet<DashboardDataKey> {

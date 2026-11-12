@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { AlertTriangle, BriefcaseBusiness, CircleDollarSign, FolderKanban } from "lucide-react";
+import { BriefcaseBusiness, CircleDollarSign, FolderKanban } from "lucide-react";
 import { GithubIcon } from "@/components/icons/github";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -19,13 +19,11 @@ import { dueFollowUps } from "@/lib/jobs/board";
 import type { EventsResult } from "@/lib/calendar";
 import type { MarketingCalendarsResponse } from "@/lib/marketing-calendars";
 import type { EntityStatus } from "@/lib/queries/entities";
-import type { ClientOpportunity, Cron, ImportantDate, Invoice, JobApplication, Organization, Project, ProjectCost, Todo, Updater, WeeklyReview } from "@/lib/types";
+import type { Cron, ImportantDate, Invoice, JobApplication, Organization, Project, ProjectCost, Todo, Updater, WeeklyReview } from "@/lib/types";
 
-const CLOSED = new Set(["won", "lost", "expired", "archived"]);
 
 export function WorkOverviewPanel({
   projects,
-  opportunities,
   organizations,
   invoices,
   jobApplications,
@@ -42,7 +40,6 @@ export function WorkOverviewPanel({
   previewMarketingCalendars,
 }: {
   projects: Project[];
-  opportunities: ClientOpportunity[];
   organizations: Organization[];
   invoices: Invoice[];
   jobApplications: JobApplication[];
@@ -75,9 +72,6 @@ export function WorkOverviewPanel({
       .filter(({ result }) => result.health !== "healthy"),
     [projects, todos, costs, crons],
   );
-  const dueOpportunityFollowUps = opportunities.filter((item) =>
-    !CLOSED.has(item.status) && item.next_follow_up_at && new Date(item.next_follow_up_at) <= new Date(),
-  ).length;
   // Applications whose follow-up date has arrived, derived with the same rule
   // the Career board and its "Follow-ups due" metric use.
   const careerFollowUps = useMemo(() => dueFollowUps(jobApplications), [jobApplications]);
@@ -91,8 +85,6 @@ export function WorkOverviewPanel({
 
   const metrics = [
     { label: p.activeProjects, value: projects.filter((x) => x.is_active && x.status !== "archived").length, icon: FolderKanban },
-    { label: p.openOpportunities, value: opportunities.filter((x) => !CLOSED.has(x.status)).length, icon: BriefcaseBusiness },
-    { label: p.followUps, value: dueOpportunityFollowUps, icon: AlertTriangle },
     { label: p.unpaidInvoices, value: invoices.filter((x) => x.status === "issued").length, icon: CircleDollarSign },
     { label: p.clientsTitle, value: organizations.filter((x) => x.status === "active").length, icon: BriefcaseBusiness },
     { label: p.currentApplications, value: jobApplications.filter((x) => !["rejected", "withdrawn"].includes(x.status)).length, icon: BriefcaseBusiness },
@@ -113,8 +105,8 @@ export function WorkOverviewPanel({
   return (
     <div>
       <PageHeader title={p.workTitle} description={p.workDescription} />
-      <div className="surface-band -mx-4 grid grid-cols-2 gap-y-2 px-4 py-3 sm:grid-cols-3 md:-mx-6 md:px-6 xl:-mx-8 xl:grid-cols-6 xl:px-8">
-        {metrics.map(({ label, value, icon }) => <Metric key={label} label={label} value={value} icon={icon} tone={label === p.followUps && value > 0 ? "attention" : "default"} />)}
+      <div className="surface-band -mx-4 grid grid-cols-2 gap-y-2 px-4 py-3 sm:grid-cols-4 md:-mx-6 md:px-6 xl:-mx-8 xl:px-8">
+        {metrics.map(({ label, value, icon }) => <Metric key={label} label={label} value={value} icon={icon} />)}
       </div>
       <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,.8fr)]">
         <Card className="border-l-2 border-l-warning">
@@ -186,7 +178,6 @@ export function WorkOverviewPanel({
             )}
           </CardContent>
         </Card>
-        <Card><CardHeader><CardTitle>{p.pipeline}</CardTitle></CardHeader><CardContent>{opportunities.filter((item) => !CLOSED.has(item.status)).length === 0 ? <p className="text-sm text-foreground-muted">{p.pipelineEmpty}</p> : <ul className="divide-y divide-border">{opportunities.filter((item) => !CLOSED.has(item.status)).slice(0, 6).map((item) => <li key={item.id}><Link href="/opportunities" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><StatusBadge value={item.status} /></Link></li>)}</ul>}</CardContent></Card>
         <Card><CardHeader><CardTitle>{p.upcomingDates}</CardTitle></CardHeader><CardContent>{upcomingDates.length === 0 ? <p className="text-sm text-foreground-muted">{p.noUpcomingDates}</p> : <ul className="divide-y divide-border">{upcomingDates.map((item) => <li key={item.id}><Link href="/dates" prefetch={false} className="flex min-h-11 items-center justify-between gap-3 py-2"><span className="text-sm font-medium">{item.title}</span><span className="text-xs tabular text-foreground-muted">{item.the_date}</span></Link></li>)}</ul>}</CardContent></Card>
       </div>
       <Card className="mt-4">

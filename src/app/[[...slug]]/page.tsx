@@ -37,7 +37,7 @@ export default async function DashboardPage({
     referenceRowsRes, importantDatesRes, invoicesRes, invoiceItemsRes,
     invoiceSettingsRes, projectsRes, projectCommunicationsRes, projectCostsRes, cronsRes,
     subscriptionAllocationsRes, competitorsRes,
-    organizationsRes, opportunitiesRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
+    organizationsRes, inboxItemsRes, notificationsRes, weeklyReviewsRes,
     jobListingsRes, jobUserStatesRes, savedJobPositionsRes, jobApplicationsRes,
     jobApplicationEventsRes, coverLetterTemplatesRes, jobLastRunRes,
     todayCalendar, weekCalendar, prefs, navigationProjectsRes,
@@ -69,7 +69,6 @@ export default async function DashboardPage({
     loadWhen("subscriptionAllocations", () => supabase.from("subscription_allocations").select("*").eq("user_id", user.id).order("created_at", { ascending: true })),
     loadWhen("competitors", () => supabase.from("competitors").select("*").eq("user_id", user.id).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).limit(1000)),
     loadWhen("organizations", () => supabase.from("organizations").select("*").eq("user_id", user.id).order("name", { ascending: true })),
-    loadWhen("opportunities", () => supabase.from("client_opportunities").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1000)),
     loadWhen("inboxItems", () => supabase.from("inbox_items").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(250)),
     loadWhen("notifications", () => supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)),
     loadWhen("weeklyReviews", () => supabase.from("weekly_reviews").select("*").eq("user_id", user.id).order("week_start", { ascending: false }).limit(12)),
@@ -141,7 +140,6 @@ export default async function DashboardPage({
     initialSubscriptionAllocations={subscriptionAllocationsRes?.data ?? []}
     initialCompetitors={competitorsRes?.data ?? []}
     initialOrganizations={organizationsRes?.data ?? []}
-    initialOpportunities={opportunitiesRes?.data ?? []}
     initialInboxItems={inboxItemsRes?.data ?? []}
     initialNotifications={notificationsRes?.data ?? []}
     initialWeeklyReviews={weeklyReviewsRes?.data ?? []}

@@ -37,7 +37,7 @@ import { formatCurrency } from "@/lib/utils";
 import { qk } from "@/lib/queries/keys";
 import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
-import type { ClientOpportunity, ImportantDate, Invoice, InvoiceItem, Note, Organization, OrganizationType, Project, Todo, Updater } from "@/lib/types";
+import type { ImportantDate, Invoice, InvoiceItem, Note, Organization, OrganizationType, Project, Todo, Updater } from "@/lib/types";
 
 const TYPES: OrganizationType[] = ["client", "prospective_client", "employer", "prospective_employer", "personal_project", "other"];
 
@@ -51,11 +51,10 @@ function formatCheckedAt(timestamp: string): string {
   }
 }
 
-export function ClientsPanel({ organizations, setOrganizations, projects, opportunities, invoices, invoiceItems, todos, notes, importantDates, displayCurrency }: {
+export function ClientsPanel({ organizations, setOrganizations, projects, invoices, invoiceItems, todos, notes, importantDates, displayCurrency }: {
   organizations: Organization[];
   setOrganizations: Updater<Organization[]>;
   projects: Project[];
-  opportunities: ClientOpportunity[];
   invoices: Invoice[];
   invoiceItems: InvoiceItem[];
   todos: Todo[];
@@ -193,19 +192,18 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
     <div className="mb-4 grid gap-2 rounded-lg border border-border bg-surface-secondary p-2 sm:grid-cols-[minmax(0,1fr)_16rem]"><Input aria-label={p.searchClients} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={p.searchClients} /><SimpleSelect aria-label={p.allOrganizationTypes} value={typeFilter} onValueChange={(value) => setTypeFilter(value as OrganizationType | "all")} options={[{ value: "all", label: p.allOrganizationTypes }, ...TYPES.map((type) => ({ value: type, label: statusLabel(type, lang) }))]} /></div>
     {visibleOrganizations.length === 0 ? <EmptyState title={organizations.length === 0 ? p.clientsEmpty : t.common.none} icon={Users} /> : <div className="overflow-hidden rounded-lg border border-border bg-surface">{visibleOrganizations.map((org) => {
       const relatedProjects = projects.filter((x) => x.organization_id === org.id);
-      const relatedOpportunities = opportunities.filter((x) => x.organization_id === org.id);
       const relatedInvoices = invoices.filter((x) => x.organization_id === org.id);
       const relatedTodos = todos.filter((x) => x.organization_id === org.id);
       const relatedNotes = notes.filter((x) => x.organization_id === org.id);
       const relatedDates = importantDates.filter((x) => x.organization_id === org.id);
-      const counts = { projects: relatedProjects.length, opportunities: relatedOpportunities.length, invoices: relatedInvoices.length };
+      const counts = { projects: relatedProjects.length, invoices: relatedInvoices.length };
       const invoiceTotal = relatedInvoices.reduce((sum, invoice) => sum + convert(computeTotals(invoiceItems.filter((item) => item.invoice_id === invoice.id).map((item) => ({ quantity: Number(item.quantity), unit_price: Number(item.unit_price), vat_rate: Number(item.vat_rate) })), { roundTotal: invoice.round_total, currency: invoice.currency }).total, invoice.currency, displayCurrency), 0);
       const expanded = expandedId === org.id;
       const vatStatus = vatStatusOf(org);
       const vatIsFresh = vatCheckIsFresh(org, new Date());
       const canVerifyVat = isEuVatId(org.vat_id);
       const canFillFromAres = isValidIco(org.company_id);
-      return <article key={org.id} className="border-b border-border last:border-0"><div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(13rem,.8fr)_auto] sm:items-center"><button type="button" onClick={() => setExpandedId(expanded ? null : org.id)} aria-expanded={expanded} aria-label={`${p.showRelationship}: ${org.name}`} className="min-w-0 text-left focus-ring"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{org.name}</h2><EntityBadge>{statusLabel(org.type, lang)}</EntityBadge><StatusBadge value={org.status} /></div><p className="mt-1 text-xs text-foreground-muted">{org.email ?? org.website ?? p.noRelatedRecords}</p></button><div className="grid grid-cols-3 gap-2 text-center text-[11px] text-foreground-muted"><span><strong className="block text-sm tabular text-foreground">{counts.projects}</strong>{p.projects}</span><span><strong className="block text-sm tabular text-foreground">{counts.opportunities}</strong>{p.opportunities}</span><span><strong className="block text-sm tabular text-foreground">{counts.invoices}</strong>{p.invoices}</span></div><div className="flex justify-end"><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${org.name}`} onClick={() => void removeOrganization(org.id)}><Trash2 /></Button></div></div>
+      return <article key={org.id} className="border-b border-border last:border-0"><div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(13rem,.8fr)_auto] sm:items-center"><button type="button" onClick={() => setExpandedId(expanded ? null : org.id)} aria-expanded={expanded} aria-label={`${p.showRelationship}: ${org.name}`} className="min-w-0 text-left focus-ring"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-sm font-semibold">{org.name}</h2><EntityBadge>{statusLabel(org.type, lang)}</EntityBadge><StatusBadge value={org.status} /></div><p className="mt-1 text-xs text-foreground-muted">{org.email ?? org.website ?? p.noRelatedRecords}</p></button><div className="grid grid-cols-2 gap-2 text-center text-[11px] text-foreground-muted"><span><strong className="block text-sm tabular text-foreground">{counts.projects}</strong>{p.projects}</span><span><strong className="block text-sm tabular text-foreground">{counts.invoices}</strong>{p.invoices}</span></div><div className="flex justify-end"><Button variant="ghost" size="icon-sm" aria-label={`${p.delete}: ${org.name}`} onClick={() => void removeOrganization(org.id)}><Trash2 /></Button></div></div>
         {expanded && <div className="grid gap-4 border-t border-border bg-surface-inset p-4 lg:grid-cols-[minmax(14rem,.65fr)_minmax(0,1.35fr)]"><div className="space-y-2">{org.email && <a href={`mailto:${org.email}`} className="block text-sm underline">{org.email}</a>}{org.website && <a href={org.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm underline">{org.website}<ExternalLink className="h-3 w-3" /></a>}{org.notes && <p className="text-sm text-foreground-muted">{org.notes}</p>}{relatedInvoices.length > 0 && <p className="pt-2 text-xs font-medium tabular">{p.totalInvoiced}: {formatCurrency(invoiceTotal, displayCurrency)}</p>}
           <div className="space-y-2 border-t border-border pt-2">
             {org.company_id && <p className="text-xs tabular text-foreground-muted">{p.companyId}: {org.company_id}{org.ares_verified_at ? ` · ${p.aresFilledOn} ${formatCheckedAt(org.ares_verified_at)}` : ""}</p>}
@@ -219,7 +217,7 @@ export function ClientsPanel({ organizations, setOrganizations, projects, opport
             </div>}
             {vatNameMismatch(org.name, org.vat_verified_name) && <p className="text-xs text-warning">{p.vatRegisteredAs}: {org.vat_verified_name}</p>}
             {registryNotice?.id === org.id && <p className="text-xs text-foreground-muted" role="status">{registryNotice.text}</p>}
-          </div></div><div><p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">{p.relatedWork}</p><ul className="mt-2 divide-y divide-border text-xs text-foreground-muted">{relatedProjects.map((item) => <li key={item.id} className="py-1.5"><Link className="font-medium text-foreground underline" href={`/projects/${encodeURIComponent(item.slug)}`} prefetch={false}>{item.name}</Link></li>)}{relatedOpportunities.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.opportunity}: {item.title}</span><StatusBadge value={item.status} /></li>)}{relatedInvoices.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.invoices}: {item.number}</span><StatusBadge value={item.status} /></li>)}{relatedTodos.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.task}: {item.title}</li>)}{relatedNotes.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.note}: {item.title}</li>)}{relatedDates.slice(0, 3).map((item) => <li key={item.id} className="py-1.5 tabular">{item.the_date}: {item.title}</li>)}</ul></div></div>}
+          </div></div><div><p className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">{p.relatedWork}</p><ul className="mt-2 divide-y divide-border text-xs text-foreground-muted">{relatedProjects.map((item) => <li key={item.id} className="py-1.5"><Link className="font-medium text-foreground underline" href={`/projects/${encodeURIComponent(item.slug)}`} prefetch={false}>{item.name}</Link></li>)}{relatedInvoices.map((item) => <li key={item.id} className="flex items-center justify-between gap-2 py-1.5"><span>{p.invoices}: {item.number}</span><StatusBadge value={item.status} /></li>)}{relatedTodos.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.task}: {item.title}</li>)}{relatedNotes.slice(0, 3).map((item) => <li key={item.id} className="py-1.5">{p.note}: {item.title}</li>)}{relatedDates.slice(0, 3).map((item) => <li key={item.id} className="py-1.5 tabular">{item.the_date}: {item.title}</li>)}</ul></div></div>}
       </article>;
     })}</div>}
   </div>;

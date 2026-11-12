@@ -100,7 +100,6 @@ import {
 import type {
   AiCategory,
   AiLink,
-  ClientOpportunity,
   Competitor,
   Cron,
   ImportantDate,
@@ -181,7 +180,6 @@ type ProjectsPanelProps = {
   subscriptionAllocations: SubscriptionAllocation[];
   transactions: Transaction[];
   organizations: Organization[];
-  opportunities: ClientOpportunity[];
   importantDates: ImportantDate[];
   prompts: Prompt[];
   inboxItems: InboxItem[];
@@ -222,7 +220,6 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       subscriptionAllocations={props.subscriptionAllocations}
       transactions={props.transactions}
       organizations={props.organizations}
-      opportunities={props.opportunities}
       importantDates={props.importantDates}
       prompts={props.prompts}
       inboxItems={props.inboxItems}

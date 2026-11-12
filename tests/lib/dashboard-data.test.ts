@@ -87,16 +87,16 @@ describe("dashboard route data boundaries", () => {
     expect(dashboardDataKeysForTab("home").has("inboxItems")).toBe(false);
   });
 
-  it("loads Career and Opportunities records only after the check is pressed", () => {
+  it("loads Career records only after the check is pressed; Opportunities reads its own contact pages", () => {
     expect([...dashboardDataKeysForTab("career")]).toEqual(["jobLastRun"]);
     expect([...dashboardDataKeysForTab("opportunities")]).toEqual([]);
     for (const key of ["jobListings", "jobUserStates", "savedJobPositions", "jobApplications", "jobApplicationEvents", "coverLetterTemplates"] as const) {
       expect(tabNeedsDashboardData("career", key), key).toBe(false);
       expect(tabNeedsDashboardData("career", key, true), key).toBe(true);
     }
-    for (const key of ["projects", "organizations", "opportunities"] as const) {
-      expect(tabNeedsDashboardData("opportunities", key), key).toBe(false);
-      expect(tabNeedsDashboardData("opportunities", key, true), key).toBe(true);
+    expect(onDemandDataKeys("opportunities")).toEqual([]);
+    for (const key of ["projects", "organizations"] as const) {
+      expect(tabNeedsDashboardData("opportunities", key, true), key).toBe(false);
     }
     // Activation never widens another destination.
     expect(onDemandDataKeys("home")).toEqual([]);

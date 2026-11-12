@@ -57,7 +57,6 @@ import { DneskaiOverflowMenu } from "@/components/marketing/dneskai/overflow-men
 import type {
   AiCategory,
   AiLink,
-  ClientOpportunity,
   Competitor,
   Cron,
   ImportantDate,
@@ -110,7 +109,6 @@ type Props = {
   subscriptionAllocations: SubscriptionAllocation[];
   transactions: Transaction[];
   organizations: Organization[];
-  opportunities: ClientOpportunity[];
   importantDates: ImportantDate[];
   prompts: Prompt[];
   inboxItems: InboxItem[];
@@ -175,7 +173,6 @@ export function ProjectWorkspace(props: Props) {
   const allocatedMonthly = sharesMonthly(projectSubscriptions);
   const subsections = childProjects(props.allProjects, project.id);
   const projectTransactions = props.transactions.filter((transaction) => transaction.project_id === project.id);
-  const projectOpportunities = props.opportunities.filter((opportunity) => opportunity.project_id === project.id);
   const projectDates = props.importantDates.filter((date) => date.project_id === project.id);
   const projectCommunications = props.communications.filter((item) => item.project_id === project.id);
   const organization = props.organizations.find((item) => item.id === project.organization_id);
@@ -191,7 +188,6 @@ export function ProjectWorkspace(props: Props) {
     ...projectNotes.map((item) => ({ id: `note-${item.id}`, at: item.updated_at, label: `${t.nav.sections.notes}: ${item.title}` })),
     ...projectTodos.map((item) => ({ id: `todo-${item.id}`, at: item.created_at, label: `${t.nav.sections.tasks}: ${item.title}` })),
     ...projectInvoices.map((item) => ({ id: `invoice-${item.id}`, at: item.updated_at, label: `${t.nav.sections.invoices}: ${item.number} · ${statusLabel(item.status, lang)}` })),
-    ...projectOpportunities.map((item) => ({ id: `opportunity-${item.id}`, at: item.updated_at, label: `${p.opportunity}: ${item.title} · ${statusLabel(item.status, lang)}` })),
     ...props.costs.map((item) => ({ id: `cost-${item.id}`, at: item.updated_at, label: `${p.monthlyCost}: ${item.label}` })),
     ...projectCommunications.map((item) => ({ id: `communication-${item.id}`, at: item.occurred_at, label: `${p.projectCommunication}: ${item.subject || item.summary.slice(0, 80)}` })),
   ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 20);
