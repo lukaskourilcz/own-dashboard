@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createMigratedDatabase } from '../helpers/supabase-pglite';
 import { importContacts, parseContacts, type LeadContactRow } from '../../scripts/import-lead-contacts';
 
-/** Opportunities → Contacts (20261112180000) in isolated PGlite: the import contract, the seed and own-only RLS. */
+/** Opportunities → Contacts (20261112172222) in isolated PGlite: the import contract, the seed and own-only RLS. */
 const owner = '11111111-1111-4111-8111-111111111111', stranger = '99999999-9999-4999-8999-999999999999';
 const fixture = JSON.parse(readFileSync('tests/fixtures/leads/hodinovy-manzel/contacts.json', 'utf8')) as unknown;
 let db: PGlite;

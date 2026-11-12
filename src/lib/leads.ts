@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/client";
 
 /**
  * Opportunities → Contacts and Emails (owner request, 12 November 2026). Tradespeople the owner offers a website
- * with a booking form, one trade at a time (`20261112180000_lead_contacts.sql`). The dashboard reads and edits; it
+ * with a booking form, one trade at a time (`20261112172222_lead_contacts.sql`). The dashboard reads and edits; it
  * never sends anything and never calls a model. scripts/import-lead-contacts.ts fills the contacts.
  */
 export const LEAD_OUTREACH_STATUSES = ["new", "contacted", "replied", "interested", "not_interested", "do_not_contact"] as const;

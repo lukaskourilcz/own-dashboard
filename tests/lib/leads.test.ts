@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { LEAD_REGIONS as SCRIPT_REGIONS } from "../../scripts/import-lead-contacts";
 import { LEAD_REGIONS, leadMailto, leadSearchTerm, leadTemplateValues, renderLeadTemplate } from "@/lib/leads";
 
-const migration = readFileSync("supabase/migrations/20261112180000_lead_contacts.sql", "utf8");
+const migration = readFileSync("supabase/migrations/20261112172222_lead_contacts.sql", "utf8");
 const seededBody = migration.match(/\$body\$([\s\S]*?)\$body\$/)![1]!;
 const withWebsite = { name: "Jan Novák – hodinový manžel", city: "Plzeň", region: "Plzeňský kraj", website: "https://hodinovymanzel-novak.cz/", quality_reason: "Na mobilu se rozpadá menu, chybí ceník.", activity: "drobné opravy", email_source_url: "https://www.firmy.cz/detail/123.html" };
 const withoutWebsite = { ...withWebsite, website: null, quality_reason: null };
