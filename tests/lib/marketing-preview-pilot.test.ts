@@ -29,7 +29,7 @@ describe('retired preview pilot notice (#113)', () => {
     const { previewPilotRetired } = await import('@/lib/marketing/preview-pilot');
     expect(previewPilotRetired('generation-pilot', { VERCEL_ENV: 'preview', ...generation })).toBe(false);
     expect(previewPilotRetired('offline-import', { VERCEL_ENV: 'production' })).toBe(true);
-    expect(previewPilotRetired('source-preview', {})).toBe(true);
+    expect(previewPilotRetired('template-approvals', {})).toBe(true);
     expect(warn).not.toHaveBeenCalled();
   });
 
@@ -61,5 +61,6 @@ describe('retired preview pilot notice (#113)', () => {
     expect(dneskaiCollectionBlockers({ VERCEL_ENV: 'production' })).not.toContain('collection-paid-pilot-blocked');
   });
 
-  // The DNESKAi collection bridge (and its Preview share) was removed on 9 November 2026 — collection reads the free
+  // The source bridges and their Preview shares are gone (DNESKAi 9 November, devShark 13 November 2026), so the
+  // source-preview family no longer exists.
 });
