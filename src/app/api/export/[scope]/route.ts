@@ -7,7 +7,7 @@ type Scope = (typeof SCOPES)[number];
 
 const TABLES: Record<Exclude<Scope, "legacy" | "full">, string[]> = {
   financial: ["accounts", "bank_connections", "transactions", "subscriptions", "invoices", "invoice_items", "invoice_settings", "project_costs", "spend_categories", "subscription_allocations", "transaction_rules", "transaction_category_rules"],
-  professional: ["organizations", "client_opportunities", "freelance_platforms", "opportunity_events", "projects", "project_costs", "competitors", "crons", "todos", "plans", "important_dates", "career_companies", "saved_job_positions", "job_applications", "job_user_state", "job_application_events", "cover_letter_templates", "weekly_reviews", "inbox_items", "notifications", "notification_log", "marketing_strategy_links", "marketing_strategy_results"],
+  professional: ["organizations", "lead_trades", "lead_contacts", "lead_email_templates", "projects", "project_costs", "competitors", "crons", "todos", "plans", "important_dates", "career_companies", "saved_job_positions", "job_applications", "job_user_state", "job_application_events", "cover_letter_templates", "weekly_reviews", "inbox_items", "notifications", "notification_log", "marketing_strategy_links", "marketing_strategy_results"],
   knowledge: ["notes", "prompts", "prompt_links", "ai_links", "ai_categories", "project_links", "tools", "shortcuts", "reference_rows", "repo_notes", "repo_links"],
   projects: ["projects", "project_costs", "project_links", "competitors", "crons", "todos", "notes", "prompts", "important_dates", "subscriptions", "subscription_allocations", "transactions", "invoices", "marketing_strategy_links", "marketing_strategy_results"],
   notes: ["notes"],
@@ -24,7 +24,8 @@ async function exportTables(supabase: Awaited<ReturnType<typeof createClient>>, 
 }
 
 async function exportLiveLegacy(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const ownTables = ["daily_pulse", "streaks", "streak_logs", "books", "book_pages", "sharing_prefs"];
+  // The retired client opportunity pipeline (12 November 2026) stays exportable here while its tables exist.
+  const ownTables = ["daily_pulse", "streaks", "streak_logs", "books", "book_pages", "sharing_prefs", "client_opportunities", "opportunity_events", "freelance_platforms"];
   const result = await exportTables(supabase, ownTables, userId);
   // Legacy RLS already exposes only memberships/invites involving this user.
   const couples = await supabase.from("couples").select("*");
