@@ -898,60 +898,6 @@ export type Organization = {
   updated_at: string;
 };
 
-export type OpportunitySource =
-  | "tugedr"
-  | "referral"
-  | "direct"
-  | "existing_client"
-  | "inbound"
-  | "other";
-
-export type OpportunityStatus =
-  | "discovered"
-  | "shortlisted"
-  | "contacted"
-  | "proposal_sent"
-  | "negotiating"
-  | "won"
-  | "lost"
-  | "expired"
-  | "archived";
-
-export type ClientOpportunity = {
-  platform_id?: string | null;
-  remote_scope?: "worldwide" | "europe" | "czechia" | "restricted" | "unknown" | "onsite";
-  eligibility?: "verified" | "needs_review" | "not_suitable";
-  stack?: string[];
-  match_notes?: string;
-  proposal_text?: string;
-  proposal_url?: string | null;
-  submitted_on?: string | null;
-  responded_on?: string | null;
-  checked_on?: string | null;
-  id: string;
-  user_id: string;
-  organization_id: string | null;
-  project_id: string | null;
-  source: OpportunitySource;
-  source_url: string | null;
-  title: string;
-  description: string;
-  status: OpportunityStatus;
-  budget_min: number | null;
-  budget_max: number | null;
-  currency: string;
-  rate_type: "fixed" | "hourly" | "daily" | "monthly" | "unknown" | null;
-  deadline: string | null;
-  next_follow_up_at: string | null;
-  contact_name: string | null;
-  contact_email: string | null;
-  notes: string;
-  won_at: string | null;
-  lost_at: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
 export type InboxStatus = "pending" | "snoozed" | "processed" | "dismissed";
 
 export type InboxItem = {

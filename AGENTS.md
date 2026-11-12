@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # OwnDashboard project rules
 
-Read `CLAUDE.md` for the product control surface and follow the focused workflows under `.claude/skills/`. Search before creating, preserve the catch-all shell, route-scoped React Query loading, own-only Supabase RLS, static FX, Czech invoice correctness, the no-model-call boundary in `docs/ai-and-privacy.md`, EN/CS parity, and the retired personal scope. Tugedr is an opportunity source, never Pulse. Use semantic tokens and authentic `/dev-preview` UI; validate mobile, accessibility, non-happy paths, and relevant tests. Before producing brand media, perform current primary-source research for safe low-cost or free generators and select a documented provider. Never add filler or generated fake UI.
+Read `CLAUDE.md` for the product control surface and follow the focused workflows under `.claude/skills/`. Search before creating, preserve the catch-all shell, route-scoped React Query loading, own-only Supabase RLS, static FX, Czech invoice correctness, the no-model-call boundary in `docs/ai-and-privacy.md`, EN/CS parity, and the retired personal scope. Opportunities holds tradespeople contacts (Kontakty) and one outreach template per trade (Emaily); the client opportunity pipeline and Tugedr are retired there, and the dashboard never sends e-mail. Use semantic tokens and authentic `/dev-preview` UI; validate mobile, accessibility, non-happy paths, and relevant tests. Before producing brand media, perform current primary-source research for safe low-cost or free generators and select a documented provider. Never add filler or generated fake UI.
 
 Keep project communications project-scoped and subscription renewal dates/classification explicit.
 

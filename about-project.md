@@ -2,7 +2,7 @@
 
 Bilingual, self-hosted, owner-only professional operating system for one
 software engineer/freelancer. Connects projects and their competitor research,
-client opportunities, organizations, Career, Czech invoices, money, planning,
+outreach contacts, organizations, Career, Czech invoices, money, planning,
 knowledge (notes, prompts, tools, links), integrations, notifications and
 weekly reviews. The owner-authorized Marketing workspace alone can use Claude through a bounded LangChain worker; other product areas make no model calls.
 

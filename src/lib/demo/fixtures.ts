@@ -16,7 +16,6 @@
 import type {
   Account,
   AppNotification,
-  ClientOpportunity,
   AiCategory,
   AiLink,
   Competitor,
@@ -702,16 +701,6 @@ export const organizations: Organization[] = [{
   created_at: TS, updated_at: TS,
 }];
 
-export const opportunities: ClientOpportunity[] = [{
-  id: "opp-1", user_id: UID, organization_id: "org-acme", project_id: null,
-  source: "tugedr", source_url: "https://tugedr.com", title: "Acme customer portal",
-  description: "Discovery and implementation of a self-service portal.", status: "proposal_sent",
-  budget_min: 90000, budget_max: 140000, currency: "CZK", rate_type: "fixed",
-  deadline: ymd(30), next_follow_up_at: at(9, 0, 1), contact_name: "Eva",
-  contact_email: "eva@example.com", notes: "", won_at: null, lost_at: null,
-  created_at: TS, updated_at: TS,
-}];
-
 export const inboxItems: InboxItem[] = [{
   id: "inbox-1", user_id: UID, source_type: "manual", source_id: null,
   title: "Review Acme analytics request", summary: "Decide whether this belongs in the current scope.",
@@ -745,9 +734,9 @@ export const weeklyReviews: WeeklyReview[] = [{
 }];
 
 export const notifications: AppNotification[] = [{
-  id: "notice-1", user_id: UID, kind: "follow_up_due", source_type: "client_opportunity",
-  source_id: "opp-1", title: "Acme follow-up is due tomorrow", body: "Review the proposal before contacting Eva.",
-  action_url: "/opportunities", read_at: null, dismissed_at: null, snoozed_until: null, created_at: TS,
+  id: "notice-1", user_id: UID, kind: "follow_up_due", source_type: "organization",
+  source_id: "org-acme", title: "Acme follow-up is due tomorrow", body: "Review the portal scope before contacting Eva.",
+  action_url: "/clients", read_at: null, dismissed_at: null, snoozed_until: null, created_at: TS,
 }];
 
 export const jobListings: JobListing[] = [

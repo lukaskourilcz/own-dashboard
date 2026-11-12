@@ -34,7 +34,7 @@ export function useEntityStore<T>(
   options?: {
     enabled?: boolean;
     seeded?: boolean;
-    /** On-demand data (Career, Opportunities) never goes stale by itself:
+    /** On-demand data (Career) never goes stale by itself:
      * only the owner's "Check for new offers" fetches it again. */
     onDemand?: boolean;
   },

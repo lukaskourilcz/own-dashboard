@@ -94,7 +94,7 @@ export function CommandPalette({
       { id: "go-workflows", label: s.workflows, group: "go", icon: FolderKanban, keywords: "workflows process map postup přehled návaznosti", run: go("workflows") },
       { id: "go-work", label: s.work, group: "go", icon: BriefcaseBusiness, keywords: "work overview delivery práce", run: go("work") },
       { id: "go-projects", label: s.projects, group: "go", icon: FolderKanban, keywords: "projects github costs repos projekty", run: go("projects") },
-      { id: "go-opportunities", label: s.opportunities, group: "go", icon: BriefcaseBusiness, keywords: "pipeline leads tugedr opportunities příležitosti", run: go("opportunities") },
+      { id: "go-opportunities", label: s.opportunities, group: "go", icon: BriefcaseBusiness, keywords: "leads contacts kontakty emails e-maily šablona hodinový manžel opportunities příležitosti", run: go("opportunities") },
       { id: "go-clients", label: s.clients, group: "go", icon: Users, keywords: "clients organizations contacts klienti", run: go("clients") },
       { id: "go-career", label: s.career, group: "go", icon: BriefcaseBusiness, keywords: "career jobs applications práce pozice", run: go("career") },
       { id: "go-invoices", label: s.invoices, group: "go", icon: Receipt, keywords: "invoice billing vat dph faktury", run: go("invoices") },

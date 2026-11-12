@@ -19,7 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import { currentUserId } from "@/lib/supabase/user";
 import type { AppNotification, InboxItem, InboxStatus, Updater } from "@/lib/types";
 
-type Destination = "task" | "note" | "opportunity" | "project" | "organization" | "job_application" | "important_date" | "transaction_category";
+type Destination = "task" | "note" | "project" | "organization" | "job_application" | "important_date" | "transaction_category";
 
 export function InboxPanel({ items, setItems, notifications, setNotifications }: { items: InboxItem[]; setItems: Updater<InboxItem[]>; notifications: AppNotification[]; setNotifications: Updater<AppNotification[]> }) {
   const t = useDict();
@@ -67,7 +67,7 @@ export function InboxPanel({ items, setItems, notifications, setNotifications }:
     },
     onSuccess: (item) => {
       setItems((old) => old.map((x) => x.id === item.id ? item : x));
-      for (const queryKey of [qk.inboxItems, qk.todos, qk.notes, qk.opportunities, qk.projects, qk.organizations, qk.jobApplications, qk.importantDates, qk.transactions]) void qc.invalidateQueries({ queryKey });
+      for (const queryKey of [qk.inboxItems, qk.todos, qk.notes, qk.projects, qk.organizations, qk.jobApplications, qk.importantDates, qk.transactions]) void qc.invalidateQueries({ queryKey });
     },
     onError: (error) => toast.err(error instanceof Error && error.message === "invalid destination" ? p.invalidDestination : p.couldNotSave),
   });
@@ -98,7 +98,7 @@ export function InboxPanel({ items, setItems, notifications, setNotifications }:
 
   const sources = [...new Set(items.map((item) => item.source_type))].sort();
   const destinationOptions: { value: Destination; label: string }[] = [
-    { value: "task", label: p.task }, { value: "note", label: p.note }, { value: "opportunity", label: p.opportunity },
+    { value: "task", label: p.task }, { value: "note", label: p.note },
     { value: "project", label: p.project }, { value: "organization", label: p.client }, { value: "job_application", label: p.jobApplication },
     { value: "important_date", label: p.importantDate }, { value: "transaction_category", label: p.transactionCategory },
   ];

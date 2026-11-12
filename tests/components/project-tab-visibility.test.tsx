@@ -31,7 +31,7 @@ const project = {
 } satisfies Project;
 const noop = () => undefined;
 const workspace = <ProjectWorkspace project={project} allProjects={[project]} costs={[]} crons={[]} todos={[]} notes={[]} setNotes={noop} invoices={[]} invoiceItems={[]}
-  subscriptions={[]} subscriptionAllocations={[]} transactions={[]} organizations={[]} opportunities={[]} importantDates={[]} prompts={[]} inboxItems={[]}
+  subscriptions={[]} subscriptionAllocations={[]} transactions={[]} organizations={[]} importantDates={[]} prompts={[]} inboxItems={[]}
   repoNotes={[]} setRepoNotes={noop} repoLinks={[]} setRepoLinks={noop} communications={[]} setCommunications={noop} aiLinks={[]} aiCategories={[]}
   projectLinks={[]} setProjectLinks={noop} promptLinks={[]} competitors={[]} setCompetitors={noop} onOpenProject={noop} displayCurrency="CZK"
   repositoryIntegrationEnabled={false} isPreview />;

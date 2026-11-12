@@ -76,7 +76,6 @@ export function DemoDashboard({
       initialSubscriptionAllocations={f.subscriptionAllocations}
       initialCompetitors={f.competitors}
       initialOrganizations={f.organizations}
-      initialOpportunities={f.opportunities}
       initialInboxItems={f.inboxItems}
       initialNotifications={f.notifications}
       initialWeeklyReviews={f.weeklyReviews}

@@ -8,7 +8,6 @@ import type {
   AiCategory,
   AiLink,
   BankConnection,
-  ClientOpportunity,
   CategoryRule,
   CoverLetterTemplate,
   ImportantDate,
@@ -198,16 +197,6 @@ export async function fetchOrganizations(): Promise<Organization[]> {
     .order("name", { ascending: true });
   if (error) throw error;
   return (data ?? []) as Organization[];
-}
-
-export async function fetchOpportunities(): Promise<ClientOpportunity[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("client_opportunities")
-    .select("*")
-    .order("updated_at", { ascending: false }).limit(1000);
-  if (error) throw error;
-  return (data ?? []) as ClientOpportunity[];
 }
 
 export async function fetchInboxItems(): Promise<InboxItem[]> {
