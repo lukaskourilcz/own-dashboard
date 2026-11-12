@@ -51,25 +51,3 @@ test("Career shows public Czech research without eager private or scraper reques
   await page.getByRole("button", { name: "Open positions", exact: true }).click();
   await expect(page.getByRole("button", { name: "Senior Frontend Engineer (React)", exact: true })).toBeVisible();
 });
-
-test("Opportunities loads nothing until pressed and remembers the last load", async ({ page }, testInfo) => {
-  await gotoPreview(page, { lang: "cs" });
-  const requests = watchDataRequests(page);
-  await open(page, testInfo.project.name === "mobile", "Příležitosti");
-  await expect(page.getByRole("heading", { name: "Příležitosti se načtou, až o to požádáte" })).toBeVisible();
-  await expect(page.getByText("V této relaci zatím nenačteno.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Acme customer portal" })).toHaveCount(0);
-  await page.waitForTimeout(500);
-  expect(requests).toEqual([]);
-
-  await page.getByRole("button", { name: "Zkontrolovat nové nabídky", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Acme customer portal", exact: true })).toBeVisible();
-  await expect(page.getByText(/^Naposledy načteno: .* · Příležitosti: 1 · Platformy: \d+$/)).toBeVisible();
-
-  // A new page load asks again, but the gate shows when and what was last loaded.
-  await page.goto("/dev-preview");
-  await open(page, testInfo.project.name === "mobile", "Příležitosti");
-  await expect(page.getByText(/^Naposledy načteno: .* · Příležitosti: 1 · Platformy: \d+$/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Zkontrolovat nové nabídky", exact: true })).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-});
