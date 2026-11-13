@@ -7,6 +7,7 @@ vi.mock("server-only", () => ({}));
 import {
   MARKETING_CALENDAR_SOURCES,
   aggregateTipUsage,
+  calendarLink,
   marketingWeek,
   parseMarketingCalendar,
   tipDeepLinkQuery,
@@ -15,6 +16,7 @@ import {
   unmatchedTipRefs,
   usageForTip,
   type MarketingCalendar,
+  type MarketingEntry,
   type MarketingSourceResult,
 } from "@/lib/marketing-calendars";
 import { readMarketingCalendars } from "@/lib/marketing-calendars-server";
@@ -53,14 +55,16 @@ const entry = (id: string, date: string, tipRefs: string[] = [], time: string | 
 });
 
 describe("marketing calendar sources", () => {
-  it("reads the devShark and DNESKAi calendars from committed files and nothing else", () => {
-    expect(MARKETING_CALENDAR_SOURCES.map((item) => [item.label, item.file])).toEqual([
-      ["devShark", "content/marketing-calendars/marketingshark.json"],
-      ["DNESKAi", "content/marketing-calendars/caught-up.json"],
+  it("reads the devShark and DNESKAi calendars from committed files and links to their OwnDashboard workspaces", () => {
+    expect(MARKETING_CALENDAR_SOURCES.map((item) => [item.label, item.file, item.calendarUrl])).toEqual([
+      ["devShark", "content/marketing-calendars/marketingshark.json", "/projects/devshark?projectTab=devshark-studio"],
+      ["DNESKAi", "content/marketing-calendars/caught-up.json", "/projects/dneskai?projectTab=dneskai-calendar"],
     ]);
-    for (const item of MARKETING_CALENDAR_SOURCES) {
-      expect(item.calendarUrl).toBe(`https://boardless-ai.vercel.app/admin/calendar?venture=${item.id}`);
-    }
+  });
+
+  it("keeps an app path a path when it adds query parameters", () => {
+    expect(calendarLink("/projects/dneskai?projectTab=dneskai-calendar", { q: "A tip" })).toBe("/projects/dneskai?projectTab=dneskai-calendar&q=A+tip");
+    expect(calendarLink("https://example.com/cal?venture=x", { week: "2026-11-09" })).toBe("https://example.com/cal?venture=x&week=2026-11-09");
   });
 });
 
@@ -269,5 +273,41 @@ describe("readMarketingCalendars", () => {
     ]);
     expect(result.sources[0]!.calendar?.entries.length ?? 0).toBeGreaterThan(0);
     expect(result.sources.find((item) => item.id === "missing")!.calendar).toBeNull();
+  });
+});
+
+describe("the plan laid over the archived calendars (13 November 2026)", () => {
+  const today = "2026-11-13";
+  const planned = (id: string, date: string, platform = "instagram"): MarketingEntry => ({ id, date, time: "12:00", platform, kind: "carousel", title: `Plan ${id}`, status: "planned", tipRefs: [] });
+  const source = (id: string, file: string, project: string) => ({ id, project, label: id, file, calendarUrl: `/projects/${project}` });
+
+  it("keeps archived entries before today, takes every later entry from the plan and drops archived pre-launch items", async () => {
+    const result = await readMarketingCalendars(
+      [source("devshark", "content/marketing-calendars/marketingshark.json", "devshark"), source("dneskai", "content/marketing-calendars/caught-up.json", "dneskai")],
+      "2026-11-13T08:00:00.000Z",
+      { today, entries: { devshark: [planned("a", "2026-11-14"), planned("b", "2026-11-13", "threads")] } },
+    );
+    const [devshark, dneskai] = result.sources;
+    expect(devshark!.upcoming).toBe("plan");
+    const upcoming = devshark!.calendar!.entries.filter((entry) => entry.date >= today);
+    expect(upcoming.map((entry) => entry.id)).toEqual(["b", "a"]);
+    expect(devshark!.calendar!.entries.filter((entry) => entry.date < today).length).toBeGreaterThan(0);
+    expect(devshark!.calendar!.entries.some((entry) => entry.tipRefs.length > 0)).toBe(true);
+    expect(devshark!.calendar!.prelaunch).toEqual([]);
+    expect(devshark!.calendar!.periodEnd).toBe("2026-11-14");
+    // DNESKAi's plan could not be read: its archive stays as it was and is not marked as planned.
+    expect(dneskai!.upcoming).toBeUndefined();
+    expect(dneskai!.calendar!.entries.length).toBeGreaterThan(0);
+  });
+
+  it("shows the plan, not the archive, in the Work overview week", async () => {
+    const result = await readMarketingCalendars(
+      [source("devshark", "content/marketing-calendars/marketingshark.json", "devshark")],
+      "2026-11-13T08:00:00.000Z",
+      { today, entries: { devshark: [planned("a", "2026-11-14")] } },
+    );
+    const week = marketingWeek(result.sources, today);
+    expect(week.entries.map((entry) => [entry.id, entry.url])).toEqual([["a", "/projects/devshark?week=2026-11-09&entry=a"]]);
+    expect(week.prelaunch).toEqual([]);
   });
 });

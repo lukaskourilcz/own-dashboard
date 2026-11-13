@@ -8,12 +8,14 @@ import {
   type MarketingCalendarsResponse,
   type MarketingSourceResult,
 } from "@/lib/marketing-calendars";
+import { withPlanEntries, type PlanCalendarEntries } from "@/lib/marketing-calendars-plan";
 
 /**
- * Reads the configured marketing calendars from the documents committed in this
+ * Reads the configured marketing calendars from the archived documents in this
  * repository (`content/marketing-calendars`, migrated out of Quorum on
- * 9 November 2026). Nothing is fetched and nothing is written: every source comes
- * back either as a trimmed calendar or with the reason it could not be read.
+ * 9 November 2026) and lays the owner's plan over them. Nothing is fetched and
+ * nothing is written: every source comes back either as a trimmed calendar or
+ * with the reason it could not be read.
  */
 
 /** A 30-day plan is about 250 kB; a document four times that is refused, not cut. */
@@ -36,10 +38,18 @@ async function readSource(source: MarketingCalendarSource): Promise<MarketingSou
   return { ...base, status: "ok", calendar: parsed.calendar };
 }
 
+/**
+ * Every configured calendar. With `plan`, each archived calendar's entries from `plan.today` on are replaced by the
+ * owner's plan (`withPlanEntries`); a project whose plan could not be read keeps its archive.
+ */
 export async function readMarketingCalendars(
   sources: readonly MarketingCalendarSource[] = MARKETING_CALENDAR_SOURCES,
   checkedAt = new Date().toISOString(),
+  plan?: { entries: PlanCalendarEntries; today: string },
 ): Promise<MarketingCalendarsResponse> {
-  const results = await Promise.all(sources.map(readSource));
+  const results = await Promise.all(sources.map(async (source) => {
+    const result = await readSource(source);
+    return plan ? withPlanEntries(result, source.project, plan.entries, plan.today) : result;
+  }));
   return { checkedAt, sources: results };
 }
