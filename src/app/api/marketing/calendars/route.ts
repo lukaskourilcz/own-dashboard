@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { readMarketingCalendars } from "@/lib/marketing-calendars-server";
+import { readPlanCalendarEntries } from "@/lib/marketing-calendars-plan";
+import { pragueMarketingDate } from "@/lib/marketing/weekly-planning";
 import { rateLimit } from "@/lib/rate-limit";
 
 /**
@@ -8,7 +10,9 @@ import { rateLimit } from "@/lib/rate-limit";
  *
  * GET /api/marketing/calendars → MarketingCalendarsResponse. Each configured
  * `marketing-calendar/1` document (`MARKETING_CALENDAR_SOURCES`) is read from
- * the committed files on disk on every call and never stored; the browser keeps
+ * the archived files on disk, and the next 30 days come from the owner's plan
+ * tables (`marketing_dneskai_plan`, `marketing_devshark_plan`). Nothing is
+ * stored; the browser keeps
  * the answer for the page session and asks again only when the owner presses
  * "Check the calendars again". The response carries trimmed entries (date,
  * platform, kind, title, status, tip titles) and a status per calendar.
@@ -32,6 +36,10 @@ export async function GET() {
     );
   }
 
-  const result = await readMarketingCalendars();
+  const now = new Date();
+  const today = pragueMarketingDate(now);
+  // The plan is read through the owner's session; a failed read leaves that project on its archive.
+  const entries = await readPlanCalendarEntries(supabase, user.id, today).catch(() => ({}));
+  const result = await readMarketingCalendars(undefined, now.toISOString(), { entries, today });
   return NextResponse.json(result, { headers: { "Cache-Control": "private, no-store" } });
 }

@@ -29,7 +29,7 @@ describe('retired preview pilot notice (#113)', () => {
     const { previewPilotRetired } = await import('@/lib/marketing/preview-pilot');
     expect(previewPilotRetired('generation-pilot', { VERCEL_ENV: 'preview', ...generation })).toBe(false);
     expect(previewPilotRetired('offline-import', { VERCEL_ENV: 'production' })).toBe(true);
-    expect(previewPilotRetired('source-preview', {})).toBe(true);
+    expect(previewPilotRetired('template-approvals', {})).toBe(true);
     expect(warn).not.toHaveBeenCalled();
   });
 
@@ -37,14 +37,12 @@ describe('retired preview pilot notice (#113)', () => {
     const { marketingPilotConfiguration } = await import('@/lib/marketing/pilot');
     const { trustedMarketingTemplate } = await import('@/lib/marketing/template-registry');
     const { currentMarketingTemplate } = await import('@/lib/marketing/render');
-    const { sourceRefreshConfig } = await import('@/lib/marketing/source-refresh');
     const { assertMarketingOfflineImportConfiguration } = await import('@/lib/marketing/offline-import');
     const production = { VERCEL_ENV: 'production' };
     expect(marketingPilotConfiguration(owner, { ...production, ...generation }, now)).toBeNull();
     expect(trustedMarketingTemplate('devshark', { ...production, MARKETING_PILOT_TEMPLATE_APPROVALS: '[]' })).toEqual(currentMarketingTemplate('devshark'));
-    expect(sourceRefreshConfig('dneskai', { ...production, MARKETING_DNESKAI_SOURCE_URL: 'https://quorum.example.invalid/admin/api/marketing-source', MARKETING_DNESKAI_SOURCE_SECRET: 'offline-bridge-secret'.repeat(2), MARKETING_DNESKAI_SOURCE_PREVIEW_SHARE_TOKEN: marker })).toEqual({ url: 'https://quorum.example.invalid/admin/api/marketing-source', secret: 'offline-bridge-secret'.repeat(2) });
     expect(() => assertMarketingOfflineImportConfiguration(owner, { ...production, ...generation, MARKETING_OWNER_ID: owner, MARKETING_OFFLINE_IMPORT_ENABLED: 'true' }, now)).toThrow('offline-import-disabled');
-    expect(lines().map(line => line.family).sort()).toEqual(['generation-pilot', 'offline-import', 'source-preview', 'template-approvals']);
+    expect(lines().map(line => line.family).sort()).toEqual(['generation-pilot', 'offline-import', 'template-approvals']);
     expect(JSON.stringify(warn.mock.calls)).not.toContain(marker);
   });
 
@@ -63,6 +61,6 @@ describe('retired preview pilot notice (#113)', () => {
     expect(dneskaiCollectionBlockers({ VERCEL_ENV: 'production' })).not.toContain('collection-paid-pilot-blocked');
   });
 
-  // The DNESKAi collection bridge (and its Preview share) was removed on 9 November 2026 — collection reads the free
-  // feeds natively — so source-preview's retirement is now observed only through sourceRefreshConfig above.
+  // The source bridges and their Preview shares are gone (DNESKAi 9 November, devShark 13 November 2026), so the
+  // source-preview family no longer exists.
 });

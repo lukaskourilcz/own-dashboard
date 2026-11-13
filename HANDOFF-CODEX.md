@@ -9,7 +9,8 @@ Stav k 9. 11. 2026, předává Claude. OwnDashboard obsahuje DNESKAi, devShark m
 - **CI na GitHubu je vypnuté** (Lukáš 9. 11., workflow „CI“ id 290796638). Merge po lokálních kontrolách (typecheck, lint, dotčené testy), vždy `gh pr merge --merge`.
 - **Trvalé svolení:** migrace, merge a nasazení bez ptaní (globální `~/.claude/CLAUDE.md`).
 - **Backlog:** tabulka `public.backlog_items`. Stavy `open`, `ready_for_agent`, `in_progress`, `done`, `dropped`. Položky ve stavu `ready_for_agent` mají v `note` zadání od Lukáše. Při převzetí nastav `in_progress`, po dokončení `done` a výsledek dopiš do `note`.
-- **Quorum už není potřeba:** renderer, kalendáře i zdroje DNESKAi jsou v own-dashboardu (#287, #299).
+- **Quorum už není potřeba:** renderer, kalendáře, zdroje DNESKAi (#287, #299) i vyhledávání zdrojů devSharku (13. 11., koncepty z `marketing_devshark_drafts`) jsou v own-dashboardu. Proměnné `MARKETING_*_SOURCE_*` nic nečte, jdou smazat z Vercelu.
+- **Marketingové kalendáře (13. 11.):** zdrojem pravdy je plán v DB (`marketing_dneskai_plan`, `marketing_devshark_plan`). Soubory v `content/marketing-calendars/` jsou zmrazený archiv z Quorum (4. 10. až 2. 11.), nikdo je neaktualizuje; `/api/marketing/calendars` z nich bere jen dny před dneškem kvůli citacím tipů a zbytek čte z plánu.
 
 ## Zapnuté přepínače a crony (Vercel produkce)
 

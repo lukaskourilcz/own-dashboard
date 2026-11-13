@@ -4,9 +4,12 @@ import { parseDateOnly } from "@/lib/date-keys";
 /**
  * The marketing calendars OwnDashboard reads but never writes.
  *
- * Each project's 30-day marketing plan is a `marketing-calendar/1` JSON
- * document, snapshotted into this repository under `content/marketing-calendars`
- * (migrated out of Quorum on 9 November 2026 so OwnDashboard needs no Quorum).
+ * Each project's Quorum-era 30-day plan is a `marketing-calendar/1` JSON
+ * document, archived in this repository under `content/marketing-calendars`
+ * (migrated out of Quorum on 9 November 2026, frozen at 2 November). From
+ * 13 November 2026 the entries from today on come from OwnDashboard's own plan
+ * tables instead (`src/lib/marketing-calendars-plan.ts`); nobody updates the
+ * archive.
  * OwnDashboard closes the loop in two read-only places: IG TIPS counts the
  * calendar entries that apply each tip (`entries[].tipRefs` cite tips by exact
  * title), and the Work overview lists the next seven days across every calendar.
@@ -27,7 +30,7 @@ export type MarketingCalendarSource = {
   label: string;
   /** The committed document's path in this repository. */
   file: string;
-  /** The page that renders this calendar; it takes `q`, `week` and `entry`. */
+  /** The OwnDashboard workspace that holds this project's plan (the Quorum calendar pages are gone). */
   calendarUrl: string;
 };
 
@@ -41,14 +44,14 @@ export const MARKETING_CALENDAR_SOURCES = [
     project: "devshark",
     label: "devShark",
     file: "content/marketing-calendars/marketingshark.json",
-    calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark",
+    calendarUrl: "/projects/devshark?projectTab=devshark-studio",
   },
   {
     id: "caught-up",
     project: "dneskai",
     label: "DNESKAi",
     file: "content/marketing-calendars/caught-up.json",
-    calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=caught-up",
+    calendarUrl: "/projects/dneskai?projectTab=dneskai-calendar",
   },
 ] as const satisfies readonly MarketingCalendarSource[];
 
@@ -108,6 +111,11 @@ export type MarketingSourceResult = {
   /** The reason behind `error`, or the project a `wrong-project` document names. */
   detail: string | null;
   calendar: MarketingCalendar | null;
+  /**
+   * Where the entries from today on come from: `plan` when OwnDashboard's own plan was laid over the archived
+   * document (`src/lib/marketing-calendars-plan.ts`), absent when only the archive could be read.
+   */
+  upcoming?: "plan";
 };
 
 export type MarketingCalendarsResponse = {
@@ -241,11 +249,12 @@ export type TipUsageIndex = {
   readSources: string[];
 };
 
-/** A calendar page URL with extra query parameters. */
+/** A calendar page URL with extra query parameters; an app path (`/projects/...`) stays a path. */
 export function calendarLink(calendarUrl: string, params: Record<string, string>): string {
-  const url = new URL(calendarUrl);
+  const relative = calendarUrl.startsWith("/");
+  const url = new URL(calendarUrl, "https://app.invalid");
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  return url.toString();
+  return relative ? `${url.pathname}${url.search}` : url.toString();
 }
 
 /**

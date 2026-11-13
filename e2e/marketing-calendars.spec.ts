@@ -6,8 +6,8 @@ type AxePage = ConstructorParameters<typeof AxeBuilder>[0]["page"];
 
 const TIP_PLAN = "Plan a month of posts around two topics";
 const TIP_CAROUSEL = "Design every carousel at the 4:5 portrait ratio and keep that one ratio for every slide of the post";
-const DEVSHARK = { id: "marketingshark", label: "devShark", file: "content/marketing-calendars/marketingshark.json", calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=marketingshark" };
-const DNESKAI = { id: "caught-up", label: "DNESKAi", file: "content/marketing-calendars/caught-up.json", calendarUrl: "https://boardless-ai.vercel.app/admin/calendar?venture=caught-up" };
+const DEVSHARK = { id: "marketingshark", label: "devShark", file: "content/marketing-calendars/marketingshark.json", calendarUrl: "/projects/devshark?projectTab=devshark-studio" };
+const DNESKAI = { id: "caught-up", label: "DNESKAi", file: "content/marketing-calendars/caught-up.json", calendarUrl: "/projects/dneskai?projectTab=dneskai-calendar" };
 
 /** A local `yyyy-MM-dd`, `offset` days from today, as the browser counts days. */
 function day(offset: number): string {
@@ -93,9 +93,9 @@ test("tip cards say which plans apply them, read from the calendars, with a Not 
   await expect(plan.locator("[data-tip-usage]")).toHaveText(/^Applied in\s*devShark ×2/);
   const link = plan.getByRole("link", { name: /devShark ×2/ });
   await expect(link).toHaveAttribute("target", "_blank");
-  const href = new URL((await link.getAttribute("href"))!);
-  expect(href.origin + href.pathname).toBe("https://boardless-ai.vercel.app/admin/calendar");
-  expect(href.searchParams.get("venture")).toBe("marketingshark");
+  const href = new URL((await link.getAttribute("href"))!, "https://app.invalid");
+  expect(href.pathname).toBe("/projects/devshark");
+  expect(href.searchParams.get("projectTab")).toBe("devshark-studio");
   expect(href.searchParams.get("q")).toBe(TIP_PLAN);
   await expect(main.locator('[data-tip-card="tip2"] [data-tip-usage]')).toContainText("devShark ×1");
   await expect(main.locator('[data-tip-card="tip3"] [data-tip-usage]')).toHaveCount(0);
