@@ -159,6 +159,13 @@ class MetaFailure extends Error {
 }
 class CheckpointFailure extends Error {}
 type ThreadsGraphStep = 'profile' | 'quota' | 'carousel-item' | 'container' | 'status' | 'publish';
+/**
+ * Threads refusals of a carousel parent that clear on a later attempt (13 November 2026): 400/100/4279004 hit 5 of
+ * about 30 production carousels between 10 and 12 November, after every child had read FINISHED, with the same
+ * kind of slides and text that published at other slots. Nothing exists on Threads when the parent fails, so the
+ * publisher forgets the children and the next tick builds them again; the 15-minute publish window bounds the tries.
+ */
+const THREADS_RETRYABLE_PARENT_FAILURES = new Set(['400-100-4279004']);
 const metaErrorNumber = (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 999_999_999;
 
 async function graphFailure(response: Response, threadsStep?: ThreadsGraphStep): Promise<MetaFailure> {
@@ -169,7 +176,8 @@ async function graphFailure(response: Response, threadsStep?: ThreadsGraphStep):
   const { code: errorCode, error_subcode: errorSubcode, is_transient: transient } = payload?.error ?? {};
   const metaCode = metaErrorNumber(errorCode) ? `-${errorCode}` : '';
   const subcode = metaCode && metaErrorNumber(errorSubcode) ? `-${errorSubcode}` : '';
-  return new MetaFailure(code, `threads-${threadsStep}-http-${response.status}${metaCode}${subcode}`, transient === true);
+  const retryableParent = threadsStep === 'container' && THREADS_RETRYABLE_PARENT_FAILURES.has(`${response.status}${metaCode}${subcode}`);
+  return new MetaFailure(code, `threads-${threadsStep}-http-${response.status}${metaCode}${subcode}`, transient === true || retryableParent);
 }
 async function pollWait(input: PublishMarketingInput, ms: number): Promise<void> {
   input.signal?.throwIfAborted();
