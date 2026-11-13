@@ -107,6 +107,15 @@ describe('DNESKAi Threads failure receipts', () => {
     expect(state.checkpoints).toMatchObject([{ stage: 'container-retry' }]);
   });
 
+  it('retries the carousel parent refusal 400/100/4279004 without publishing, and only on the parent', async () => {
+    const parent = threadsFixture(({ body }) => body.has('children') ? Response.json({ error: { code: 100, error_subcode: 4279004 } }, { status: 400 }) : undefined);
+    expect(await publishMarketingRevision(parent.input)).toMatchObject({ status: 'pending', errorCode: 'container-retry', retryCause: 'threads-container-http-400-100-4279004' });
+    expect(parent.checkpoints).toMatchObject([{ stage: 'container-retry' }]);
+    expect(parent.posts().filter(({ url }) => url.pathname.endsWith('/threads_publish'))).toHaveLength(0);
+    const child = threadsFixture(({ body }) => body.get('is_carousel_item') === 'true' ? Response.json({ error: { code: 100, error_subcode: 4279004 } }, { status: 400 }) : undefined);
+    expect(await publishMarketingRevision(child.input)).toMatchObject({ status: 'failed', errorCode: 'threads-carousel-item-http-400-100-4279004' });
+  });
+
   it.each([false, true])('waits for Threads image children before making the parent, prolonged processing %s', async (prolonged) => {
     let reads = 0;
     const state = threadsFixture(({ url, method, body }) => {
