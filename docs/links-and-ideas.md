@@ -28,14 +28,14 @@ The tips in production were written in English, so their summaries are English t
 
 ### Marketing plans
 
-The 30-day marketing plans cite the tips they apply by exact title (`entries[].tipRefs` in each `marketing-calendar/1` document), and IG TIPS reads them back (#91). The calendars read are the ones in `MARKETING_CALENDAR_SOURCES` (`src/lib/marketing-calendars.ts`): devShark and DNESKAi in `lukaskourilcz/quorum`. They are fetched through the owner's server-side GitHub connection on request and never stored ([architecture](../DOCS.md#planning-and-library)).
+The 30-day marketing plans cite the tips they apply by exact title (`entries[].tipRefs` in each `marketing-calendar/1` document), and IG TIPS reads them back (#91). The calendars read are the ones in `MARKETING_CALENDAR_SOURCES` (`src/lib/marketing-calendars.ts`): the devShark and DNESKAi documents archived in `content/marketing-calendars/` (Quorum era, 4 October to 2 November 2026). Only those archived entries carry tip citations. From today on a calendar shows OwnDashboard's own plan, which cites no tips, so the counts no longer grow ([architecture](../DOCS.md#planning-and-library)).
 
 - A tip card that a plan applies ends with "Applied in devShark ×12, DNESKAi ×3": the number of calendar entries citing the tip, per calendar. An entry citing a tip twice counts once, and case and spacing do not split a title. Each count opens that calendar filtered by the tip.
 - The "Not yet applied" chip, after the topic chips, lists the tips no readable calendar cites and combines with the topic chips and search. It appears only once at least one calendar was read, so a failed read never marks every tip unused.
 - A status line under the chips names the calendars read with their entry counts, each calendar that could not be read with the file and the reason ("Could not read lukaskourilcz/quorum/state/marketing-calendar/caught-up.json: the file is not on the default branch yet."), and how many cited titles match no saved tip, which is how a renamed tip shows up.
 - `/ig-tips?q=<title>` opens IG TIPS with the search prefilled and, when a tip has exactly that title, its card expanded and scrolled into view. A query that names no tip exactly stays an ordinary search. The query applies once; switching sections clears it.
 
-The same calendars feed the Work overview's Marketing card, the next seven days across the plans.
+The same calendars feed the Work overview's Marketing card: the next seven days of the DNESKAi and devShark plans.
 
 ## Migration and rollout
 
